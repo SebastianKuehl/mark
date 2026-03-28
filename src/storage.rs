@@ -4,13 +4,14 @@ use std::path::{Path, PathBuf};
 /// Paths used by the mark application.
 pub struct AppPaths {
     /// `~/.mark`
-    #[allow(dead_code)]
     pub root: PathBuf,
     /// `~/.mark/rendered`
     pub rendered: PathBuf,
     /// `~/.mark/bin`
     #[allow(dead_code)]
     pub bin: PathBuf,
+    /// `~/.mark/config.toml`
+    pub config: PathBuf,
 }
 
 impl AppPaths {
@@ -20,10 +21,12 @@ impl AppPaths {
         let root = home.join(".mark");
         let rendered = root.join("rendered");
         let bin = root.join("bin");
+        let config = root.join("config.toml");
         Ok(AppPaths {
             root,
             rendered,
             bin,
+            config,
         })
     }
 
@@ -85,6 +88,7 @@ mod tests {
         assert!(paths.root.ends_with(".mark"));
         assert!(paths.rendered.ends_with("rendered"));
         assert!(paths.bin.ends_with("bin"));
+        assert!(paths.config.ends_with("config.toml"));
     }
 
     #[test]

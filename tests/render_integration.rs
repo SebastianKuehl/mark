@@ -18,7 +18,7 @@ mod render_flow {
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("output");
-        let html = mark::render::render_markdown(&markdown, title);
+        let html = mark::render::render_markdown(&markdown, title, mark::config::Theme::Light);
 
         // Write it.
         let rendered_dir = dir.path().join("rendered");

@@ -1,3 +1,4 @@
+use crate::config::Theme;
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use std::path::PathBuf;
@@ -18,6 +19,10 @@ pub struct Cli {
     #[arg(long)]
     pub no_open: bool,
 
+    /// Override the render theme for this invocation (light or dark)
+    #[arg(long, value_name = "THEME")]
+    pub theme: Option<Theme>,
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
@@ -31,5 +36,22 @@ pub enum Commands {
     Completions {
         /// Shell to generate completions for.
         shell: Shell,
+    },
+    /// Manage persistent mark configuration.
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
+}
+
+/// Config sub-actions.
+#[derive(Subcommand, Debug)]
+pub enum ConfigAction {
+    /// Set the persistent render theme (light or dark).
+    ///
+    /// Example: mark config set-theme dark
+    SetTheme {
+        /// Theme to use: light or dark
+        theme: Theme,
     },
 }

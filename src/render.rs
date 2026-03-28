@@ -1,12 +1,13 @@
 use pulldown_cmark::{html, Options, Parser};
 
+use crate::config::Theme;
 use crate::copy_clean::{is_supported_language, strip_full_line_comments};
 
 /// Render Markdown source to a complete standalone HTML5 document.
 ///
 /// The output is self-contained: no external stylesheets or scripts are
 /// referenced. `title` is used as the `<title>` and shown as an `<h1>` in the
-/// page header.
+/// page header. `theme` controls the colour scheme of the output.
 ///
 /// # Security note
 ///
@@ -15,7 +16,7 @@ use crate::copy_clean::{is_supported_language, strip_full_line_comments};
 /// render **local files owned by the user**. Do not use it to render
 /// untrusted Markdown — the result could contain executable JavaScript. See
 /// the README for details.
-pub fn render_markdown(markdown: &str, title: &str) -> String {
+pub fn render_markdown(markdown: &str, title: &str, theme: Theme) -> String {
     let mut opts = Options::empty();
     opts.insert(Options::ENABLE_TABLES);
     opts.insert(Options::ENABLE_FOOTNOTES);
@@ -27,14 +28,55 @@ pub fn render_markdown(markdown: &str, title: &str) -> String {
     html::push_html(&mut body, parser);
     let body = post_process_code_blocks(&body);
 
-    build_html_document(title, &body)
+    build_html_document(title, &body, theme)
 }
 
 /// Wrap a rendered HTML body in a complete HTML5 document with embedded CSS and JS.
-fn build_html_document(title: &str, body: &str) -> String {
+fn build_html_document(title: &str, body: &str, theme: Theme) -> String {
     let css = include_str!("style.css");
 
-    let copy_css = r#".mark-code-block {
+    let copy_css = if theme == Theme::Dark {
+        r#".mark-code-block {
+  position: relative;
+  margin: 1em 0;
+}
+.mark-code-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4em;
+  padding: 0.25em 0.5em;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+.mark-code-block pre {
+  margin-top: 0;
+  border-radius: 0 0 4px 4px;
+}
+.mark-btn {
+  font-size: 0.78em;
+  padding: 0.2em 0.6em;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background: #333;
+  color: #ccc;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mark-btn:hover {
+  background: #444;
+}
+.mark-btn.mark-copied {
+  color: #6dbf6d;
+  border-color: #6dbf6d;
+}
+.mark-btn.mark-failed {
+  color: #f66;
+  border-color: #f66;
+}"#
+    } else {
+        r#".mark-code-block {
   position: relative;
   margin: 1em 0;
 }
@@ -71,7 +113,8 @@ fn build_html_document(title: &str, body: &str) -> String {
 .mark-btn.mark-failed {
   color: #b00;
   border-color: #b00;
-}"#;
+}"#
+    };
 
     let copy_js = r#"(function() {
   function flash(btn, msg, cls) {
@@ -142,15 +185,39 @@ fn build_html_document(title: &str, body: &str) -> String {
   });
 })();"#;
 
+    let theme_attr = match theme {
+        Theme::Dark => "dark",
+        Theme::Light => "light",
+    };
+
+    // Dark theme overrides for base styles.
+    let theme_css = if theme == Theme::Dark {
+        r#"
+/* dark theme */
+body { color: #e0e0e0; background: #1a1a1a; }
+h1, h2 { border-bottom-color: #444; }
+a { color: #7ab4f5; }
+code { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+pre { background: #2a2a2a; border-color: #444; }
+blockquote { border-left-color: #555; color: #aaa; background: #222; }
+th { background: #2a2a2a; }
+tr:nth-child(even) { background: #222; }
+th, td { border-color: #444; }
+hr { border-top-color: #444; }"#
+    } else {
+        ""
+    };
+
     format!(
         r#"<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="{theme_attr}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <style>
 {css}
+{theme_css}
 </style>
 <style>
 {copy_css}
@@ -166,8 +233,10 @@ fn build_html_document(title: &str, body: &str) -> String {
 </body>
 </html>
 "#,
+        theme_attr = theme_attr,
         title = escape_html(title),
         css = css,
+        theme_css = theme_css,
         copy_css = copy_css,
         body = body,
         copy_js = copy_js,
@@ -315,35 +384,36 @@ pub(crate) fn post_process_code_blocks(html: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::Theme;
 
     #[test]
     fn render_produces_nonempty_html() {
-        let html = render_markdown("# Hello\n\nWorld.", "Hello");
+        let html = render_markdown("# Hello\n\nWorld.", "Hello", Theme::Light);
         assert!(!html.is_empty());
         assert!(html.contains("<!DOCTYPE html>"));
     }
 
     #[test]
     fn render_contains_heading() {
-        let html = render_markdown("# My Title\n", "My Title");
+        let html = render_markdown("# My Title\n", "My Title", Theme::Light);
         assert!(html.contains("<h1>My Title</h1>"));
     }
 
     #[test]
     fn render_contains_paragraph() {
-        let html = render_markdown("Hello world\n", "test");
+        let html = render_markdown("Hello world\n", "test", Theme::Light);
         assert!(html.contains("<p>Hello world</p>"));
     }
 
     #[test]
     fn render_title_in_head() {
-        let html = render_markdown("text", "My Doc");
+        let html = render_markdown("text", "My Doc", Theme::Light);
         assert!(html.contains("<title>My Doc</title>"));
     }
 
     #[test]
     fn render_escapes_title_html() {
-        let html = render_markdown("x", "<script>alert(1)</script>");
+        let html = render_markdown("x", "<script>alert(1)</script>", Theme::Light);
         assert!(html.contains("&lt;script&gt;"));
         // The raw injected script should not appear as an executable tag in the title.
         assert!(!html.contains("<title><script>"));
@@ -352,14 +422,39 @@ mod tests {
 
     #[test]
     fn render_includes_embedded_css() {
-        let html = render_markdown("x", "t");
+        let html = render_markdown("x", "t", Theme::Light);
         assert!(html.contains("<style>"));
+    }
+
+    #[test]
+    fn render_light_theme_has_data_attribute() {
+        let html = render_markdown("x", "t", Theme::Light);
+        assert!(html.contains(r#"data-theme="light""#));
+    }
+
+    #[test]
+    fn render_dark_theme_has_data_attribute() {
+        let html = render_markdown("x", "t", Theme::Dark);
+        assert!(html.contains(r#"data-theme="dark""#));
+    }
+
+    #[test]
+    fn render_dark_theme_contains_dark_css() {
+        let html = render_markdown("x", "t", Theme::Dark);
+        // Dark theme CSS includes a dark background colour.
+        assert!(html.contains("background: #1a1a1a"));
+    }
+
+    #[test]
+    fn render_light_theme_no_dark_css() {
+        let html = render_markdown("x", "t", Theme::Light);
+        assert!(!html.contains("background: #1a1a1a"));
     }
 
     #[test]
     fn code_block_has_copy_button() {
         let md = "```\nsome code\n```\n";
-        let html = render_markdown(md, "t");
+        let html = render_markdown(md, "t", Theme::Light);
         assert!(
             html.contains("mark-copy-btn"),
             "copy button should be present"
@@ -369,7 +464,7 @@ mod tests {
     #[test]
     fn code_block_supported_lang_has_clean_button() {
         let md = "```rust\nfn main() {}\n```\n";
-        let html = render_markdown(md, "t");
+        let html = render_markdown(md, "t", Theme::Light);
         assert!(
             html.contains(r#"class="mark-btn mark-copy-clean-btn""#),
             "clean button element should be present for rust"
@@ -379,7 +474,7 @@ mod tests {
     #[test]
     fn code_block_unsupported_lang_no_clean_button() {
         let md = "```html\n<p>hello</p>\n```\n";
-        let html = render_markdown(md, "t");
+        let html = render_markdown(md, "t", Theme::Light);
         // Check the button element itself is absent (not just the class string,
         // which also appears inside the embedded JS).
         assert!(
@@ -391,7 +486,7 @@ mod tests {
     #[test]
     fn code_block_no_lang_no_clean_button() {
         let md = "```\nsome code\n```\n";
-        let html = render_markdown(md, "t");
+        let html = render_markdown(md, "t", Theme::Light);
         assert!(
             !html.contains(r#"class="mark-btn mark-copy-clean-btn""#),
             "clean button element should NOT be present when no language specified"

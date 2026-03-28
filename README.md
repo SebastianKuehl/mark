@@ -14,6 +14,8 @@ A cross-platform CLI that renders Markdown files to HTML and opens them in your 
 - Auto-cleans rendered files older than 30 days on every run
 - `--cleanup` mode for manual housekeeping
 - `--no-open` mode for CI or scripting
+- Persistent theme support (`light` / `dark`) via `mark config set-theme`
+- Per-invocation theme override via `--theme`
 - Works on Linux, macOS, and Windows
 - No network dependencies — all styling is embedded
 
@@ -110,6 +112,46 @@ mark --version
 
 ---
 
+## Theme
+
+`mark` supports **light** (default) and **dark** render themes.
+
+### Set the theme permanently
+
+```sh
+mark config set-theme dark
+mark config set-theme light
+```
+
+This writes the chosen theme to `~/.mark/config.toml` and is used for all future renders.
+
+### Override the theme for a single run
+
+```sh
+mark --theme dark README.md
+mark --theme light README.md
+```
+
+The `--theme` flag overrides the persisted config for that invocation only.
+
+### Precedence
+
+1. `--theme` CLI flag (highest priority)
+2. Persisted value in `~/.mark/config.toml`
+3. Default: `light`
+
+### Config file location
+
+`~/.mark/config.toml` (Linux/macOS) or `%USERPROFILE%\.mark\config.toml` (Windows).
+
+Example contents:
+
+```toml
+theme = "dark"
+```
+
+
+
 ## Where files are stored
 
 | Path | Purpose |
@@ -117,6 +159,7 @@ mark --version
 | `~/.mark/` | Root app directory |
 | `~/.mark/bin/` | Installed `mark` binary |
 | `~/.mark/rendered/` | Generated HTML files |
+| `~/.mark/config.toml` | Persistent configuration |
 
 Rendered filenames follow the pattern `<source-stem>-<timestamp>-<hash>.html`, e.g.:
 

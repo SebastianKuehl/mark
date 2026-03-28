@@ -1,7 +1,12 @@
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
-use mark::{browser, cleanup, cli::Commands, render, storage};
+use mark::{
+    browser, cleanup,
+    cli::{Commands, ConfigAction},
+    config::{AppConfig, Theme},
+    render, storage,
+};
 
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
@@ -10,6 +15,20 @@ fn main() -> Result<()> {
     if let Some(Commands::Completions { shell }) = args.command {
         let mut cmd = mark::cli::Cli::command();
         generate(shell, &mut cmd, "mark", &mut std::io::stdout());
+        return Ok(());
+    }
+
+    // Handle `config` subcommands.
+    if let Some(Commands::Config { action }) = args.command {
+        let paths = storage::AppPaths::resolve()?;
+        match action {
+            ConfigAction::SetTheme { theme } => {
+                let mut cfg = AppConfig::load(&paths.config)?;
+                cfg.theme = theme;
+                cfg.save(&paths.config)?;
+                println!("Theme set to '{theme}'.");
+            }
+        }
         return Ok(());
     }
 
@@ -57,7 +76,11 @@ fn main() -> Result<()> {
         .and_then(|s| s.to_str())
         .unwrap_or("output");
 
-    let html = render::render_markdown(&markdown, title);
+    // Resolve theme: CLI override > persisted config > default light.
+    let cfg = AppConfig::load(&paths.config)?;
+    let theme: Theme = args.theme.unwrap_or(cfg.theme);
+
+    let html = render::render_markdown(&markdown, title, theme);
 
     paths.ensure_rendered_dir()?;
 
