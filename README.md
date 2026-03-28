@@ -138,7 +138,69 @@ On every normal render run, `mark` automatically deletes HTML files in `~/.mark/
 
 ---
 
-## PATH setup
+## Shell Completions
+
+`mark` can generate completion scripts for bash, zsh, fish, and PowerShell.
+
+### Automatic installation
+
+The install scripts set up completions automatically:
+
+| Shell | Location | Config hook |
+|-------|----------|-------------|
+| bash | `~/.bash_completion.d/mark` | sourced from `~/.bashrc` / `~/.bash_profile` |
+| zsh | `~/.zsh/completions/_mark` | `fpath` + `compinit` added to `~/.zshrc` |
+| fish | `~/.config/fish/completions/mark.fish` | auto-loaded by fish |
+| PowerShell | `%USERPROFILE%\.mark\completions\mark.ps1` | dot-sourced from `$PROFILE` |
+
+All hooks are idempotent — running the installer a second time is safe.
+
+### Manual installation
+
+Generate a script and install it yourself:
+
+**bash**
+```sh
+mark completions bash > ~/.bash_completion.d/mark
+# Add to ~/.bashrc (once):
+echo 'source ~/.bash_completion.d/mark' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**zsh**
+```sh
+mkdir -p ~/.zsh/completions
+mark completions zsh > ~/.zsh/completions/_mark
+# Add to ~/.zshrc (once, before compinit):
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**fish**
+```sh
+mark completions fish > ~/.config/fish/completions/mark.fish
+# Fish auto-loads completions from this directory — no further steps needed.
+```
+
+**PowerShell**
+```powershell
+mark completions powershell > "$env:USERPROFILE\.mark\completions\mark.ps1"
+# Add to your $PROFILE (once):
+Add-Content $PROFILE ". '$env:USERPROFILE\.mark\completions\mark.ps1'"
+```
+
+### Preview a completion script
+
+```sh
+mark completions bash
+mark completions zsh
+mark completions fish
+mark completions powershell
+```
+
+---
+
 
 The installer adds a guarded PATH entry to your shell config using a `case` statement that prevents duplication even when multiple config files source each other:
 

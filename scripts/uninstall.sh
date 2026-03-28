@@ -6,8 +6,9 @@
 # What this script does:
 #   1. Removes the mark binary from ~/.mark/bin
 #   2. Removes the PATH entry this installer added from shell config files
-#   3. Optionally removes ~/.mark/rendered (asks for confirmation)
-#   4. Does NOT remove ~/.mark itself unless rendered is also removed and bin
+#   3. Removes shell completion files and their config hooks (idempotent)
+#   4. Optionally removes ~/.mark/rendered (asks for confirmation)
+#   5. Does NOT remove ~/.mark itself unless rendered is also removed and bin
 #      is empty, to avoid destroying user data.
 #
 # No sudo required.
@@ -20,6 +21,15 @@ BINARY="$BIN_DIR/mark"
 RENDERED_DIR="$MARK_DIR/rendered"
 PATH_MARKER='# >>> mark CLI path >>>'
 PATH_MARKER_END='# <<< mark CLI path <<<'
+
+# Completion locations
+BASH_COMP_FILE="$HOME/.bash_completion.d/mark"
+ZSH_COMP_FILE="$HOME/.zsh/completions/_mark"
+FISH_COMP_FILE="$HOME/.config/fish/completions/mark.fish"
+BASH_SOURCE_MARKER='# >>> mark bash completions >>>'
+BASH_SOURCE_MARKER_END='# <<< mark bash completions <<<'
+ZSH_FPATH_MARKER='# >>> mark zsh completions >>>'
+ZSH_FPATH_MARKER_END='# <<< mark zsh completions <<<'
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -69,6 +79,43 @@ remove_path_from_file() {
     success "Removed PATH entry from $file"
 }
 
+# Remove a marker-delimited block from a file, idempotently.
+remove_block_from_file() {
+    local file="$1"
+    local start_marker="$2"
+    local end_marker="$3"
+
+    if [ ! -f "$file" ]; then
+        return 0
+    fi
+    if ! grep -qF "$start_marker" "$file" 2>/dev/null; then
+        return 0
+    fi
+    if ! grep -qF "$end_marker" "$file" 2>/dev/null; then
+        warn "End marker missing in $file — skipping to avoid corruption."
+        warn "Remove the block manually between '$start_marker' and '$end_marker'."
+        return 1
+    fi
+
+    local tmp in_block=0
+    tmp="$(mktemp)"
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [ "$line" = "$start_marker" ]; then
+            in_block=1
+            continue
+        fi
+        if [ "$in_block" -eq 1 ]; then
+            if [ "$line" = "$end_marker" ]; then
+                in_block=0
+            fi
+            continue
+        fi
+        printf '%s\n' "$line"
+    done < "$file" > "$tmp"
+    mv "$tmp" "$file"
+    success "Removed completion config block from $file"
+}
+
 # ── remove binary ─────────────────────────────────────────────────────────────
 
 if [ -f "$BINARY" ]; then
@@ -114,6 +161,31 @@ if [ -f "$FISH_CONFIG" ]; then
             success "Removed PATH entry from $FISH_CONFIG"
         fi
     fi
+fi
+
+# ── remove completion files and config hooks ──────────────────────────────────
+
+# bash completion file
+if [ -f "$BASH_COMP_FILE" ]; then
+    rm -f "$BASH_COMP_FILE"
+    success "Removed bash completion: $BASH_COMP_FILE"
+fi
+# bash sourcing block
+remove_block_from_file "$HOME/.bashrc" "$BASH_SOURCE_MARKER" "$BASH_SOURCE_MARKER_END"
+remove_block_from_file "$HOME/.bash_profile" "$BASH_SOURCE_MARKER" "$BASH_SOURCE_MARKER_END"
+
+# zsh completion file
+if [ -f "$ZSH_COMP_FILE" ]; then
+    rm -f "$ZSH_COMP_FILE"
+    success "Removed zsh completion: $ZSH_COMP_FILE"
+fi
+# zsh fpath block
+remove_block_from_file "$HOME/.zshrc" "$ZSH_FPATH_MARKER" "$ZSH_FPATH_MARKER_END"
+
+# fish completion file (fish auto-loads from this directory; no config hook to remove)
+if [ -f "$FISH_COMP_FILE" ]; then
+    rm -f "$FISH_COMP_FILE"
+    success "Removed fish completion: $FISH_COMP_FILE"
 fi
 
 # ── optionally remove rendered files ─────────────────────────────────────────

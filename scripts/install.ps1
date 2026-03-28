@@ -13,14 +13,19 @@
 #   3. Copies the binary to %USERPROFILE%\.mark\bin\mark.exe
 #   4. Adds %USERPROFILE%\.mark\bin to the user PATH (idempotent)
 #   5. Marks %USERPROFILE%\.mark as hidden
+#   6. Installs PowerShell completion script (idempotent)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$MarkDir     = Join-Path $env:USERPROFILE '.mark'
-$BinDir      = Join-Path $MarkDir 'bin'
-$RenderedDir = Join-Path $MarkDir 'rendered'
-$Binary      = Join-Path $BinDir 'mark.exe'
+$MarkDir          = Join-Path $env:USERPROFILE '.mark'
+$BinDir           = Join-Path $MarkDir 'bin'
+$RenderedDir      = Join-Path $MarkDir 'rendered'
+$Binary           = Join-Path $BinDir 'mark.exe'
+$CompletionsDir   = Join-Path $MarkDir 'completions'
+$CompletionFile   = Join-Path $CompletionsDir 'mark.ps1'
+$CompletionMarker = '# >>> mark completions >>>'
+$CompletionEnd    = '# <<< mark completions <<<'
 
 function Write-Info    { param($msg) Write-Host "[mark] $msg" }
 function Write-Success { param($msg) Write-Host "[mark] OK $msg" -ForegroundColor Green }
@@ -92,17 +97,54 @@ if ($alreadyPresent) {
     $pathChanged = $true
 }
 
+# ── PowerShell completions ────────────────────────────────────────────────────
+
+Write-Info "Installing PowerShell completions..."
+
+if (-not (Test-Path $CompletionsDir)) {
+    New-Item -ItemType Directory -Path $CompletionsDir -Force | Out-Null
+}
+
+# Generate and write the completion script.
+& $Binary completions powershell | Set-Content -Path $CompletionFile -Encoding UTF8
+Write-Success "PowerShell completion script written: $CompletionFile"
+
+# Dot-source the completion file from the user's PowerShell profile, idempotently.
+# Ensure the profile file exists.
+if (-not (Test-Path $PROFILE)) {
+    New-Item -ItemType File -Path $PROFILE -Force | Out-Null
+    Write-Info "Created PowerShell profile: $PROFILE"
+}
+
+$profileContent = Get-Content -Path $PROFILE -Raw -ErrorAction SilentlyContinue
+if ($null -eq $profileContent) { $profileContent = '' }
+
+if ($profileContent -match [regex]::Escape($CompletionMarker)) {
+    Write-Info "PowerShell completion already sourced in $PROFILE — skipping."
+} else {
+    $sourceBlock = @"
+
+$CompletionMarker
+if (Test-Path '$CompletionFile') { . '$CompletionFile' }
+$CompletionEnd
+"@
+    Add-Content -Path $PROFILE -Value $sourceBlock -Encoding UTF8
+    Write-Success "Added completion source to $PROFILE"
+    $pathChanged = $true
+}
+
 # ── done ──────────────────────────────────────────────────────────────────────
 
 Write-Host ""
 Write-Success "mark installed successfully!"
 Write-Host ""
-Write-Host "  Binary : $Binary"
-Write-Host "  Renders: $RenderedDir"
+Write-Host "  Binary      : $Binary"
+Write-Host "  Renders     : $RenderedDir"
+Write-Host "  Completions : $CompletionFile"
 Write-Host ""
 
 if ($pathChanged) {
-    Write-Host "  NOTE: PATH was updated. Restart this terminal (or open a new one)"
+    Write-Host "  NOTE: PATH or profile was updated. Restart this terminal (or open a new one)"
     Write-Host "        before running mark."
 } else {
     Write-Host "  mark is ready. Open a new terminal and run: mark --help"

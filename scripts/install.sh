@@ -12,6 +12,7 @@
 #   2. Creates ~/.mark/bin and ~/.mark/rendered if they don't exist
 #   3. Copies the binary to ~/.mark/bin/mark
 #   4. Adds ~/.mark/bin to PATH in your shell config (idempotent)
+#   5. Installs shell completion scripts (idempotent)
 
 set -euo pipefail
 
@@ -22,6 +23,22 @@ BINARY="$BIN_DIR/mark"
 PATH_SNIPPET='case ":$PATH:" in *":$HOME/.mark/bin:"*) ;; *) export PATH="$HOME/.mark/bin:$PATH" ;; esac'
 PATH_MARKER='# >>> mark CLI path >>>'
 PATH_MARKER_END='# <<< mark CLI path <<<'
+
+# Completion install locations
+BASH_COMP_DIR="$HOME/.bash_completion.d"
+BASH_COMP_FILE="$BASH_COMP_DIR/mark"
+ZSH_COMP_DIR="$HOME/.zsh/completions"
+ZSH_COMP_FILE="$ZSH_COMP_DIR/_mark"
+FISH_COMP_DIR="$HOME/.config/fish/completions"
+FISH_COMP_FILE="$FISH_COMP_DIR/mark.fish"
+
+# Markers for idempotent zsh fpath injection
+ZSH_FPATH_MARKER='# >>> mark zsh completions >>>'
+ZSH_FPATH_MARKER_END='# <<< mark zsh completions <<<'
+
+# Markers for idempotent bash sourcing injection
+BASH_SOURCE_MARKER='# >>> mark bash completions >>>'
+BASH_SOURCE_MARKER_END='# <<< mark bash completions <<<'
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,6 +65,23 @@ add_path_to_file() {
     } >> "$file"
     success "Added ~/.mark/bin to PATH in $file"
     RESTART_NEEDED=1
+}
+
+# Add a block to a file, idempotently, using a start/end marker pair.
+add_block_to_file() {
+    local file="$1"
+    local marker="$2"
+    local content="$3"
+    touch "$file"
+    if grep -qF "$marker" "$file" 2>/dev/null; then
+        info "Block already present in $file — skipping."
+        return 0
+    fi
+    {
+        echo ""
+        echo "$marker"
+        echo "$content"
+    } >> "$file"
 }
 
 # ── preflight ─────────────────────────────────────────────────────────────────
@@ -125,6 +159,67 @@ fi
 if [ ! -f "$HOME/.bashrc" ] && [ ! -f "$HOME/.bash_profile" ] && \
    [ ! -f "$HOME/.zshrc" ] && ! command -v fish &>/dev/null; then
     add_path_to_file "$HOME/.profile"
+fi
+
+# ── shell completions ─────────────────────────────────────────────────────────
+
+info "Installing shell completions…"
+
+# bash — write completion file and ensure it is sourced from ~/.bashrc
+if [ -f "$HOME/.bashrc" ] || [ -f "$HOME/.bash_profile" ]; then
+    mkdir -p "$BASH_COMP_DIR"
+    "$BINARY" completions bash > "$BASH_COMP_FILE"
+    success "Bash completion installed: $BASH_COMP_FILE"
+
+    # Source the completion dir from ~/.bashrc if present.
+    BASH_SOURCE_CONTENT="[[ -f \"$BASH_COMP_FILE\" ]] && source \"$BASH_COMP_FILE\""
+    for bash_cfg in "$HOME/.bashrc" "$HOME/.bash_profile"; do
+        if [ -f "$bash_cfg" ]; then
+            if grep -qF "$BASH_SOURCE_MARKER" "$bash_cfg" 2>/dev/null; then
+                info "Bash completion source already in $bash_cfg — skipping."
+            else
+                {
+                    echo ""
+                    echo "$BASH_SOURCE_MARKER"
+                    echo "$BASH_SOURCE_CONTENT"
+                    echo "$BASH_SOURCE_MARKER_END"
+                } >> "$bash_cfg"
+                success "Added bash completion source to $bash_cfg"
+                RESTART_NEEDED=1
+            fi
+        fi
+    done
+fi
+
+# zsh — write _mark file and ensure ~/.zsh/completions is in fpath
+if [ -f "$HOME/.zshrc" ]; then
+    mkdir -p "$ZSH_COMP_DIR"
+    "$BINARY" completions zsh > "$ZSH_COMP_FILE"
+    success "Zsh completion installed: $ZSH_COMP_FILE"
+
+    # Add ~/.zsh/completions to fpath in ~/.zshrc, before compinit, idempotently.
+    ZSH_FPATH_CONTENT='fpath=(~/.zsh/completions $fpath)
+autoload -Uz compinit && compinit'
+    if grep -qF "$ZSH_FPATH_MARKER" "$HOME/.zshrc" 2>/dev/null; then
+        info "Zsh fpath already configured in ~/.zshrc — skipping."
+    else
+        {
+            echo ""
+            echo "$ZSH_FPATH_MARKER"
+            echo "$ZSH_FPATH_CONTENT"
+            echo "$ZSH_FPATH_MARKER_END"
+        } >> "$HOME/.zshrc"
+        success "Added zsh fpath configuration to ~/.zshrc"
+        RESTART_NEEDED=1
+    fi
+fi
+
+# fish — write to the standard fish completions directory (auto-loaded)
+if command -v fish &>/dev/null || [ -f "$FISH_CONFIG" ]; then
+    mkdir -p "$FISH_COMP_DIR"
+    "$BINARY" completions fish > "$FISH_COMP_FILE"
+    success "Fish completion installed: $FISH_COMP_FILE"
+    info "Fish completions are auto-loaded from $FISH_COMP_DIR"
 fi
 
 # ── done ──────────────────────────────────────────────────────────────────────

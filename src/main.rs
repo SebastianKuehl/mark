@@ -1,9 +1,36 @@
 use anyhow::Result;
-use clap::Parser;
-use mark::{browser, cleanup, render, storage};
+use clap::{CommandFactory, Parser};
+use clap_complete::generate;
+use mark::{browser, cleanup, cli::Commands, render, storage};
 
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
+
+    // Handle the `completions` subcommand before anything else.
+    if let Some(Commands::Completions { shell }) = args.command {
+        let mut cmd = mark::cli::Cli::command();
+        generate(shell, &mut cmd, "mark", &mut std::io::stdout());
+        return Ok(());
+    }
+
+    // Without a subcommand, replicate the old ArgGroup semantics:
+    // exactly one of FILE or --cleanup must be provided.
+    if args.file.is_some() && args.cleanup {
+        let mut cmd = mark::cli::Cli::command();
+        cmd.error(
+            clap::error::ErrorKind::ArgumentConflict,
+            "FILE and --cleanup cannot be used together",
+        )
+        .exit();
+    }
+    if args.file.is_none() && !args.cleanup {
+        let mut cmd = mark::cli::Cli::command();
+        cmd.error(
+            clap::error::ErrorKind::MissingRequiredArgument,
+            "either FILE or --cleanup is required",
+        )
+        .exit();
+    }
 
     let paths = storage::AppPaths::resolve()?;
 

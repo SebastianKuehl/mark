@@ -1,0 +1,27 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 6 only.
+
+Important constraints:
+- Do not make unrelated changes outside shell completion work unless required
+- File argument completion must work as file path completion
+- Support bash, zsh, fish, and PowerShell
+- Completion setup must be user-scoped and idempotent
+- Do not require sudo or admin rights
+- Preserve existing CLI behavior
+- After changes, run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+
+If practical, also run:
+- cargo clippy --all-targets --all-features -- -D warnings
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues
+- manual steps needed for any shell where auto-install is limited

@@ -16,6 +16,7 @@ path = "src/lib.rs"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 dirs = "5"
 open = "5"
 pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
