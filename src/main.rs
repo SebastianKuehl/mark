@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use mark::{render, storage};
+use mark::{browser, cleanup, render, storage};
 
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
@@ -8,8 +8,9 @@ fn main() -> Result<()> {
     let paths = storage::AppPaths::resolve()?;
 
     if args.cleanup {
-        // Cleanup-only mode (full implementation in Milestone 3).
-        println!("Cleanup mode is not yet implemented (Milestone 3).");
+        paths.ensure_rendered_dir()?;
+        let deleted = cleanup::cleanup_old_files(&paths.rendered)?;
+        println!("Cleanup complete: {deleted} file(s) removed.");
         return Ok(());
     }
 
@@ -32,14 +33,23 @@ fn main() -> Result<()> {
     let html = render::render_markdown(&markdown, title);
 
     paths.ensure_rendered_dir()?;
+
+    // Clean up old rendered files before writing the new one.
+    match cleanup::cleanup_old_files(&paths.rendered) {
+        Ok(n) if n > 0 => println!("Cleaned up {n} old rendered file(s)."),
+        Ok(_) => {}
+        Err(e) => eprintln!("Warning: cleanup failed: {e}"),
+    }
+
     let out_name = storage::output_filename(&file);
     let out_path = storage::write_rendered(&paths.rendered, &out_name, &html)?;
 
     println!("Rendered: {}", out_path.display());
 
     if !args.no_open {
-        // Browser opening is implemented in Milestone 3.
-        println!("Note: browser opening will be available in Milestone 3.");
+        if let Err(e) = browser::open_browser(&out_path) {
+            eprintln!("Warning: {e}");
+        }
     }
 
     Ok(())
