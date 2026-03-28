@@ -9,10 +9,15 @@ license = "MIT"
 name = "mark"
 path = "src/main.rs"
 
+[lib]
+name = "mark"
+path = "src/lib.rs"
+
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 dirs = "5"
+pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
 thiserror = "1"
 
 [dev-dependencies]

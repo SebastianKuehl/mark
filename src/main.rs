@@ -1,15 +1,9 @@
 use anyhow::Result;
 use clap::Parser;
-
-mod browser;
-mod cleanup;
-mod cli;
-mod error;
-mod render;
-mod storage;
+use mark::{render, storage};
 
 fn main() -> Result<()> {
-    let args = cli::Cli::parse();
+    let args = mark::cli::Cli::parse();
 
     let paths = storage::AppPaths::resolve()?;
 
@@ -27,14 +21,26 @@ fn main() -> Result<()> {
         anyhow::bail!("Input file not found: {}", file.display());
     }
 
+    let markdown = std::fs::read_to_string(&file)
+        .map_err(|e| anyhow::anyhow!("Failed to read {}: {e}", file.display()))?;
+
+    let title = file
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("output");
+
+    let html = render::render_markdown(&markdown, title);
+
     paths.ensure_rendered_dir()?;
     let out_name = storage::output_filename(&file);
-    let out_path = paths.rendered.join(&out_name);
+    let out_path = storage::write_rendered(&paths.rendered, &out_name, &html)?;
 
-    println!("Output: {}", out_path.display());
+    println!("Rendered: {}", out_path.display());
 
-    // Rendering, browser opening, and cleanup are implemented in Milestone 2 & 3.
-    println!("Rendering and browser opening will be available in Milestone 2/3.");
+    if !args.no_open {
+        // Browser opening is implemented in Milestone 3.
+        println!("Note: browser opening will be available in Milestone 3.");
+    }
 
     Ok(())
 }

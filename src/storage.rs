@@ -1,5 +1,5 @@
 use crate::error::MarkError;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Paths used by the mark application.
 pub struct AppPaths {
@@ -34,13 +34,25 @@ impl AppPaths {
     }
 }
 
+/// Write `html` into `rendered_dir` using `filename`, returning the full path.
+pub fn write_rendered(
+    rendered_dir: &Path,
+    filename: &str,
+    html: &str,
+) -> Result<PathBuf, MarkError> {
+    std::fs::create_dir_all(rendered_dir)?;
+    let out = rendered_dir.join(filename);
+    std::fs::write(&out, html.as_bytes())?;
+    Ok(out)
+}
+
 /// Generate a unique output filename for a rendered HTML file.
 ///
 /// Format: `<stem>-<timestamp-secs>-<short-hash>.html`
 ///
 /// The hash is derived from the canonical input path so the same file
 /// rendered at the same second still gets a unique, deterministic name.
-pub fn output_filename(input: &std::path::Path) -> String {
+pub fn output_filename(input: &Path) -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     let stem = input
@@ -93,10 +105,8 @@ mod tests {
 
     #[test]
     fn output_filename_is_unique_for_different_inputs() {
-        // Same timestamp is unlikely; we check structure at least.
         let a = output_filename(Path::new("a.md"));
         let b = output_filename(Path::new("b.md"));
-        // Stems differ
         assert!(a.starts_with("a-"));
         assert!(b.starts_with("b-"));
     }
@@ -107,7 +117,25 @@ mod tests {
         // Expected: my-doc-<secs>-<8hex>.html
         let parts: Vec<&str> = name.splitn(4, '-').collect();
         assert_eq!(parts.len(), 4, "expected 4 dash-separated segments: {name}");
-        // Last part ends with .html
         assert!(parts[3].ends_with(".html"), "got: {name}");
+    }
+
+    #[test]
+    fn write_rendered_creates_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let html = "<html><body>hello</body></html>";
+        let out = write_rendered(dir.path(), "test.html", html).expect("write");
+        assert!(out.exists());
+        let content = std::fs::read_to_string(&out).expect("read");
+        assert_eq!(content, html);
+    }
+
+    #[test]
+    fn write_rendered_creates_missing_dir() {
+        let base = tempfile::tempdir().expect("tempdir");
+        let rendered_dir = base.path().join("rendered");
+        // Directory does not exist yet.
+        let out = write_rendered(&rendered_dir, "out.html", "<p>ok</p>").expect("write");
+        assert!(out.exists());
     }
 }
