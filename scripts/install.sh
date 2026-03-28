@@ -191,26 +191,46 @@ if [ -f "$HOME/.bashrc" ] || [ -f "$HOME/.bash_profile" ]; then
     done
 fi
 
-# zsh — write _mark file and ensure ~/.zsh/completions is in fpath
+# zsh — write _mark completion file.
+#
+# Strategy:
+#   1. oh-my-zsh: drop into $ZSH_CUSTOM/completions/ — omz adds that dir to
+#      fpath before calling compinit, so no ~/.zshrc edits are needed.
+#   2. Plain zsh: add ~/.zsh/completions to fpath in ~/.zshrc (before compinit).
+#      NOTE: this appended block only works if no prior compinit call exists;
+#      users with frameworks (prezto, antigen, etc.) should use manual setup.
 if [ -f "$HOME/.zshrc" ]; then
-    mkdir -p "$ZSH_COMP_DIR"
-    "$BINARY" completions zsh > "$ZSH_COMP_FILE"
-    success "Zsh completion installed: $ZSH_COMP_FILE"
-
-    # Add ~/.zsh/completions to fpath in ~/.zshrc, before compinit, idempotently.
-    ZSH_FPATH_CONTENT='fpath=(~/.zsh/completions $fpath)
-autoload -Uz compinit && compinit'
-    if grep -qF "$ZSH_FPATH_MARKER" "$HOME/.zshrc" 2>/dev/null; then
-        info "Zsh fpath already configured in ~/.zshrc — skipping."
-    else
-        {
-            echo ""
-            echo "$ZSH_FPATH_MARKER"
-            echo "$ZSH_FPATH_CONTENT"
-            echo "$ZSH_FPATH_MARKER_END"
-        } >> "$HOME/.zshrc"
-        success "Added zsh fpath configuration to ~/.zshrc"
+    # Detect oh-my-zsh by checking the canonical env var or install dir.
+    OMZ_DIR="${ZSH:-$HOME/.oh-my-zsh}"
+    if [ -d "$OMZ_DIR" ]; then
+        # oh-my-zsh path: use $ZSH_CUSTOM/completions (auto-loaded before compinit).
+        OMZ_CUSTOM="${ZSH_CUSTOM:-$OMZ_DIR/custom}"
+        OMZ_COMP_DIR="$OMZ_CUSTOM/completions"
+        mkdir -p "$OMZ_COMP_DIR"
+        "$BINARY" completions zsh > "$OMZ_COMP_DIR/_mark"
+        success "Zsh completion installed (oh-my-zsh): $OMZ_COMP_DIR/_mark"
+        info "Reload your shell or run: omz reload"
         RESTART_NEEDED=1
+    else
+        # Plain zsh path: write to ~/.zsh/completions and add fpath hook.
+        mkdir -p "$ZSH_COMP_DIR"
+        "$BINARY" completions zsh > "$ZSH_COMP_FILE"
+        success "Zsh completion installed: $ZSH_COMP_FILE"
+
+        ZSH_FPATH_CONTENT='fpath=(~/.zsh/completions $fpath)
+autoload -Uz compinit && compinit'
+        if grep -qF "$ZSH_FPATH_MARKER" "$HOME/.zshrc" 2>/dev/null; then
+            info "Zsh fpath already configured in ~/.zshrc — skipping."
+        else
+            {
+                echo ""
+                echo "$ZSH_FPATH_MARKER"
+                echo "$ZSH_FPATH_CONTENT"
+                echo "$ZSH_FPATH_MARKER_END"
+            } >> "$HOME/.zshrc"
+            success "Added zsh fpath configuration to ~/.zshrc"
+            RESTART_NEEDED=1
+        fi
     fi
 fi
 

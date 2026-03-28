@@ -221,6 +221,28 @@ Behavior:
   deletion
 - document behavior clearly
 
+### 9a. Shell completions
+
+The CLI should support shell completion generation and installation.
+
+Requirements:
+- Provide a command to generate shell completion scripts, such as:
+  - `mark completions bash`
+  - `mark completions zsh`
+  - `mark completions fish`
+  - `mark completions powershell`
+- Ensure the main file input argument is configured for file path completion
+- Support at least:
+  - bash
+  - zsh
+  - fish
+  - PowerShell
+- Install scripts should install or hook up completions in a user-scoped,
+  idempotent way where practical
+- If a shell cannot be auto-configured robustly, document manual setup in the
+  README
+- Do not break normal default shell filename completion behavior
+
 ### 10. Cross-platform requirements
 
 - Must compile and run on Linux, macOS, and Windows

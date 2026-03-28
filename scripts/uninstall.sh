@@ -174,12 +174,19 @@ fi
 remove_block_from_file "$HOME/.bashrc" "$BASH_SOURCE_MARKER" "$BASH_SOURCE_MARKER_END"
 remove_block_from_file "$HOME/.bash_profile" "$BASH_SOURCE_MARKER" "$BASH_SOURCE_MARKER_END"
 
-# zsh completion file
+# zsh completion file — check both plain-zsh and oh-my-zsh locations
 if [ -f "$ZSH_COMP_FILE" ]; then
     rm -f "$ZSH_COMP_FILE"
     success "Removed zsh completion: $ZSH_COMP_FILE"
 fi
-# zsh fpath block
+OMZ_DIR="${ZSH:-$HOME/.oh-my-zsh}"
+OMZ_CUSTOM="${ZSH_CUSTOM:-$OMZ_DIR/custom}"
+OMZ_COMP_FILE="$OMZ_CUSTOM/completions/_mark"
+if [ -f "$OMZ_COMP_FILE" ]; then
+    rm -f "$OMZ_COMP_FILE"
+    success "Removed zsh completion (oh-my-zsh): $OMZ_COMP_FILE"
+fi
+# zsh fpath block (only present for plain-zsh installs)
 remove_block_from_file "$HOME/.zshrc" "$ZSH_FPATH_MARKER" "$ZSH_FPATH_MARKER_END"
 
 # fish completion file (fish auto-loads from this directory; no config hook to remove)

@@ -149,11 +149,18 @@ The install scripts set up completions automatically:
 | Shell | Location | Config hook |
 |-------|----------|-------------|
 | bash | `~/.bash_completion.d/mark` | sourced from `~/.bashrc` / `~/.bash_profile` |
-| zsh | `~/.zsh/completions/_mark` | `fpath` + `compinit` added to `~/.zshrc` |
+| zsh (oh-my-zsh) | `$ZSH_CUSTOM/completions/_mark` | auto-loaded by oh-my-zsh before `compinit` |
+| zsh (plain) | `~/.zsh/completions/_mark` | `fpath` + `compinit` added to `~/.zshrc` |
 | fish | `~/.config/fish/completions/mark.fish` | auto-loaded by fish |
 | PowerShell | `%USERPROFILE%\.mark\completions\mark.ps1` | dot-sourced from `$PROFILE` |
 
 All hooks are idempotent — running the installer a second time is safe.
+
+> **oh-my-zsh users**: the installer detects oh-my-zsh and drops `_mark` into
+> `$ZSH_CUSTOM/completions/` (default: `~/.oh-my-zsh/custom/completions/`).
+> oh-my-zsh adds that directory to `fpath` before calling `compinit`, so no
+> `~/.zshrc` edits are needed. Run `omz reload` or open a new terminal to
+> activate completions.
 
 ### Manual installation
 
@@ -167,11 +174,19 @@ echo 'source ~/.bash_completion.d/mark' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-**zsh**
+**zsh (oh-my-zsh)**
+```sh
+mkdir -p "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/completions"
+mark completions zsh > "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/completions/_mark"
+# Reload (oh-my-zsh adds $ZSH_CUSTOM/completions to fpath automatically):
+omz reload
+```
+
+**zsh (plain, no framework)**
 ```sh
 mkdir -p ~/.zsh/completions
 mark completions zsh > ~/.zsh/completions/_mark
-# Add to ~/.zshrc (once, before compinit):
+# Add to ~/.zshrc (once, before any compinit call):
 echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
 echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
 source ~/.zshrc

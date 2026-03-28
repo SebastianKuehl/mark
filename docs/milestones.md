@@ -119,3 +119,80 @@
 - production-ready repo
 - complete documentation
 - quality checks in place
+
+---
+
+## Milestone 6: Shell autocomplete and completion installation
+
+### Goal
+- Add first-class shell completion support for `mark`
+- Ensure the positional file argument completes as a file path
+- Support completion generation for at least:
+  - bash
+  - zsh
+  - fish
+  - PowerShell
+- Add a CLI command to generate completion scripts, for example:
+  - `mark completions bash`
+  - `mark completions zsh`
+  - `mark completions fish`
+  - `mark completions powershell`
+- Ensure completions work for:
+  - flags such as `--help`, `--version`, `--cleanup`, `--no-open`
+  - subcommands related to completion generation
+  - file path completion for the Markdown input argument
+- Update install scripts so shell completion is installed or hooked up in a
+  user-scoped, idempotent way where practical
+- Preserve normal shell file completion behavior and do not break it
+
+### Requirements
+- Use idiomatic Rust support for completion generation, such as `clap_complete`
+  if using `clap`
+- Mark the input file argument with the appropriate file path hint so generated
+  completion scripts know it is a path-like argument
+- Completion setup must be user-scoped only
+- Do not require sudo or administrator rights
+- Installer changes must be idempotent
+- If automatic completion installation is not practical for a shell, document
+  the manual setup clearly in the README
+- PowerShell support should be included for Windows
+- Do not break existing CLI behavior
+
+### zsh install strategy — oh-my-zsh vs plain zsh
+
+Appending `fpath` + `compinit` to the end of `~/.zshrc` does **not** work when
+oh-my-zsh (or similar frameworks) are present, because `compinit` is called by
+the framework earlier in shell init. Adding `fpath` after that point has no
+effect.
+
+The correct approach:
+- **oh-my-zsh detected** (`$ZSH` dir exists): drop `_mark` into
+  `$ZSH_CUSTOM/completions/` (default `~/.oh-my-zsh/custom/completions/`).
+  oh-my-zsh adds that directory to `fpath` automatically before calling
+  `compinit`, so no `~/.zshrc` edits are needed.
+- **Plain zsh** (no framework): add `fpath=(~/.zsh/completions $fpath)` and
+  `autoload -Uz compinit && compinit` to `~/.zshrc`. This only works reliably
+  if no prior `compinit` call exists in the file.
+
+Detection logic in `install.sh`: check for the `$ZSH` environment variable or
+the `~/.oh-my-zsh` directory.
+
+### Testing
+Add at least:
+- tests or smoke checks that completion scripts can be generated successfully
+- tests or assertions that the file input argument is configured as a file path
+  hint if feasible
+- verification that normal build and test commands still pass
+
+### Documentation
+Update the README with:
+- supported shells
+- how completions are installed automatically
+- how to manually install completions if desired
+- examples for generating completion scripts manually
+
+### Deliverables
+- working completion generation in the CLI
+- installer integration for shell completion where practical
+- documentation for setup and troubleshooting
+- no regression in normal CLI behavior
