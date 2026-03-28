@@ -1,0 +1,20 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 3 only.
+
+Important constraints:
+- Do not start Milestone 4 or later
+- Cleanup must never delete outside `.mark/rendered`
+- Browser opening must be test-friendly
+- After changes, run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues

@@ -1,0 +1,20 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 1 only.
+
+Important constraints:
+- Do not start Milestone 2 or later
+- Make sensible choices without asking unless truly blocked
+- Keep code clean and modular
+- After changes, run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues

@@ -1,0 +1,19 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 2 only on top of the current repo state.
+
+Important constraints:
+- Do not start Milestone 3 or later
+- Preserve existing tests unless improving them
+- After changes, run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues

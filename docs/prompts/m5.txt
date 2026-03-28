@@ -1,0 +1,20 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 5 only.
+
+Important constraints:
+- README must be complete and practical
+- Ensure final repo quality
+- Run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+  - cargo clippy --all-targets --all-features -- -D warnings
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues

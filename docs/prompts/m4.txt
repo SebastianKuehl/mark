@@ -1,0 +1,21 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 4 only.
+
+Important constraints:
+- Do not start Milestone 5 or later
+- Installer behavior must be idempotent
+- Do not require sudo or admin
+- PATH changes must be user-scoped only
+- After changes, run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues
