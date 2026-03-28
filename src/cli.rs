@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 /// Render a Markdown file to HTML and open it in the default browser.
 #[derive(Parser, Debug)]
-#[command(name = "mark", version, about, long_about = None)]
+#[command(name = "mark", version = concat!("v", env!("CARGO_PKG_VERSION")), long_version = concat!("v", env!("CARGO_PKG_VERSION")), about, long_about = None, disable_version_flag = true)]
 pub struct Cli {
     /// Markdown file to render
     #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
@@ -22,6 +22,10 @@ pub struct Cli {
     /// Override the render theme for this invocation (light or dark)
     #[arg(long, value_name = "THEME")]
     pub theme: Option<Theme>,
+
+    /// Print version
+    #[arg(long, short = 'V', action = clap::ArgAction::SetTrue)]
+    pub version: bool,
 
     #[command(subcommand)]
     pub command: Option<Commands>,

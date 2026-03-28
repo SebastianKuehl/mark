@@ -11,6 +11,11 @@ use mark::{
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
 
+    if args.version {
+        println!("v{}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
     // Handle the `completions` subcommand before anything else.
     if let Some(Commands::Completions { shell }) = args.command {
         let mut cmd = mark::cli::Cli::command();
