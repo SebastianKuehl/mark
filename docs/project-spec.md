@@ -265,6 +265,45 @@ Requirements:
 - Keep the HTML self-contained
 - Make the page look decent for normal Markdown documents
 
+### 11b. Persistent theme configuration
+
+The CLI should support a persistent render theme configuration.
+
+Requirements:
+- Supported theme values:
+  - `dark`
+  - `light`
+- The user must be able to set the theme permanently via the CLI
+- A single invocation must be able to override the configured theme
+
+Recommended CLI:
+- `mark config set-theme dark`
+- `mark config set-theme light`
+- `mark --theme dark <FILE>`
+- `mark --theme light <FILE>`
+
+Configuration storage:
+- Store configuration in `.mark/config.toml`
+
+Theme resolution precedence:
+1. per-invocation override via `--theme`
+2. persisted config value from `.mark/config.toml`
+3. default to `light` if no config exists
+
+Behavior:
+- invalid theme values must produce a clear error
+- if the config file does not exist, rendering should still work using the
+  default theme
+- the selected theme must affect generated HTML styling
+- rendered pages must remain self-contained
+- all rendered page UI should remain readable in both dark and light themes
+
+Documentation:
+- document the config file location
+- document how to set the theme permanently
+- document how to override it for a single run
+- document precedence rules
+
 ### 12. Safety and behavior notes
 
 - Treat the input Markdown as local user content

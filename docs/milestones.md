@@ -289,3 +289,58 @@ Update the README with:
 - conservative and tested clean-copy logic
 - no regressions to normal Markdown rendering
 - updated documentation
+---
+
+## Milestone 8: Persistent theme configuration
+
+### Goal
+- Add support for a persistent render theme:
+  - `dark`
+  - `light`
+- The user must be able to set the theme permanently via the CLI
+- The configured theme must affect rendered HTML output
+- The configured theme must be overridable for a single invocation by passing a
+  CLI argument
+
+### CLI requirements
+Add persistent theme configuration commands such as:
+- `mark config set-theme dark`
+- `mark config set-theme light`
+
+Add render-time override support such as:
+- `mark --theme dark README.md`
+- `mark --theme light README.md`
+
+### Behavior
+- Store the persistent configuration in `.mark/config.toml`
+- Theme precedence must be:
+  1. CLI override via `--theme`
+  2. persisted config value
+  3. default to `light` if no config exists
+- Invalid theme values must fail with a clear error
+- Rendering must apply the resolved theme consistently to the generated HTML
+- Existing render features must continue to work
+
+### Rendering requirements
+- The generated HTML must render appropriately for both dark and light themes
+- Existing UI elements in the rendered page must remain readable in both themes
+- Keep the HTML self-contained
+
+### Testing
+Add at least:
+- tests for config read and write behavior
+- tests for theme precedence
+- tests that rendered HTML changes according to the selected theme
+
+### Documentation
+Update the README with:
+- how to set the theme permanently
+- how to override it for one run
+- where the config file is stored
+- the precedence rules
+
+### Deliverables
+- persistent theme config support
+- single-run theme override support
+- updated rendering for dark and light themes
+- tests and documentation

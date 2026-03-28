@@ -1,0 +1,31 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 8 only.
+
+Constraints:
+- Add persistent theme config with supported values:
+  - dark
+  - light
+- Add a CLI way to set the theme permanently
+- Add a per-invocation override via CLI argument
+- Precedence must be:
+  1. invocation override
+  2. persisted config
+  3. default light
+- Keep existing CLI behavior working
+- Update tests and README
+- After changes, run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+
+If practical, also run:
+- cargo clippy --all-targets --all-features -- -D warnings
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues
