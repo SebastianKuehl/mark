@@ -229,6 +229,26 @@ The uninstaller removes this exact block cleanly.
 
 ---
 
+## Code block copy actions
+
+Every fenced code block in the rendered HTML includes action buttons in a toolbar above the block:
+
+- **📋 Copy** — copies the code exactly as shown
+- **🧹 Copy clean** — copies the code with full-line comments removed (supported languages only)
+
+### Supported languages for Copy clean
+
+`bash`, `sh`, `zsh`, `fish`, `powershell`, `python`, `rust`, `javascript`, `typescript`
+
+### Limitations
+
+- `Copy clean` removes only **full-line comments** (lines where the trimmed content starts with the comment marker)
+- Inline comments (code followed by a comment on the same line) are **not** removed
+- Block comments (`/* ... */`) are **not** removed
+- Languages not in the supported list show only the `Copy` button
+
+---
+
 ## Security note
 
 `mark` passes raw HTML blocks in Markdown through unchanged (via `pulldown-cmark`). This is intentional for local user files. **Do not use `mark` to render untrusted Markdown from external sources** — embedded `<script>` or other HTML could execute in your browser.
