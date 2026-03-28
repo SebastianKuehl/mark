@@ -1,0 +1,35 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 7 only.
+
+Important constraints:
+- Do not make unrelated changes outside this milestone unless required
+- Add two code-block buttons in rendered HTML:
+  - Copy
+  - Copy clean
+- Use text + icon, not icon-only controls
+- `Copy` must copy the code exactly as shown
+- `Copy clean` must remove full-line comments only
+- Do not attempt unsafe stripping of inline comments
+- `Copy clean` must only apply to supported languages
+- For unsupported languages, hide or disable `Copy clean`
+- Do not rely on external network resources
+- Keep the rendered HTML self-contained
+- Preserve existing CLI behavior
+- After changes, run:
+  - cargo fmt --all
+  - cargo check
+  - cargo test
+
+If practical, also run:
+- cargo clippy --all-targets --all-features -- -D warnings
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues
+- supported languages for clean copy
+- any limitations of the clean-copy behavior

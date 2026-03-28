@@ -196,3 +196,96 @@ Update the README with:
 - installer integration for shell completion where practical
 - documentation for setup and troubleshooting
 - no regression in normal CLI behavior
+
+---
+
+## Milestone 7: Code block copy actions
+
+### Goal
+- Add copy actions to rendered code blocks in the generated HTML
+- Provide two separate buttons for each eligible code block:
+  - `Copy`
+  - `Copy clean`
+- `Copy` must copy the code exactly as displayed
+- `Copy clean` must copy a cleaned version of the code intended for easier
+  direct terminal or editor use
+
+### UX requirements
+- Use two buttons, not one toggle-based control
+- Use text plus icons, not icon-only buttons
+- Recommended labels and semantics:
+  - `Copy` with a clipboard/copy icon
+  - `Copy clean` with a broom icon
+- Buttons should be visually unobtrusive but clearly discoverable
+- Show a brief success state after copying, such as:
+  - `Copied`
+  - `Copied clean`
+- Show a clear but lightweight failure message if clipboard access fails
+
+### Clean-copy behavior
+- `Copy clean` must remove full-line comments only
+- Do not remove inline comments
+- Do not attempt aggressive parsing that could corrupt code
+- Only support clean-copy for explicitly supported languages
+- Recommended initial supported languages:
+  - `bash`
+  - `sh`
+  - `zsh`
+  - `fish`
+  - `powershell`
+  - `python`
+  - `rust`
+  - `javascript`
+  - `typescript`
+- For unsupported or unknown languages:
+  - keep the normal `Copy` button
+  - hide or disable `Copy clean`
+
+### Comment stripping rules
+Implement conservative full-line comment stripping only.
+
+Examples:
+- shell-like languages:
+  - strip lines whose trimmed form starts with `#`
+- Python:
+  - strip lines whose trimmed form starts with `#`
+- Rust, JavaScript, TypeScript:
+  - strip lines whose trimmed form starts with `//`
+- PowerShell:
+  - strip lines whose trimmed form starts with `#`
+
+Do not attempt for v1:
+- block comment removal such as `/* ... */`
+- HTML comment stripping
+- SQL comment stripping
+- inline comment stripping
+- language parsing beyond simple full-line detection
+
+### Technical requirements
+- The rendered HTML must remain self-contained
+- Do not depend on external JavaScript or CSS resources
+- Add the button UI during HTML rendering or post-processing of rendered code
+  blocks
+- Clipboard support must work from the locally opened rendered HTML page where
+  browser permissions allow it
+- Keep the implementation robust for multiple code blocks per page
+
+### Testing
+Add at least:
+- tests for clean-copy transformation logic
+- tests that supported language detection behaves as expected
+- tests or render verification that code blocks receive the expected copy UI
+- ensure normal rendering still works
+
+### Documentation
+Update the README with:
+- what the two buttons do
+- which languages support `Copy clean`
+- limitations of clean-copy behavior
+- that `Copy clean` removes only full-line comments
+
+### Deliverables
+- rendered code blocks with `Copy` and `Copy clean` actions
+- conservative and tested clean-copy logic
+- no regressions to normal Markdown rendering
+- updated documentation

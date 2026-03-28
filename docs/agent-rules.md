@@ -39,3 +39,8 @@ At the end of each milestone, provide:
 - a summary of files changed
 - commands run
 - any known issues or follow-up items
+
+- For rendered-page enhancements, prefer self-contained HTML, CSS, and
+  JavaScript with no external dependencies
+- Do not implement unsafe or overly aggressive code transformations that may
+  corrupt copied snippets
