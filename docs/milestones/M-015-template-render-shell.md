@@ -28,7 +28,7 @@ Adopt `src/index.html` as the HTML shell used for rendered Markdown pages so `ma
 High
 
 ## Status
-in_progress
+released
 
 ## Target Release
-TBD
+v0.6.0 (minor)

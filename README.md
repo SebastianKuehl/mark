@@ -16,6 +16,7 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - **Breadcrumb navigation** on every page below the entry-point, showing the path from root to the current file
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
 - **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
+- **Bundled application shell** — rendered pages now reuse the checked-in app shell and component styling shipped with `mark`
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - **In-page theme switcher** — switch between `system`, `light`, and `dark` without re-rendering
 - Opens the result in the system default browser

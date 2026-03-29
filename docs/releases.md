@@ -1,5 +1,14 @@
 # Releases
 
+## v0.6.0 — minor
+
+- **Date:** 2026-03-29
+- **Type:** minor
+- **Merged items:** M-015, F-017 — Template-driven render shell
+- **Summary:** Rendered pages now use the bundled `src/index.html` shell as the source of truth for page layout, replacing the old hand-built wrapper while preserving sidebar behavior, theme switching, single-vs-recursive rendering, and icon + label theme options.
+
+---
+
 ## v0.5.1 — patch
 
 - **Date:** 2026-03-29
