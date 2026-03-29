@@ -14,6 +14,17 @@
 | [worker-agent-rules.md](worker-agent-rules.md) | Rules governing all anvil implementation agents |
 | [../README.md](../README.md) | Public-facing user documentation |
 
+### ID Conventions
+
+- `M-###` = milestone
+- `F-###` = feature
+- `B-###` = bug
+- `P-###` = delegated prompt
+
+Only the instructor and the Product Owner Agent may update `README.md`.
+
+Current active execution item: `B-004`.
+
 ---
 
 ## 📦 Releases
@@ -62,6 +73,9 @@
 | ID | Title | Severity | Status | Doc |
 |----|-------|----------|--------|-----|
 | [B-001](bugs/B-001-non-md-files-not-copied.md) | Non-Markdown linked files not copied | Medium | ✅ released | [B-001](bugs/B-001-non-md-files-not-copied.md) |
+| [B-002](bugs/B-002-cache-linked-file-staleness.md) | Render cache misses linked-file changes | Medium | 📝 planned | [B-002](bugs/B-002-cache-linked-file-staleness.md) |
+| [B-003](bugs/B-003-cache-theme-mismatch.md) | Theme change not reflected on cache hit | Low | 📝 planned | [B-003](bugs/B-003-cache-theme-mismatch.md) |
+| [B-004](bugs/B-004-completion-subcommands-after-file.md) | Completion suggests subcommands after FILE | Medium | 🚧 in_progress | [B-004](bugs/B-004-completion-subcommands-after-file.md) |
 
 ---
 
@@ -83,6 +97,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-013](prompts/P-013-F-013-render-memory.md) | F-013 | Render memory |
 | [P-014](prompts/P-014-F-014-folder-hierarchy.md) | F-014 | Preserve folder hierarchy in rendered output and sidebar tree |
 | [P-015](prompts/P-015-M-014-view-controls-and-render-modes.md) | M-014 (F-015+F-016) | View controls and render modes |
+| [P-016](prompts/P-016-B-004-completion-after-file.md) | B-004 | Fix completion suggestions after positional FILE |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -91,8 +106,8 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | None |
-| Open worktrees | None |
+| Active agents | `anvil` assigned to `B-004` / `P-016` (background) |
+| Open worktrees | `.worktrees/B-004-completion-after-file` |
 | Latest tag | `v0.5.0` |
-| Next planned work | B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
+| Next planned work | B-004 in progress · B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

@@ -18,6 +18,8 @@
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
+| B-004 | bug | Shell completion suggests subcommands after FILE argument | `in_progress` | anvil | `.worktrees/B-004-completion-after-file` | `fix/B-004-completion-after-file` | — | 2026-03-29 |
+| P-016 | task | Fix completion suggestions after positional FILE | `in_progress` | anvil | `.worktrees/B-004-completion-after-file` | `fix/B-004-completion-after-file` | — | 2026-03-29 |
 | M-014 | milestone | View Controls and Render Modes | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |
 | F-015 | feature | Render mode flags and persistent defaults | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |
 | F-016 | feature | Sidebar and theme controls | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |
