@@ -31,11 +31,24 @@ pub fn render_markdown(markdown: &str, title: &str, theme: Theme) -> String {
     html::push_html(&mut body, parser);
     let body = post_process_code_blocks(&body);
 
-    build_html_document(title, &body, theme)
+    build_html_document(title, &body, theme, &[], &[])
 }
 
 /// Wrap a rendered HTML body in a complete HTML5 document with embedded CSS and JS.
-fn build_html_document(title: &str, body: &str, theme: Theme) -> String {
+///
+/// `breadcrumb` is an ordered list of `(display_name, html_path)` ancestors
+/// from the entry-point down to (but not including) the current file.  Empty
+/// for the entry-point itself.
+///
+/// `all_files` is the full list of `(display_name, html_path, is_current)`
+/// entries for the sidebar, in BFS discovery order.
+fn build_html_document(
+    title: &str,
+    body: &str,
+    theme: Theme,
+    breadcrumb: &[(String, PathBuf)],
+    all_files: &[(String, PathBuf, bool)],
+) -> String {
     let css = include_str!("style.css");
 
     let copy_css = if theme == Theme::Dark {
@@ -206,11 +219,68 @@ blockquote { border-left-color: #555; color: #aaa; background: #222; }
 th { background: #2a2a2a; }
 tr:nth-child(even) { background: #222; }
 th, td { border-color: #444; }
-hr { border-top-color: #444; }"#
+hr { border-top-color: #444; }
+/* dark nav */
+.mark-sidebar-label { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+.mark-sidebar-label:hover { background: #333; }
+.mark-sidebar { background: #222; border-right-color: #444; }
+.mark-sidebar li a { color: #7ab4f5; }
+.mark-sidebar li a:hover { background: #333; }
+.mark-sidebar-current span { color: #e0e0e0; }
+.mark-breadcrumb { background: #222; border-color: #444; }
+.mark-breadcrumb a { color: #7ab4f5; }
+.mark-breadcrumb-sep { color: #666; }
+.mark-breadcrumb-current { color: #ccc; }"#
     } else {
         ""
     };
 
+    // ── Build breadcrumb HTML ────────────────────────────────────────────────
+    let breadcrumb_html = if breadcrumb.is_empty() {
+        String::new()
+    } else {
+        let mut bc = String::from("<nav class=\"mark-breadcrumb\">\n");
+        for (name, path) in breadcrumb {
+            let href = escape_html(&path.to_string_lossy());
+            let display = escape_html(name);
+            bc.push_str(&format!(
+                "  <a href=\"{href}\">{display}</a>\n  <span class=\"mark-breadcrumb-sep\">&rsaquo;</span>\n"
+            ));
+        }
+        bc.push_str(&format!(
+            "  <span class=\"mark-breadcrumb-current\">{}</span>\n",
+            escape_html(title)
+        ));
+        bc.push_str("</nav>\n");
+        bc
+    };
+
+    // ── Build sidebar HTML ───────────────────────────────────────────────────
+    let sidebar_html = if all_files.is_empty() {
+        String::new()
+    } else {
+        let mut sb = String::new();
+        sb.push_str("<input type=\"checkbox\" id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\" checked>\n");
+        sb.push_str(
+            "<label for=\"mark-sidebar-toggle\" class=\"mark-sidebar-label\">&#9776;</label>\n",
+        );
+        sb.push_str("<nav class=\"mark-sidebar\">\n<ul>\n");
+        for (name, path, is_current) in all_files {
+            let display = escape_html(name);
+            if *is_current {
+                sb.push_str(&format!(
+                    "  <li class=\"mark-sidebar-current\"><span>{display}</span></li>\n"
+                ));
+            } else {
+                let href = escape_html(&path.to_string_lossy());
+                sb.push_str(&format!("  <li><a href=\"{href}\">{display}</a></li>\n"));
+            }
+        }
+        sb.push_str("</ul>\n</nav>\n");
+        sb
+    };
+
+    // Content is wrapped so the sidebar toggle can push it via CSS sibling selector.
     format!(
         r#"<!DOCTYPE html>
 <html lang="en" data-theme="{theme_attr}">
@@ -227,9 +297,11 @@ hr { border-top-color: #444; }"#
 </style>
 </head>
 <body>
+{sidebar_html}<div class="mark-content-wrapper">
 <article>
-{body}
+{breadcrumb_html}{body}
 </article>
+</div>
 <script>
 {copy_js}
 </script>
@@ -241,6 +313,8 @@ hr { border-top-color: #444; }"#
         css = css,
         theme_css = theme_css,
         copy_css = copy_css,
+        sidebar_html = sidebar_html,
+        breadcrumb_html = breadcrumb_html,
         body = body,
         copy_js = copy_js,
     )
@@ -551,9 +625,17 @@ pub fn extract_local_asset_links(markdown: &str, source_dir: &Path) -> Vec<(Stri
 /// absolute [`PathBuf`] of its rendered HTML file.  Anchor fragments in the
 /// original link are preserved on the rewritten `href`.
 ///
+/// `breadcrumb` is an ordered list of `(display_name, html_path)` ancestors
+/// from the entry-point down to (but not including) the current file.  Pass
+/// an empty slice for the entry-point.
+///
+/// `all_files` is the full BFS-ordered list of `(display_name, html_path,
+/// is_current)` entries used to render the sidebar.  Pass an empty slice for
+/// standalone (single-file) renders.
+///
 /// External URLs and links whose base is not present in `link_map` are left
 /// unchanged.  When `link_map` is empty the output is identical to
-/// [`render_markdown`].
+/// [`render_markdown`] (modulo any nav chrome).
 ///
 /// The rewriting is performed by transforming pulldown-cmark link events
 /// before passing them to the HTML serialiser, so it operates on the parsed
@@ -563,8 +645,10 @@ pub fn render_markdown_rewriting_links(
     title: &str,
     theme: Theme,
     link_map: &HashMap<String, PathBuf>,
+    breadcrumb: &[(String, PathBuf)],
+    all_files: &[(String, PathBuf, bool)],
 ) -> String {
-    if link_map.is_empty() {
+    if link_map.is_empty() && breadcrumb.is_empty() && all_files.is_empty() {
         return render_markdown(markdown, title, theme);
     }
 
@@ -621,7 +705,7 @@ pub fn render_markdown_rewriting_links(
     let mut body = String::new();
     html::push_html(&mut body, events.into_iter());
     let body = post_process_code_blocks(&body);
-    build_html_document(title, &body, theme)
+    build_html_document(title, &body, theme, breadcrumb, all_files)
 }
 
 #[cfg(test)]
@@ -823,7 +907,7 @@ mod tests {
         link_map.insert("api.md".to_string(), html_path.clone());
 
         let md = "[API](api.md)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
         let expected = format!("href=\"{}\"", html_path.display());
         assert!(
             html.contains(&expected),
@@ -843,7 +927,7 @@ mod tests {
         link_map.insert("api.md".to_string(), html_path.clone());
 
         let md = "[Section](api.md#endpoints)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
         let expected = format!("href=\"{}#endpoints\"", html_path.display());
         assert!(
             html.contains(&expected),
@@ -855,7 +939,7 @@ mod tests {
     fn rewrite_links_leaves_external_urls_unchanged() {
         let link_map: HashMap<String, PathBuf> = HashMap::new();
         let md = "[Google](https://google.com)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
         assert!(
             html.contains("href=\"https://google.com\""),
             "external URL must not be modified:\n{html}"
@@ -866,7 +950,7 @@ mod tests {
     fn rewrite_links_leaves_non_md_local_links_unchanged() {
         let link_map: HashMap<String, PathBuf> = HashMap::new();
         let md = "[Image](photo.png)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
         assert!(
             html.contains("href=\"photo.png\""),
             "non-md link must not be modified:\n{html}"
@@ -877,7 +961,8 @@ mod tests {
     fn rewrite_links_empty_map_is_identity() {
         let link_map: HashMap<String, PathBuf> = HashMap::new();
         let md = "[Chapter](chapter.md)\n";
-        let html_rewrite = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let html_rewrite =
+            render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
         let html_plain = render_markdown(md, "t", Theme::Light);
         assert_eq!(
             html_rewrite, html_plain,
@@ -983,6 +1068,129 @@ mod tests {
         assert!(
             links.is_empty(),
             "path traversal outside source_dir must be rejected"
+        );
+    }
+
+    // ── breadcrumb + sidebar tests ────────────────────────────────────────────
+
+    #[test]
+    fn no_breadcrumb_on_entry_point() {
+        // Empty breadcrumb slice → no breadcrumb nav element in output.
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html = render_markdown_rewriting_links(
+            "# Entry",
+            "entry",
+            Theme::Light,
+            &link_map,
+            &[], // no breadcrumb
+            &[],
+        );
+        assert!(
+            !html.contains("<nav class=\"mark-breadcrumb\">"),
+            "entry-point must not have breadcrumb nav element:\n{html}"
+        );
+    }
+
+    #[test]
+    fn breadcrumb_present_on_depth_one_page() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let entry_html = dir.path().join("entry-abc.html");
+        let breadcrumb = vec![("entry".to_string(), entry_html.clone())];
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html = render_markdown_rewriting_links(
+            "# Chapter",
+            "chapter",
+            Theme::Light,
+            &link_map,
+            &breadcrumb,
+            &[],
+        );
+        assert!(
+            html.contains("<nav class=\"mark-breadcrumb\">"),
+            "depth-1 page must have breadcrumb:\n{html}"
+        );
+        let href = format!("href=\"{}\"", entry_html.display());
+        assert!(
+            html.contains(&href),
+            "breadcrumb must link to entry html:\n{html}"
+        );
+        assert!(
+            html.contains("mark-breadcrumb-current"),
+            "current page must appear as non-link span:\n{html}"
+        );
+    }
+
+    #[test]
+    fn sidebar_present_when_all_files_provided() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let entry_html = dir.path().join("entry-abc.html");
+        let chapter_html = dir.path().join("chapter-abc.html");
+        let all_files = vec![
+            ("entry".to_string(), entry_html.clone(), false),
+            ("chapter".to_string(), chapter_html.clone(), true),
+        ];
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html = render_markdown_rewriting_links(
+            "# Chapter",
+            "chapter",
+            Theme::Light,
+            &link_map,
+            &[],
+            &all_files,
+        );
+        assert!(
+            html.contains("<nav class=\"mark-sidebar\">"),
+            "sidebar must be present when all_files is non-empty:\n{html}"
+        );
+        assert!(
+            html.contains("mark-sidebar-toggle"),
+            "sidebar toggle must be present:\n{html}"
+        );
+        assert!(
+            html.contains("mark-sidebar-current"),
+            "current page must be highlighted in sidebar:\n{html}"
+        );
+        // Non-current pages must be links.
+        let entry_href = format!("href=\"{}\"", entry_html.display());
+        assert!(
+            html.contains(&entry_href),
+            "non-current entry must be a link in sidebar:\n{html}"
+        );
+    }
+
+    #[test]
+    fn sidebar_absent_when_all_files_empty() {
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html =
+            render_markdown_rewriting_links("# Solo", "solo", Theme::Light, &link_map, &[], &[]);
+        assert!(
+            !html.contains("<nav class=\"mark-sidebar\">"),
+            "no sidebar nav element when all_files is empty:\n{html}"
+        );
+    }
+
+    #[test]
+    fn sidebar_present_on_dark_theme() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let html_path = dir.path().join("entry-abc.html");
+        let all_files = vec![("entry".to_string(), html_path.clone(), true)];
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html = render_markdown_rewriting_links(
+            "# Entry",
+            "entry",
+            Theme::Dark,
+            &link_map,
+            &[],
+            &all_files,
+        );
+        assert!(
+            html.contains("<nav class=\"mark-sidebar\">"),
+            "sidebar must be present in dark theme:\n{html}"
+        );
+        // Dark theme CSS for sidebar must be injected.
+        assert!(
+            html.contains("mark-sidebar-label"),
+            "dark theme sidebar label CSS must be present:\n{html}"
         );
     }
 }

@@ -129,6 +129,9 @@ fn main() -> Result<()> {
     let mut content_cache: HashMap<PathBuf, String> = HashMap::new();
     content_cache.insert(entry_canonical.clone(), markdown.clone());
 
+    // Track the BFS discovery parent of each file (for breadcrumb construction).
+    let mut parent_map: HashMap<PathBuf, PathBuf> = HashMap::new();
+
     let mut queue: VecDeque<PathBuf> = VecDeque::new();
     queue.push_back(entry_canonical.clone());
 
@@ -147,6 +150,7 @@ fn main() -> Result<()> {
             match std::fs::read_to_string(&canonical) {
                 Ok(md) => {
                     content_cache.insert(canonical.clone(), md);
+                    parent_map.insert(canonical.clone(), current.clone());
                     ordered.push(canonical.clone());
                     queue.push_back(canonical);
                 }
@@ -183,6 +187,21 @@ fn main() -> Result<()> {
 
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let mut entry_out_path: Option<PathBuf> = None;
+
+    // Build the full sidebar list once: (display_name, rendered_html_path, is_current=false).
+    // We'll flip is_current per file during rendering.
+    let all_files_base: Vec<(String, PathBuf)> = ordered
+        .iter()
+        .map(|canonical| {
+            let name = canonical
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("output")
+                .to_string();
+            let out_name = output_name_map.get(canonical).expect("name was assigned");
+            (name, paths.rendered.join(out_name))
+        })
+        .collect();
 
     for (idx, canonical) in ordered.iter().enumerate() {
         let content = content_cache.get(canonical).cloned().unwrap_or_default();
@@ -223,7 +242,44 @@ fn main() -> Result<()> {
             link_map.insert(original_url, dest);
         }
 
-        let html = render::render_markdown_rewriting_links(&content, stem, theme, &link_map);
+        // Build the sidebar list with is_current flagged for this file.
+        let all_files: Vec<(String, PathBuf, bool)> = all_files_base
+            .iter()
+            .enumerate()
+            .map(|(i, (name, path))| (name.clone(), path.clone(), i == idx))
+            .collect();
+
+        // Build the breadcrumb: walk parent_map from this file up to entry,
+        // then reverse so it reads entry → … → parent.
+        let breadcrumb: Vec<(String, PathBuf)> = if idx == 0 {
+            vec![]
+        } else {
+            let mut chain: Vec<(String, PathBuf)> = Vec::new();
+            let mut cursor = canonical.clone();
+            while let Some(parent_canonical) = parent_map.get(&cursor) {
+                let parent_name = parent_canonical
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("?")
+                    .to_string();
+                let parent_out_name = output_name_map
+                    .get(parent_canonical)
+                    .expect("parent name was assigned");
+                chain.push((parent_name, paths.rendered.join(parent_out_name)));
+                cursor = parent_canonical.clone();
+            }
+            chain.reverse();
+            chain
+        };
+
+        let html = render::render_markdown_rewriting_links(
+            &content,
+            stem,
+            theme,
+            &link_map,
+            &breadcrumb,
+            &all_files,
+        );
         let out_name = output_name_map.get(canonical).expect("name was assigned");
         let out_path = storage::write_rendered(&paths.rendered, out_name, &html)?;
 
