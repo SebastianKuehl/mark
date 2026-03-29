@@ -1,5 +1,14 @@
 # Releases
 
+## v0.2.1 — patch
+
+- **Date:** 2026-03-29
+- **Type:** patch
+- **Merged items:** B-001 — Non-Markdown linked files not copied
+- **Summary:** Local non-Markdown files linked from Markdown (e.g. `.txt`, `.png`, `.pdf`) are now copied to `~/.mark/rendered/` and their links are rewritten to absolute paths, making them accessible in the browser. Includes path-traversal guard and idempotent copy. 8 new tests.
+
+---
+
 ## v0.2.0 — minor
 
 - **Date:** 2026-03-29
