@@ -23,7 +23,7 @@
 
 Only the instructor and the Product Owner Agent may update `README.md`.
 
-Current active execution item: `—`.
+Current active execution item: `F-017`.
 
 ---
 
@@ -51,6 +51,7 @@ Current active execution item: `—`.
 | M-012 | Render Memory | ✅ released | [M-012](milestones/M-012-render-memory.md) |
 | M-013 | Folder Hierarchy Preservation | ✅ released | [M-013](milestones/M-013-folder-hierarchy.md) |
 | M-014 | View Controls and Render Modes | ✅ released | [M-014](milestones/M-014-view-controls-and-render-modes.md) |
+| M-015 | Template-Driven Render Shell | 🚧 in_progress | [M-015](milestones/M-015-template-render-shell.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
 ---
@@ -66,6 +67,7 @@ Current active execution item: `—`.
 | [F-014](features/F-014-folder-hierarchy.md) | Preserve folder hierarchy in rendered output and sidebar tree | ✅ released | [F-014](features/F-014-folder-hierarchy.md) |
 | [F-015](features/F-015-render-mode-defaults.md) | Render mode flags and persistent defaults | ✅ released | [F-015](features/F-015-render-mode-defaults.md) |
 | [F-016](features/F-016-sidebar-theme-controls.md) | Sidebar and theme controls | ✅ released | [F-016](features/F-016-sidebar-theme-controls.md) |
+| [F-017](features/F-017-template-shell.md) | Use `src/index.html` as the rendered page template | 🚧 in_progress | [F-017](features/F-017-template-shell.md) |
 
 ---
 
@@ -99,6 +101,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-014](prompts/P-014-F-014-folder-hierarchy.md) | F-014 | Preserve folder hierarchy in rendered output and sidebar tree |
 | [P-015](prompts/P-015-M-014-view-controls-and-render-modes.md) | M-014 (F-015+F-016) | View controls and render modes |
 | [P-016](prompts/P-016-B-004-completion-after-file.md) | B-004 | Fix completion suggestions after positional FILE |
+| [P-017](prompts/P-017-F-017-template-shell.md) | F-017 | Implement template-driven render shell from `src/index.html` |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -107,8 +110,8 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | none |
-| Open worktrees | none |
+| Active agents | `anvil` assigned to `F-017` / `P-017` (background) |
+| Open worktrees | `.worktrees/F-017-template-shell` |
 | Latest tag | `v0.5.1` |
-| Next planned work | B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
+| Next planned work | F-017 in progress · B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |
