@@ -79,7 +79,8 @@ mod view_controls {
 
         let rendered = rendered_path(&stdout);
         let html = fs::read_to_string(&rendered).expect("rendered html");
-        assert!(!html.contains("<nav class=\"mark-sidebar\">"), "{html}");
+        assert!(!html.contains("id=\"mark-sidebar\""), "{html}");
+        assert!(!html.contains("&lt;put rendered html here&gt;"), "{html}");
         assert!(html.contains("href=\"chapters/intro.md\""), "{html}");
         assert!(!rendered
             .parent()
@@ -118,7 +119,10 @@ mod view_controls {
 
         let rendered = rendered_path(&stdout);
         let html = fs::read_to_string(&rendered).expect("rendered html");
-        assert!(html.contains("<nav class=\"mark-sidebar\">"), "{html}");
+        assert!(html.contains("id=\"mark-sidebar\""), "{html}");
+        assert!(html.contains("aria-label=\"Rendered file tree\""), "{html}");
+        assert!(!html.contains("#/overview.html"), "{html}");
+        assert!(!html.contains("&lt;put rendered html here&gt;"), "{html}");
         assert!(!html.contains("href=\"chapters/intro.md\""), "{html}");
         assert!(html.contains("intro.html"), "{html}");
         assert!(rendered
