@@ -6,14 +6,45 @@
 #[cfg(test)]
 mod completion_generation {
     use clap::CommandFactory;
-    use clap_complete::{generate, Shell};
+    use clap_complete::Shell;
     use mark::cli::Cli;
+    use mark::completions;
+    use std::process::Command;
 
     fn generate_completions(shell: Shell) -> String {
-        let mut cmd = Cli::command();
-        let mut buf: Vec<u8> = Vec::new();
-        generate(shell, &mut cmd, "mark", &mut buf);
-        String::from_utf8(buf).expect("completion output should be valid UTF-8")
+        completions::render(shell)
+    }
+
+    fn run_bash_completion(script: &str, words: &[&str]) -> Vec<String> {
+        let output = Command::new("bash")
+            .arg("-lc")
+            .arg(
+                r#"eval "$1"
+shift
+COMP_WORDS=("$@")
+COMP_CWORD=$((${#COMP_WORDS[@]} - 1))
+prev=""
+if (( COMP_CWORD > 0 )); then
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+fi
+_mark mark "${COMP_WORDS[COMP_CWORD]}" "${prev}"
+printf '%s\n' "${COMPREPLY[@]}""#,
+            )
+            .arg("bash")
+            .arg(script)
+            .args(words)
+            .output()
+            .expect("bash completion probe should run");
+        assert!(
+            output.status.success(),
+            "bash completion probe failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8(output.stdout)
+            .expect("bash completion output should be valid UTF-8")
+            .lines()
+            .map(str::to_owned)
+            .collect()
     }
 
     #[test]
@@ -26,6 +57,38 @@ mod completion_generation {
         assert!(
             script.contains("mark"),
             "bash completion script should reference 'mark'"
+        );
+    }
+
+    #[test]
+    fn bash_completion_keeps_root_subcommands_before_file() {
+        let script = generate_completions(Shell::Bash);
+        let completions = run_bash_completion(&script, &["mark", ""]);
+        assert!(
+            completions.iter().any(|item| item == "config"),
+            "root completions should still include subcommands before FILE"
+        );
+        assert!(
+            completions.iter().any(|item| item == "cleanup-home"),
+            "root completions should still include cleanup-home before FILE"
+        );
+    }
+
+    #[test]
+    fn bash_completion_hides_root_subcommands_after_file() {
+        let script = generate_completions(Shell::Bash);
+        let completions = run_bash_completion(&script, &["mark", "some-file.md", ""]);
+        assert!(
+            !completions.iter().any(|item| item == "config"),
+            "config should not be suggested after FILE is already present"
+        );
+        assert!(
+            !completions.iter().any(|item| item == "cleanup-home"),
+            "cleanup-home should not be suggested after FILE is already present"
+        );
+        assert!(
+            completions.iter().any(|item| item == "--single"),
+            "valid top-level flags should still be suggested after FILE"
         );
     }
 

@@ -1,9 +1,9 @@
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
-use clap_complete::generate;
 use mark::{
     browser, cache, cleanup, cleanup_home,
     cli::{Commands, ConfigAction},
+    completions,
     config::{AppConfig, RenderMode, SidebarVisibility, Theme},
     render, storage,
 };
@@ -138,8 +138,7 @@ fn main() -> Result<()> {
 
     // Handle the `completions` subcommand before anything else.
     if let Some(Commands::Completions { shell }) = args.command {
-        let mut cmd = mark::cli::Cli::command();
-        generate(shell, &mut cmd, "mark", &mut std::io::stdout());
+        print!("{}", completions::render(shell));
         return Ok(());
     }
 
