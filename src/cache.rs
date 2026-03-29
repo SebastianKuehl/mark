@@ -5,7 +5,7 @@
 //!
 //! ```toml
 //! ["/abs/path/to/overview.md"]
-//! rendered_html = "/abs/path/to/rendered/overview-ts-hash.html"
+//! rendered_html = "/abs/path/to/rendered/overview-ts-hash"
 //! source_mtime_secs = 1711648523
 //! ```
 
@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 /// A single cache entry for one source file.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CacheEntry {
-    /// Absolute path to the rendered HTML file.
+    /// Absolute path to the rendered run directory.
     pub rendered_html: PathBuf,
     /// Unix timestamp (seconds) of the source file's mtime at render time.
     pub source_mtime_secs: u64,
@@ -92,11 +92,11 @@ impl RenderCache {
             .insert(source.to_string_lossy().into_owned(), entry);
     }
 
-    /// Remove entries whose `rendered_html` file no longer exists on disk.
+    /// Remove entries whose `rendered_html` run directory no longer exists on disk.
     ///
     /// Called by `--cleanup` to prune stale cache state.
     pub fn remove_missing_entries(&mut self) {
-        self.entries.retain(|_, entry| entry.rendered_html.exists());
+        self.entries.retain(|_, entry| entry.rendered_html.is_dir());
     }
 }
 
@@ -135,7 +135,7 @@ mod tests {
 
         let source = Path::new("/home/user/notes.md");
         let entry = CacheEntry {
-            rendered_html: PathBuf::from("/home/user/.mark/rendered/notes-123-abc.html"),
+            rendered_html: PathBuf::from("/home/user/.mark/rendered/notes-123-abc"),
             source_mtime_secs: 1_700_000_000,
         };
         cache.set(source, entry.clone());
@@ -160,7 +160,7 @@ mod tests {
         let mut cache = make_cache(dir.path());
         let source = Path::new("/project/doc.md");
         let entry = CacheEntry {
-            rendered_html: PathBuf::from("/tmp/doc-1-00000001.html"),
+            rendered_html: PathBuf::from("/tmp/doc-1-00000001"),
             source_mtime_secs: 42,
         };
         cache.set(source, entry.clone());
@@ -176,12 +176,12 @@ mod tests {
         cache.set(
             source,
             CacheEntry {
-                rendered_html: PathBuf::from("/old.html"),
+                rendered_html: PathBuf::from("/old-run"),
                 source_mtime_secs: 1,
             },
         );
         let newer = CacheEntry {
-            rendered_html: PathBuf::from("/new.html"),
+            rendered_html: PathBuf::from("/new-run"),
             source_mtime_secs: 2,
         };
         cache.set(source, newer.clone());
@@ -199,7 +199,7 @@ mod tests {
         cache.set(
             source,
             CacheEntry {
-                rendered_html: PathBuf::from("/out.html"),
+                rendered_html: PathBuf::from("/out-run"),
                 source_mtime_secs: mtime,
             },
         );
@@ -215,7 +215,7 @@ mod tests {
         cache.set(
             source,
             CacheEntry {
-                rendered_html: PathBuf::from("/out.html"),
+                rendered_html: PathBuf::from("/out-run"),
                 source_mtime_secs: 100,
             },
         );
@@ -227,24 +227,24 @@ mod tests {
     // ── remove_missing_entries ────────────────────────────────────────────────
 
     #[test]
-    fn remove_missing_entries_keeps_existing_html() {
+    fn remove_missing_entries_keeps_existing_run_dir() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let html = dir.path().join("out.html");
-        std::fs::write(&html, b"<html/>").expect("write");
+        let run_dir = dir.path().join("out-run");
+        std::fs::create_dir_all(&run_dir).expect("mkdir");
 
         let mut cache = make_cache(dir.path());
         let source = Path::new("/doc.md");
         cache.set(
             source,
             CacheEntry {
-                rendered_html: html.clone(),
+                rendered_html: run_dir.clone(),
                 source_mtime_secs: 1,
             },
         );
         cache.remove_missing_entries();
         assert!(
             cache.get(source).is_some(),
-            "entry for existing html must survive"
+            "entry for existing run dir must survive"
         );
     }
 
@@ -256,8 +256,7 @@ mod tests {
         cache.set(
             source,
             CacheEntry {
-                // This HTML file does not exist.
-                rendered_html: dir.path().join("ghost.html"),
+                rendered_html: dir.path().join("ghost-run"),
                 source_mtime_secs: 1,
             },
         );
@@ -270,10 +269,33 @@ mod tests {
     }
 
     #[test]
+    fn remove_missing_entries_drops_legacy_file_entry() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let legacy_html = dir.path().join("legacy.html");
+        std::fs::write(&legacy_html, "<html/>").expect("write");
+
+        let mut cache = make_cache(dir.path());
+        let source = Path::new("/doc.md");
+        cache.set(
+            source,
+            CacheEntry {
+                rendered_html: legacy_html,
+                source_mtime_secs: 1,
+            },
+        );
+
+        cache.remove_missing_entries();
+        assert!(
+            cache.get(source).is_none(),
+            "legacy file entry must be pruned"
+        );
+    }
+
+    #[test]
     fn remove_missing_entries_is_selective() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let html_good = dir.path().join("good.html");
-        std::fs::write(&html_good, b"<html/>").expect("write");
+        let run_dir_good = dir.path().join("good-run");
+        std::fs::create_dir_all(&run_dir_good).expect("mkdir");
 
         let mut cache = make_cache(dir.path());
         let good = Path::new("/good.md");
@@ -282,14 +304,14 @@ mod tests {
         cache.set(
             good,
             CacheEntry {
-                rendered_html: html_good.clone(),
+                rendered_html: run_dir_good.clone(),
                 source_mtime_secs: 1,
             },
         );
         cache.set(
             stale,
             CacheEntry {
-                rendered_html: dir.path().join("gone.html"),
+                rendered_html: dir.path().join("gone-run"),
                 source_mtime_secs: 2,
             },
         );
@@ -309,11 +331,36 @@ mod tests {
         cache.set(
             Path::new("/x.md"),
             CacheEntry {
-                rendered_html: PathBuf::from("/x.html"),
+                rendered_html: PathBuf::from("/x-run"),
                 source_mtime_secs: 7,
             },
         );
         cache.save();
         assert!(deep.exists(), "cache file must be created with parent dirs");
+    }
+
+    #[test]
+    fn save_and_reload_preserves_run_directory_path() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("render-cache.toml");
+        let mut cache = RenderCache::load(path.clone());
+        let source = Path::new("/project/overview.md");
+        let run_dir = PathBuf::from("/project/.mark/rendered/overview-123-abcdef12");
+        cache.set(
+            source,
+            CacheEntry {
+                rendered_html: run_dir.clone(),
+                source_mtime_secs: 99,
+            },
+        );
+        cache.save();
+
+        let reloaded = RenderCache::load(path);
+        assert_eq!(
+            reloaded
+                .get(source)
+                .map(|entry| entry.rendered_html.clone()),
+            Some(run_dir)
+        );
     }
 }
