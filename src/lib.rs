@@ -3,6 +3,7 @@ pub mod cache;
 pub mod cleanup;
 pub mod cleanup_home;
 pub mod cli;
+pub mod completions;
 pub mod config;
 pub mod copy_clean;
 pub mod error;
