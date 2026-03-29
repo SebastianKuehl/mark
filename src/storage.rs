@@ -12,6 +12,8 @@ pub struct AppPaths {
     pub bin: PathBuf,
     /// `~/.mark/config.toml`
     pub config: PathBuf,
+    /// `~/.mark/render-cache.toml`
+    pub render_cache: PathBuf,
 }
 
 impl AppPaths {
@@ -22,11 +24,13 @@ impl AppPaths {
         let rendered = root.join("rendered");
         let bin = root.join("bin");
         let config = root.join("config.toml");
+        let render_cache = root.join("render-cache.toml");
         Ok(AppPaths {
             root,
             rendered,
             bin,
             config,
+            render_cache,
         })
     }
 
@@ -89,6 +93,7 @@ mod tests {
         assert!(paths.rendered.ends_with("rendered"));
         assert!(paths.bin.ends_with("bin"));
         assert!(paths.config.ends_with("config.toml"));
+        assert!(paths.render_cache.ends_with("render-cache.toml"));
     }
 
     #[test]
@@ -98,6 +103,7 @@ mod tests {
         assert!(paths.root.starts_with(&home));
         assert!(paths.rendered.starts_with(&home));
         assert!(paths.bin.starts_with(&home));
+        assert!(paths.render_cache.starts_with(&home));
     }
 
     #[test]

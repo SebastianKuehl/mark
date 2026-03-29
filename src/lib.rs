@@ -1,4 +1,5 @@
 pub mod browser;
+pub mod cache;
 pub mod cleanup;
 pub mod cleanup_home;
 pub mod cli;

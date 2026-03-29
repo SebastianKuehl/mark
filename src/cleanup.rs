@@ -4,6 +4,16 @@ use std::time::{Duration, SystemTime};
 /// Age threshold for rendered files: 30 days.
 const MAX_AGE: Duration = Duration::from_secs(30 * 24 * 60 * 60);
 
+/// Remove stale render-cache entries whose HTML output no longer exists on disk.
+///
+/// Loads the cache from `cache_path`, calls `remove_missing_entries`, and saves
+/// it back. Best-effort — errors are printed as warnings and not propagated.
+pub fn prune_render_cache(cache_path: &Path) {
+    let mut cache = crate::cache::RenderCache::load(cache_path.to_path_buf());
+    cache.remove_missing_entries();
+    cache.save();
+}
+
 /// Delete `.html` files in `rendered_dir` whose modified time is older than
 /// 30 days. Returns the number of files successfully deleted.
 ///

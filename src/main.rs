@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
 use mark::{
-    browser, cleanup, cleanup_home,
+    browser, cache, cleanup, cleanup_home,
     cli::{Commands, ConfigAction},
     config::{AppConfig, Theme},
     render, storage,
@@ -92,6 +92,7 @@ fn main() -> Result<()> {
     if args.cleanup {
         paths.ensure_rendered_dir()?;
         let deleted = cleanup::cleanup_old_files(&paths.rendered)?;
+        cleanup::prune_render_cache(&paths.render_cache);
         println!("Cleanup complete: {deleted} file(s) removed.");
         return Ok(());
     }
@@ -118,6 +119,46 @@ fn main() -> Result<()> {
 
     let entry_canonical = std::fs::canonicalize(&file)
         .map_err(|e| anyhow::anyhow!("Failed to canonicalize {}: {e}", file.display()))?;
+
+    // ── Render cache: check if re-render is needed ────────────────────────────
+    //
+    // We load the cache here so it's available both for the early-exit check
+    // and for the post-render update at the bottom of main.
+    let mut render_cache = cache::RenderCache::load(paths.render_cache.clone());
+
+    // Get the entry file's current mtime as Unix seconds.
+    let entry_mtime_secs: Option<u64> = std::fs::metadata(&entry_canonical)
+        .ok()
+        .and_then(|m| m.modified().ok())
+        .and_then(|t| {
+            t.duration_since(std::time::UNIX_EPOCH)
+                .ok()
+                .map(|d| d.as_secs())
+        });
+
+    // Only consult the cache when --no-open is NOT set (non-interactive re-renders
+    // should always proceed without prompting).
+    if !args.no_open {
+        if let (Some(mtime), Some(cached)) = (entry_mtime_secs, render_cache.get(&entry_canonical))
+        {
+            if cached.source_mtime_secs == mtime && cached.rendered_html.exists() {
+                eprint!(
+                    "Already rendered: {}\nRe-render? [y/N]: ",
+                    cached.rendered_html.display()
+                );
+                let mut line = String::new();
+                std::io::stdin().read_line(&mut line)?;
+                if !matches!(line.trim().to_ascii_lowercase().as_str(), "y") {
+                    // Open the existing rendered file and exit — no re-render.
+                    if let Err(e) = browser::open_browser(&cached.rendered_html) {
+                        eprintln!("Warning: {e}");
+                    }
+                    return Ok(());
+                }
+                // User answered "y" — fall through to full render below.
+            }
+        }
+    }
 
     let mut visited: HashSet<PathBuf> = HashSet::new();
     visited.insert(entry_canonical.clone());
@@ -297,6 +338,18 @@ fn main() -> Result<()> {
 
     let out_path = entry_out_path.expect("entry file was rendered");
     println!("Rendered: {}", out_path.display());
+
+    // ── Update render cache with the new entry-point output ──────────────────
+    if let Some(mtime) = entry_mtime_secs {
+        render_cache.set(
+            &entry_canonical,
+            cache::CacheEntry {
+                rendered_html: out_path.clone(),
+                source_mtime_secs: mtime,
+            },
+        );
+        render_cache.save();
+    }
 
     if !args.no_open {
         if let Err(e) = browser::open_browser(&out_path) {
