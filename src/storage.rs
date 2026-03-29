@@ -1,6 +1,28 @@
 use crate::error::MarkError;
 use std::path::{Path, PathBuf};
 
+fn output_name_parts(input: &Path) -> (String, u128, u32) {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    let stem = input
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("output")
+        .to_string();
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+
+    let path_bytes = input.as_os_str().as_encoded_bytes();
+    let hash: u32 = path_bytes
+        .iter()
+        .fold(0u32, |acc, &b| acc.wrapping_mul(31).wrapping_add(b as u32));
+
+    (stem, timestamp, hash)
+}
+
 /// Paths used by the mark application.
 pub struct AppPaths {
     /// `~/.mark`
@@ -53,32 +75,43 @@ pub fn write_rendered(
     Ok(out)
 }
 
+/// Create and return a unique per-invocation run directory inside `rendered_dir`.
+///
+/// Format: `<stem>-<timestamp>-<short-hash>/`
+pub fn make_run_dir(rendered_dir: &Path, entry_path: &Path) -> Result<PathBuf, MarkError> {
+    use std::thread;
+    use std::time::Duration;
+
+    std::fs::create_dir_all(rendered_dir)?;
+
+    let mut last_error: Option<std::io::Error> = None;
+    for _ in 0..10 {
+        let (stem, timestamp, hash) = output_name_parts(entry_path);
+        let run_dir = rendered_dir.join(format!("{stem}-{timestamp}-{hash:08x}"));
+        match std::fs::create_dir(&run_dir) {
+            Ok(()) => return Ok(run_dir),
+            Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+                last_error = Some(err);
+                thread::sleep(Duration::from_millis(1));
+            }
+            Err(err) => return Err(err.into()),
+        }
+    }
+
+    Err(last_error
+        .unwrap_or_else(|| std::io::Error::other("could not allocate unique run directory"))
+        .into())
+}
+
 /// Generate a unique output filename for a rendered HTML file.
 ///
-/// Format: `<stem>-<timestamp-secs>-<short-hash>.html`
+/// Format: `<stem>-<timestamp>-<short-hash>.html`
 ///
 /// The hash is derived from the canonical input path so the same file
 /// rendered at the same second still gets a unique, deterministic name.
 pub fn output_filename(input: &Path) -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    let stem = input
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("output");
-
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-
-    // Simple hash: fold the path bytes.
-    let path_bytes = input.as_os_str().as_encoded_bytes();
-    let hash: u32 = path_bytes
-        .iter()
-        .fold(0u32, |acc, &b| acc.wrapping_mul(31).wrapping_add(b as u32));
-
-    format!("{stem}-{secs}-{hash:08x}.html")
+    let (stem, timestamp, hash) = output_name_parts(input);
+    format!("{stem}-{timestamp}-{hash:08x}.html")
 }
 
 #[cfg(test)]
@@ -147,5 +180,34 @@ mod tests {
         // Directory does not exist yet.
         let out = write_rendered(&rendered_dir, "out.html", "<p>ok</p>").expect("write");
         assert!(out.exists());
+    }
+
+    #[test]
+    fn make_run_dir_creates_directory() {
+        let base = tempfile::tempdir().expect("tempdir");
+        let run_dir = make_run_dir(base.path(), Path::new("notes.md")).expect("run dir");
+        assert!(run_dir.exists(), "run dir should exist");
+        assert!(run_dir.is_dir(), "run dir should be a directory");
+        assert!(run_dir.starts_with(base.path()));
+    }
+
+    #[test]
+    fn make_run_dir_uses_entry_stem() {
+        let base = tempfile::tempdir().expect("tempdir");
+        let run_dir = make_run_dir(base.path(), Path::new("docs/overview.md")).expect("run dir");
+        let name = run_dir
+            .file_name()
+            .and_then(|s| s.to_str())
+            .expect("dir name");
+        assert!(name.starts_with("overview-"), "got: {name}");
+        assert!(!name.ends_with(".html"), "got: {name}");
+    }
+
+    #[test]
+    fn make_run_dir_creates_distinct_dirs_across_calls() {
+        let base = tempfile::tempdir().expect("tempdir");
+        let first = make_run_dir(base.path(), Path::new("docs/overview.md")).expect("first");
+        let second = make_run_dir(base.path(), Path::new("docs/overview.md")).expect("second");
+        assert_ne!(first, second, "each invocation should get its own run dir");
     }
 }

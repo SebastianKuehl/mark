@@ -8,7 +8,104 @@ use mark::{
     render, storage,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+fn stable_path_hash(path: &Path) -> u32 {
+    path.as_os_str()
+        .as_encoded_bytes()
+        .iter()
+        .fold(0u32, |acc, &b| acc.wrapping_mul(31).wrapping_add(b as u32))
+}
+
+fn relative_path_in_run(
+    entry_dir: &Path,
+    file_canonical: &Path,
+    extension: Option<&str>,
+) -> PathBuf {
+    let relative = file_canonical
+        .strip_prefix(entry_dir)
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|_| {
+            let stem = file_canonical
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .or_else(|| file_canonical.file_name().and_then(|s| s.to_str()))
+                .unwrap_or("output");
+            let fallback_extension = extension
+                .map(ToOwned::to_owned)
+                .or_else(|| {
+                    file_canonical
+                        .extension()
+                        .and_then(|ext| ext.to_str())
+                        .map(ToOwned::to_owned)
+                })
+                .unwrap_or_default();
+            let file_name = if fallback_extension.is_empty() {
+                format!("{stem}-{:08x}", stable_path_hash(file_canonical))
+            } else {
+                format!(
+                    "{stem}-{:08x}.{}",
+                    stable_path_hash(file_canonical),
+                    fallback_extension
+                )
+            };
+            PathBuf::from("_external").join(file_name)
+        });
+
+    match extension {
+        Some(ext) => relative.with_extension(ext),
+        None => relative,
+    }
+}
+
+fn output_path_for_run(run_dir: &Path, entry_dir: &Path, file_canonical: &Path) -> PathBuf {
+    run_dir.join(relative_path_in_run(
+        entry_dir,
+        file_canonical,
+        Some("html"),
+    ))
+}
+
+fn asset_output_path_for_run(
+    run_dir: &Path,
+    entry_dir: &Path,
+    asset_canonical: &Path,
+    reserved_paths: &HashSet<PathBuf>,
+) -> PathBuf {
+    let relative = relative_path_in_run(entry_dir, asset_canonical, None);
+    let dest = run_dir.join(&relative);
+    if !reserved_paths.contains(&dest) {
+        return dest;
+    }
+
+    let stem = asset_canonical
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .or_else(|| asset_canonical.file_name().and_then(|s| s.to_str()))
+        .unwrap_or("asset");
+    let ext = asset_canonical
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("");
+    let collision_name = if ext.is_empty() {
+        format!("{stem}-{:08x}", stable_path_hash(asset_canonical))
+    } else {
+        format!("{stem}-{:08x}.{ext}", stable_path_hash(asset_canonical))
+    };
+    run_dir.join(PathBuf::from("_assets").join(collision_name))
+}
+
+fn copy_asset_into_run(asset_canonical: &Path, dest: &Path) -> Result<()> {
+    use std::io;
+
+    if let Some(parent) = dest.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut src = std::fs::File::open(asset_canonical)?;
+    let mut out = std::fs::File::create(dest)?;
+    io::copy(&mut src, &mut out)?;
+    Ok(())
+}
 
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
@@ -93,7 +190,7 @@ fn main() -> Result<()> {
         paths.ensure_rendered_dir()?;
         let deleted = cleanup::cleanup_old_files(&paths.rendered)?;
         cleanup::prune_render_cache(&paths.render_cache);
-        println!("Cleanup complete: {deleted} file(s) removed.");
+        println!("Cleanup complete: {deleted} run dir(s) removed.");
         return Ok(());
     }
 
@@ -141,16 +238,24 @@ fn main() -> Result<()> {
     if !args.no_open {
         if let (Some(mtime), Some(cached)) = (entry_mtime_secs, render_cache.get(&entry_canonical))
         {
-            if cached.source_mtime_secs == mtime && cached.rendered_html.exists() {
+            let cached_entry_html = output_path_for_run(
+                &cached.rendered_html,
+                entry_canonical.parent().unwrap_or_else(|| Path::new(".")),
+                &entry_canonical,
+            );
+            if cached.source_mtime_secs == mtime
+                && cached.rendered_html.exists()
+                && cached_entry_html.exists()
+            {
                 eprint!(
                     "Already rendered: {}\nRe-render? [y/N]: ",
-                    cached.rendered_html.display()
+                    cached_entry_html.display()
                 );
                 let mut line = String::new();
                 std::io::stdin().read_line(&mut line)?;
                 if !matches!(line.trim().to_ascii_lowercase().as_str(), "y") {
                     // Open the existing rendered file and exit — no re-render.
-                    if let Err(e) = browser::open_browser(&cached.rendered_html) {
+                    if let Err(e) = browser::open_browser(&cached_entry_html) {
                         eprintln!("Warning: {e}");
                     }
                     return Ok(());
@@ -205,23 +310,33 @@ fn main() -> Result<()> {
         }
     }
 
-    // ── Phase 2: assign output filenames to every file up-front ───────────────
+    // ── Phase 2: assign output paths inside a per-run directory up-front ──────
     //
-    // We generate names before rendering so that each file's link_map can
+    // We generate paths before rendering so that each file's link_map can
     // reference the final HTML paths of its targets.
 
-    let mut output_name_map: HashMap<PathBuf, String> = HashMap::new();
+    let entry_dir = entry_canonical
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .to_path_buf();
+    let run_dir = storage::make_run_dir(&paths.rendered, &entry_canonical)?;
+    let mut output_path_map: HashMap<PathBuf, PathBuf> = HashMap::new();
     for canonical in &ordered {
-        output_name_map.insert(canonical.clone(), storage::output_filename(canonical));
+        let output_path = output_path_for_run(&run_dir, &entry_dir, canonical);
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        output_path_map.insert(canonical.clone(), output_path);
     }
+    let reserved_output_paths: HashSet<PathBuf> = output_path_map.values().cloned().collect();
 
     // ── Phase 3: render + write each file with link rewriting ─────────────────
 
     paths.ensure_rendered_dir()?;
 
-    // Clean up stale rendered files before writing the new ones.
+    // Clean up stale rendered runs before writing the new one.
     match cleanup::cleanup_old_files(&paths.rendered) {
-        Ok(n) if n > 0 => println!("Cleaned up {n} old rendered file(s)."),
+        Ok(n) if n > 0 => println!("Cleaned up {n} old rendered run(s)."),
         Ok(_) => {}
         Err(e) => eprintln!("Warning: cleanup failed: {e}"),
     }
@@ -239,8 +354,10 @@ fn main() -> Result<()> {
                 .and_then(|s| s.to_str())
                 .unwrap_or("output")
                 .to_string();
-            let out_name = output_name_map.get(canonical).expect("name was assigned");
-            (name, paths.rendered.join(out_name))
+            let out_path = output_path_map
+                .get(canonical)
+                .expect("output path was assigned");
+            (name, out_path.clone())
         })
         .collect();
 
@@ -258,21 +375,22 @@ fn main() -> Result<()> {
         let links = render::extract_local_md_links(&content, source_dir);
         let mut link_map: HashMap<String, PathBuf> = HashMap::new();
         for (base, target_canonical) in links {
-            if let Some(html_name) = output_name_map.get(&target_canonical) {
-                link_map.insert(base, paths.rendered.join(html_name));
+            if let Some(output_path) = output_path_map.get(&target_canonical) {
+                link_map.insert(base, output_path.clone());
             }
         }
 
         // Copy non-Markdown asset files and add them to the rewrite map.
         let asset_links = render::extract_local_asset_links(&content, source_dir);
         for (original_url, asset_canonical) in asset_links {
-            let file_name = match asset_canonical.file_name() {
-                Some(n) => n.to_owned(),
-                None => continue,
-            };
-            let dest = paths.rendered.join(&file_name);
+            let dest = asset_output_path_for_run(
+                &run_dir,
+                &entry_dir,
+                &asset_canonical,
+                &reserved_output_paths,
+            );
             if !dest.exists() {
-                if let Err(e) = std::fs::copy(&asset_canonical, &dest) {
+                if let Err(e) = copy_asset_into_run(&asset_canonical, &dest) {
                     eprintln!(
                         "Warning: could not copy asset {}: {e}",
                         asset_canonical.display()
@@ -303,10 +421,10 @@ fn main() -> Result<()> {
                     .and_then(|s| s.to_str())
                     .unwrap_or("?")
                     .to_string();
-                let parent_out_name = output_name_map
+                let parent_out_path = output_path_map
                     .get(parent_canonical)
-                    .expect("parent name was assigned");
-                chain.push((parent_name, paths.rendered.join(parent_out_name)));
+                    .expect("parent output path was assigned");
+                chain.push((parent_name, parent_out_path.clone()));
                 cursor = parent_canonical.clone();
             }
             chain.reverse();
@@ -320,9 +438,16 @@ fn main() -> Result<()> {
             &link_map,
             &breadcrumb,
             &all_files,
+            &run_dir,
         );
-        let out_name = output_name_map.get(canonical).expect("name was assigned");
-        let out_path = storage::write_rendered(&paths.rendered, out_name, &html)?;
+        let out_path = output_path_map
+            .get(canonical)
+            .expect("output path was assigned")
+            .clone();
+        if let Some(parent) = out_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&out_path, html.as_bytes())?;
 
         if idx == 0 {
             entry_out_path = Some(out_path);
@@ -344,7 +469,7 @@ fn main() -> Result<()> {
         render_cache.set(
             &entry_canonical,
             cache::CacheEntry {
-                rendered_html: out_path.clone(),
+                rendered_html: run_dir.clone(),
                 source_mtime_secs: mtime,
             },
         );
@@ -358,4 +483,97 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command;
+
+    #[test]
+    fn output_path_for_run_preserves_relative_hierarchy() {
+        let run_dir = PathBuf::from("/rendered/overview-123-abcdef12");
+        let entry_dir = Path::new("/docs");
+        let chapter = Path::new("/docs/chapters/api/endpoints.md");
+        let output = output_path_for_run(&run_dir, entry_dir, chapter);
+        assert_eq!(
+            output,
+            PathBuf::from("/rendered/overview-123-abcdef12/chapters/api/endpoints.html")
+        );
+    }
+
+    #[test]
+    fn output_path_for_run_falls_back_to_file_name() {
+        let run_dir = PathBuf::from("/rendered/overview-123-abcdef12");
+        let entry_dir = Path::new("/docs");
+        let outside = Path::new("/other/shared.md");
+        let output = output_path_for_run(&run_dir, entry_dir, outside);
+        assert_eq!(
+            output,
+            PathBuf::from(format!(
+                "/rendered/overview-123-abcdef12/_external/shared-{:08x}.html",
+                stable_path_hash(outside)
+            ))
+        );
+    }
+
+    #[test]
+    fn output_path_for_run_disambiguates_external_name_collisions() {
+        let run_dir = PathBuf::from("/rendered/overview-123-abcdef12");
+        let entry_dir = Path::new("/docs");
+        let a = output_path_for_run(&run_dir, entry_dir, Path::new("/tmp/a/readme.md"));
+        let b = output_path_for_run(&run_dir, entry_dir, Path::new("/tmp/b/readme.md"));
+        assert_ne!(a, b, "external files with same stem must not collide");
+    }
+
+    #[test]
+    fn relative_path_in_run_disambiguates_external_asset_collisions() {
+        let entry_dir = Path::new("/docs");
+        let a = relative_path_in_run(entry_dir, Path::new("/tmp/a/logo.png"), None);
+        let b = relative_path_in_run(entry_dir, Path::new("/tmp/b/logo.png"), None);
+        assert_ne!(a, b, "external assets with same stem must not collide");
+        assert!(a.starts_with("_external"));
+        assert!(b.starts_with("_external"));
+    }
+
+    #[test]
+    fn copy_asset_into_run_refreshes_mtime() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let source = dir.path().join("logo.png");
+        let dest = dir.path().join("run/assets/logo.png");
+        std::fs::write(&source, b"png").expect("write source");
+
+        let status = Command::new("touch")
+            .arg("-t")
+            .arg("200001010101")
+            .arg(&source)
+            .status()
+            .expect("run touch");
+        assert!(status.success(), "touch should succeed");
+
+        copy_asset_into_run(&source, &dest).expect("copy asset");
+        let source_mtime = std::fs::metadata(&source)
+            .expect("source metadata")
+            .modified()
+            .expect("source mtime");
+        let dest_mtime = std::fs::metadata(&dest)
+            .expect("dest metadata")
+            .modified()
+            .expect("dest mtime");
+        assert!(
+            dest_mtime > source_mtime,
+            "copied asset should get a fresh mtime so cleanup doesn't purge new runs"
+        );
+    }
+
+    #[test]
+    fn asset_output_path_for_run_avoids_rendered_html_collision() {
+        let run_dir = PathBuf::from("/rendered/overview-123-abcdef12");
+        let entry_dir = Path::new("/docs");
+        let reserved = HashSet::from([run_dir.join("chapters/intro.html")]);
+        let asset = Path::new("/docs/chapters/intro.html");
+        let dest = asset_output_path_for_run(&run_dir, entry_dir, asset, &reserved);
+        assert_ne!(dest, run_dir.join("chapters/intro.html"));
+        assert!(dest.starts_with(run_dir.join("_assets")));
+    }
 }

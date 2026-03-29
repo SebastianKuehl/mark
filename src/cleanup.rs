@@ -1,10 +1,10 @@
 use std::path::Path;
 use std::time::{Duration, SystemTime};
 
-/// Age threshold for rendered files: 30 days.
+/// Age threshold for rendered output: 30 days.
 const MAX_AGE: Duration = Duration::from_secs(30 * 24 * 60 * 60);
 
-/// Remove stale render-cache entries whose HTML output no longer exists on disk.
+/// Remove stale render-cache entries whose run directory no longer exists on disk.
 ///
 /// Loads the cache from `cache_path`, calls `remove_missing_entries`, and saves
 /// it back. Best-effort — errors are printed as warnings and not propagated.
@@ -14,26 +14,22 @@ pub fn prune_render_cache(cache_path: &Path) {
     cache.save();
 }
 
-/// Delete `.html` files in `rendered_dir` whose modified time is older than
-/// 30 days. Returns the number of files successfully deleted.
+/// Delete per-invocation render directories in `rendered_dir` whose oldest file
+/// (or the directory itself when empty) is older than 30 days. Also removes
+/// legacy top-level `.html` files from the pre-run-dir layout using the same
+/// age threshold.
 ///
 /// Safety guarantees:
-/// - Only operates on direct children of `rendered_dir` (no recursion).
-/// - Only deletes files whose name ends with `.html`.
-/// - Resolves symlinks via canonicalization; refuses to delete any path whose
-///   canonical form does not start with the canonical `rendered_dir`. This
-///   prevents a malicious or accidental symlink from redirecting deletions
-///   outside the intended directory.
-/// - Continues past per-file errors, printing a warning for each.
+/// - Only operates on direct children of `rendered_dir`.
+/// - Skips symlinks entirely.
+/// - Resolves candidate directories via canonicalization and refuses to delete
+///   any path whose canonical parent is not the canonical `rendered_dir`.
+/// - Continues past per-directory errors, printing a warning for each.
 pub fn cleanup_old_files(rendered_dir: &Path) -> anyhow::Result<usize> {
     if !rendered_dir.exists() {
-        // Nothing to clean up.
         return Ok(0);
     }
 
-    // Resolve the canonical base path once. If rendered_dir itself is a
-    // symlink we refuse to operate on it, because we can't guarantee it
-    // points to the real .mark/rendered.
     let canonical_base = rendered_dir.canonicalize().map_err(|e| {
         anyhow::anyhow!(
             "Could not resolve rendered dir '{}': {e}",
@@ -42,12 +38,11 @@ pub fn cleanup_old_files(rendered_dir: &Path) -> anyhow::Result<usize> {
     })?;
 
     let now = SystemTime::now();
-    let mut deleted = 0;
+    let mut deleted = 0usize;
 
-    let entries = std::fs::read_dir(rendered_dir)?;
-    for entry in entries {
+    for entry in std::fs::read_dir(rendered_dir)? {
         let entry = match entry {
-            Ok(e) => e,
+            Ok(entry) => entry,
             Err(e) => {
                 eprintln!("Warning: could not read directory entry: {e}");
                 continue;
@@ -55,48 +50,81 @@ pub fn cleanup_old_files(rendered_dir: &Path) -> anyhow::Result<usize> {
         };
 
         let path = entry.path();
-
-        // Only delete plain files with a .html extension.
-        if !path.is_file() {
-            continue;
-        }
-        if path.extension().and_then(|e| e.to_str()) != Some("html") {
-            continue;
-        }
-
-        // Canonicalize the entry and verify it lives directly under our base.
-        // This blocks symlinked files that point outside .mark/rendered.
-        let canonical_entry = match path.canonicalize() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("Warning: could not canonicalize '{}': {e}", path.display());
-                continue;
-            }
-        };
-        if canonical_entry.parent() != Some(canonical_base.as_path()) {
-            eprintln!(
-                "Warning: skipping '{}' — not a direct child of the rendered dir",
-                path.display()
-            );
-            continue;
-        }
-
-        let age = match file_age(&path, now) {
-            Ok(a) => a,
+        let file_type = match entry.file_type() {
+            Ok(file_type) => file_type,
             Err(e) => {
                 eprintln!(
-                    "Warning: could not read mtime for '{}': {e}",
+                    "Warning: could not read entry type for '{}': {e}",
                     path.display()
                 );
                 continue;
             }
         };
 
-        if age > MAX_AGE {
-            if let Err(e) = std::fs::remove_file(&path) {
-                eprintln!("Warning: could not delete '{}': {e}", path.display());
-            } else {
-                deleted += 1;
+        if file_type.is_symlink() {
+            continue;
+        }
+
+        if file_type.is_dir() {
+            let canonical_entry = match path.canonicalize() {
+                Ok(path) => path,
+                Err(e) => {
+                    eprintln!("Warning: could not canonicalize '{}': {e}", path.display());
+                    continue;
+                }
+            };
+
+            if canonical_entry.parent() != Some(canonical_base.as_path()) {
+                eprintln!(
+                    "Warning: skipping '{}' — not a direct child of the rendered dir",
+                    path.display()
+                );
+                continue;
+            }
+
+            let oldest_mtime = match oldest_mtime_in_tree(&path) {
+                Ok(mtime) => mtime,
+                Err(e) => {
+                    eprintln!(
+                        "Warning: could not inspect render directory '{}': {e}",
+                        path.display()
+                    );
+                    continue;
+                }
+            };
+            let age = now.duration_since(oldest_mtime).unwrap_or(Duration::ZERO);
+
+            if age > MAX_AGE {
+                if let Err(e) = std::fs::remove_dir_all(&path) {
+                    eprintln!("Warning: could not delete '{}': {e}", path.display());
+                } else {
+                    deleted += 1;
+                }
+            }
+            continue;
+        }
+
+        if file_type.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("html") {
+            let age = match std::fs::metadata(&path)
+                .and_then(|metadata| metadata.modified())
+                .map(|mtime| now.duration_since(mtime).unwrap_or(Duration::ZERO))
+            {
+                Ok(age) => age,
+                Err(e) => {
+                    eprintln!(
+                        "Warning: could not read legacy render mtime for '{}': {e}",
+                        path.display()
+                    );
+                    continue;
+                }
+            };
+
+            if age > MAX_AGE {
+                if let Err(e) = std::fs::remove_file(&path) {
+                    eprintln!("Warning: could not delete '{}': {e}", path.display());
+                } else {
+                    deleted += 1;
+                }
             }
         }
     }
@@ -105,33 +133,69 @@ pub fn cleanup_old_files(rendered_dir: &Path) -> anyhow::Result<usize> {
 }
 
 /// Returns how long ago `path` was last modified, relative to `now`.
+#[cfg(test)]
 fn file_age(path: &Path, now: SystemTime) -> anyhow::Result<Duration> {
     let mtime = std::fs::metadata(path)?.modified()?;
-    // If mtime is somehow in the future, treat the file as brand-new (age = 0).
     Ok(now.duration_since(mtime).unwrap_or(Duration::ZERO))
+}
+
+fn oldest_mtime_in_tree(path: &Path) -> anyhow::Result<SystemTime> {
+    let metadata = std::fs::symlink_metadata(path)?;
+    let mut oldest = metadata.modified()?;
+
+    if metadata.file_type().is_symlink() {
+        return Ok(SystemTime::now());
+    }
+
+    if metadata.is_dir() {
+        for entry in std::fs::read_dir(path)? {
+            let entry = entry?;
+            if entry.file_type()?.is_symlink() {
+                continue;
+            }
+            let child_oldest = oldest_mtime_in_tree(&entry.path())?;
+            if child_oldest < oldest {
+                oldest = child_oldest;
+            }
+        }
+    }
+
+    Ok(oldest)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::fs;
+    #[cfg(unix)]
+    use std::os::unix::fs::symlink;
+    use std::process::Command;
 
     fn write_file(path: &Path, content: &str) {
+        fs::create_dir_all(path.parent().unwrap_or_else(|| Path::new("."))).expect("mkdirs");
         fs::write(path, content).expect("write");
     }
 
-    /// Set a file's modified time to `age` in the past using a low-level trick:
-    /// write then immediately re-open so we can set the mtime via filetime.
-    /// Since we can't easily set mtime with std, we instead test the
-    /// `file_age` function directly and test cleanup by checking it respects
-    /// the boundary logic.
+    fn backdate_path(path: &Path, touch_value: &str) {
+        let status = Command::new("touch")
+            .arg("-t")
+            .arg(touch_value)
+            .arg(path)
+            .status()
+            .expect("run touch");
+        assert!(
+            status.success(),
+            "touch should succeed for {}",
+            path.display()
+        );
+    }
+
     #[test]
     fn file_age_returns_zero_for_new_file() {
         let dir = tempfile::tempdir().expect("tempdir");
         let p = dir.path().join("new.html");
         write_file(&p, "<p>hi</p>");
         let age = file_age(&p, SystemTime::now()).expect("age");
-        // Brand-new file — age must be well under 30 days.
         assert!(age < MAX_AGE, "expected age < 30d, got {age:?}");
     }
 
@@ -140,11 +204,9 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let txt = dir.path().join("notes.txt");
         write_file(&txt, "hello");
-        // Even if we pretend it's old, cleanup must not touch non-.html files.
-        // We can't backdate mtime in std, but we verify the file survives.
         let deleted = cleanup_old_files(dir.path()).expect("cleanup");
         assert_eq!(deleted, 0);
-        assert!(txt.exists(), "non-html file must survive cleanup");
+        assert!(txt.exists(), "plain file must survive cleanup");
     }
 
     #[test]
@@ -156,30 +218,123 @@ mod tests {
     }
 
     #[test]
-    fn cleanup_returns_zero_for_fresh_html_files() {
+    fn cleanup_returns_zero_for_fresh_run_directory() {
         let dir = tempfile::tempdir().expect("tempdir");
-        write_file(&dir.path().join("fresh.html"), "<p>new</p>");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        write_file(&run_dir.join("overview.html"), "<p>new</p>");
         let deleted = cleanup_old_files(dir.path()).expect("cleanup");
-        // File is brand-new — must not be deleted.
         assert_eq!(deleted, 0);
-        assert!(dir.path().join("fresh.html").exists());
+        assert!(run_dir.exists());
     }
 
     #[test]
-    fn cleanup_deletes_old_html_file() {
+    fn cleanup_deletes_old_run_directory() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let old_file = dir.path().join("old.html");
-        write_file(&old_file, "<p>old</p>");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        let nested = run_dir.join("chapters/intro.html");
+        write_file(&nested, "<p>old</p>");
+        backdate_path(&nested, "200001010101");
+        backdate_path(&run_dir.join("chapters"), "200001010101");
+        backdate_path(&run_dir, "200001010101");
 
-        // Backdate the file's mtime to 31 days ago using filetime crate —
-        // not available here. Instead, we test the predicate directly by
-        // calling file_age with a "now" far in the future.
-        let future_now = SystemTime::now() + Duration::from_secs(31 * 24 * 60 * 60);
-        let age = file_age(&old_file, future_now).expect("age");
+        let deleted = cleanup_old_files(dir.path()).expect("cleanup");
+        assert_eq!(deleted, 1);
+        assert!(!run_dir.exists(), "old run dir must be removed");
+    }
+
+    #[test]
+    fn cleanup_deletes_old_legacy_html_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let legacy = dir.path().join("overview-123-abcdef12.html");
+        write_file(&legacy, "<p>old</p>");
+        backdate_path(&legacy, "200001010101");
+
+        let deleted = cleanup_old_files(dir.path()).expect("cleanup");
+        assert_eq!(deleted, 1);
+        assert!(!legacy.exists(), "old legacy html should be removed");
+    }
+
+    #[test]
+    fn cleanup_uses_oldest_nested_file_mtime() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        let old_file = run_dir.join("chapters/old.html");
+        let new_file = run_dir.join("chapters/new.html");
+        write_file(&old_file, "old");
+        write_file(&new_file, "new");
+        backdate_path(&old_file, "200001010101");
+        backdate_path(&run_dir.join("chapters"), "200001010101");
+        backdate_path(&run_dir, "200001010101");
+
+        let deleted = cleanup_old_files(dir.path()).expect("cleanup");
+        assert_eq!(deleted, 1, "oldest nested file should drive deletion");
+        assert!(!run_dir.exists());
+    }
+
+    #[test]
+    fn oldest_mtime_in_tree_uses_nested_files() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        let nested = run_dir.join("chapters/api/endpoints.html");
+        write_file(&nested, "hello");
+        backdate_path(&nested, "200001010101");
+
+        let oldest = oldest_mtime_in_tree(&run_dir).expect("oldest");
+        let age = SystemTime::now()
+            .duration_since(oldest)
+            .expect("mtime should be in the past");
+        assert!(age > MAX_AGE, "nested file mtime should be considered");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn oldest_mtime_in_tree_skips_nested_symlink_dirs() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        let nested = run_dir.join("chapters/intro.html");
+        let outside = dir.path().join("outside");
+        write_file(&nested, "hello");
+        fs::create_dir_all(&outside).expect("mkdir outside");
+        symlink(&outside, run_dir.join("linked-outside")).expect("symlink");
+
+        let oldest = oldest_mtime_in_tree(&run_dir).expect("oldest");
+        let nested_mtime = std::fs::metadata(&nested)
+            .expect("metadata")
+            .modified()
+            .expect("mtime");
         assert!(
-            age >= MAX_AGE,
-            "with future_now, file should appear older than 30d: {age:?}"
+            oldest <= nested_mtime,
+            "nested symlink dir should not affect oldest-mtime traversal"
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cleanup_ignores_old_nested_symlink_mtime() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        let nested = run_dir.join("fresh.html");
+        let outside = dir.path().join("outside");
+        write_file(&nested, "hello");
+        fs::create_dir_all(&outside).expect("mkdir outside");
+        let link = run_dir.join("linked-outside");
+        symlink(&outside, &link).expect("symlink");
+
+        let status = Command::new("touch")
+            .arg("-h")
+            .arg("-t")
+            .arg("200001010101")
+            .arg(&link)
+            .status()
+            .expect("backdate symlink");
+        assert!(status.success(), "touch -h should succeed");
+
+        let deleted = cleanup_old_files(dir.path()).expect("cleanup");
+        assert_eq!(
+            deleted, 0,
+            "nested symlink should not age out a fresh run dir"
+        );
+        assert!(run_dir.exists(), "fresh run dir must survive");
     }
 
     #[test]

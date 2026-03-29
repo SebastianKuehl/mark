@@ -6,6 +6,14 @@ use pulldown_cmark::{html, Event, Options, Parser, Tag};
 use crate::config::Theme;
 use crate::copy_clean::{is_supported_language, strip_full_line_comments};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SidebarNode {
+    pub name: String,
+    pub path: Option<PathBuf>,
+    pub is_current: bool,
+    pub children: Vec<SidebarNode>,
+}
+
 /// Render Markdown source to a complete standalone HTML5 document.
 ///
 /// The output is self-contained: no external stylesheets or scripts are
@@ -31,7 +39,7 @@ pub fn render_markdown(markdown: &str, title: &str, theme: Theme) -> String {
     html::push_html(&mut body, parser);
     let body = post_process_code_blocks(&body);
 
-    build_html_document(title, &body, theme, &[], &[])
+    build_html_document(title, &body, theme, &[], &[], Path::new(""))
 }
 
 /// Wrap a rendered HTML body in a complete HTML5 document with embedded CSS and JS.
@@ -48,6 +56,7 @@ fn build_html_document(
     theme: Theme,
     breadcrumb: &[(String, PathBuf)],
     all_files: &[(String, PathBuf, bool)],
+    run_dir: &Path,
 ) -> String {
     let css = include_str!("style.css");
 
@@ -227,6 +236,11 @@ hr { border-top-color: #444; }
 .mark-sidebar li a { color: #7ab4f5; }
 .mark-sidebar li a:hover { background: #333; }
 .mark-sidebar-current span { color: #e0e0e0; }
+.mark-sidebar-tree ul { border-left-color: #444; }
+.mark-sidebar-file::before { border-top-color: #444; }
+.mark-sidebar-dir > label { color: #ddd; }
+.mark-sidebar-dir > label:hover { background: #333; }
+.mark-sidebar-dir > label::before { color: #999; }
 .mark-breadcrumb { background: #222; border-color: #444; }
 .mark-breadcrumb a { color: #7ab4f5; }
 .mark-breadcrumb-sep { color: #666; }
@@ -259,23 +273,15 @@ hr { border-top-color: #444; }
     let sidebar_html = if all_files.is_empty() {
         String::new()
     } else {
+        let tree = build_sidebar_tree(all_files, run_dir);
         let mut sb = String::new();
         sb.push_str("<input type=\"checkbox\" id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\" checked>\n");
         sb.push_str(
             "<label for=\"mark-sidebar-toggle\" class=\"mark-sidebar-label\">&#9776;</label>\n",
         );
-        sb.push_str("<nav class=\"mark-sidebar\">\n<ul>\n");
-        for (name, path, is_current) in all_files {
-            let display = escape_html(name);
-            if *is_current {
-                sb.push_str(&format!(
-                    "  <li class=\"mark-sidebar-current\"><span>{display}</span></li>\n"
-                ));
-            } else {
-                let href = escape_html(&path.to_string_lossy());
-                sb.push_str(&format!("  <li><a href=\"{href}\">{display}</a></li>\n"));
-            }
-        }
+        sb.push_str("<nav class=\"mark-sidebar\">\n<ul class=\"mark-sidebar-tree\">\n");
+        let mut id_counter = 0usize;
+        render_sidebar_nodes(&tree, &mut sb, &mut id_counter, 1);
         sb.push_str("</ul>\n</nav>\n");
         sb
     };
@@ -318,6 +324,126 @@ hr { border-top-color: #444; }
         body = body,
         copy_js = copy_js,
     )
+}
+
+fn render_sidebar_nodes(
+    nodes: &[SidebarNode],
+    out: &mut String,
+    id_counter: &mut usize,
+    depth: usize,
+) {
+    let indent = "  ".repeat(depth);
+    for node in nodes {
+        if node.children.is_empty() {
+            let display = escape_html(&node.name);
+            if node.is_current {
+                out.push_str(&format!(
+                    "{indent}<li class=\"mark-sidebar-file mark-sidebar-current\"><span>{display}</span></li>\n"
+                ));
+            } else if let Some(path) = &node.path {
+                let href = escape_html(&path.to_string_lossy());
+                out.push_str(&format!(
+                    "{indent}<li class=\"mark-sidebar-file\"><a href=\"{href}\">{display}</a></li>\n"
+                ));
+            }
+            continue;
+        }
+
+        *id_counter += 1;
+        let toggle_id = format!("sd-{}", id_counter);
+        let display = escape_html(&format!("{}/", node.name));
+        out.push_str(&format!("{indent}<li class=\"mark-sidebar-dir\">\n"));
+        out.push_str(&format!(
+            "{indent}  <input type=\"checkbox\" id=\"{toggle_id}\" checked>\n"
+        ));
+        out.push_str(&format!(
+            "{indent}  <label for=\"{toggle_id}\">{display}</label>\n"
+        ));
+        out.push_str(&format!("{indent}  <ul>\n"));
+        render_sidebar_nodes(&node.children, out, id_counter, depth + 2);
+        out.push_str(&format!("{indent}  </ul>\n"));
+        out.push_str(&format!("{indent}</li>\n"));
+    }
+}
+
+fn insert_sidebar_entry(
+    nodes: &mut Vec<SidebarNode>,
+    directories: &[String],
+    display_name: &str,
+    html_path: &Path,
+    is_current: bool,
+) {
+    if let Some((head, tail)) = directories.split_first() {
+        let index = if let Some(idx) = nodes
+            .iter()
+            .position(|node| node.path.is_none() && node.name == *head)
+        {
+            idx
+        } else {
+            nodes.push(SidebarNode {
+                name: head.clone(),
+                path: None,
+                is_current: false,
+                children: Vec::new(),
+            });
+            nodes.len() - 1
+        };
+        insert_sidebar_entry(
+            &mut nodes[index].children,
+            tail,
+            display_name,
+            html_path,
+            is_current,
+        );
+    } else {
+        nodes.push(SidebarNode {
+            name: display_name.to_string(),
+            path: Some(html_path.to_path_buf()),
+            is_current,
+            children: Vec::new(),
+        });
+    }
+}
+
+/// Build a SidebarNode tree from the flat all_files list.
+///
+/// Each entry's relative position in the tree is derived from its relative path
+/// under the run_dir (strip run_dir prefix → relative path → tree position).
+pub fn build_sidebar_tree(
+    all_files: &[(String, PathBuf, bool)],
+    run_dir: &Path,
+) -> Vec<SidebarNode> {
+    let mut tree = Vec::new();
+
+    for (display_name, html_abs_path, is_current) in all_files {
+        let relative = html_abs_path
+            .strip_prefix(run_dir)
+            .unwrap_or(html_abs_path.as_path());
+        let directories: Vec<String> = relative
+            .parent()
+            .map(|parent| {
+                parent
+                    .components()
+                    .filter_map(|component| match component {
+                        std::path::Component::Normal(part) => {
+                            Some(part.to_string_lossy().into_owned())
+                        }
+                        _ => None,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        insert_sidebar_entry(
+            &mut tree,
+            &directories,
+            display_name,
+            html_abs_path,
+            *is_current,
+        );
+    }
+
+    tree
 }
 
 /// Escape special HTML characters in a plain-text value.
@@ -647,6 +773,7 @@ pub fn render_markdown_rewriting_links(
     link_map: &HashMap<String, PathBuf>,
     breadcrumb: &[(String, PathBuf)],
     all_files: &[(String, PathBuf, bool)],
+    run_dir: &Path,
 ) -> String {
     if link_map.is_empty() && breadcrumb.is_empty() && all_files.is_empty() {
         return render_markdown(markdown, title, theme);
@@ -705,7 +832,7 @@ pub fn render_markdown_rewriting_links(
     let mut body = String::new();
     html::push_html(&mut body, events.into_iter());
     let body = post_process_code_blocks(&body);
-    build_html_document(title, &body, theme, breadcrumb, all_files)
+    build_html_document(title, &body, theme, breadcrumb, all_files, run_dir)
 }
 
 #[cfg(test)]
@@ -907,7 +1034,8 @@ mod tests {
         link_map.insert("api.md".to_string(), html_path.clone());
 
         let md = "[API](api.md)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
+        let html =
+            render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[], dir.path());
         let expected = format!("href=\"{}\"", html_path.display());
         assert!(
             html.contains(&expected),
@@ -927,7 +1055,8 @@ mod tests {
         link_map.insert("api.md".to_string(), html_path.clone());
 
         let md = "[Section](api.md#endpoints)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
+        let html =
+            render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[], dir.path());
         let expected = format!("href=\"{}#endpoints\"", html_path.display());
         assert!(
             html.contains(&expected),
@@ -939,7 +1068,15 @@ mod tests {
     fn rewrite_links_leaves_external_urls_unchanged() {
         let link_map: HashMap<String, PathBuf> = HashMap::new();
         let md = "[Google](https://google.com)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
+        let html = render_markdown_rewriting_links(
+            md,
+            "t",
+            Theme::Light,
+            &link_map,
+            &[],
+            &[],
+            Path::new(""),
+        );
         assert!(
             html.contains("href=\"https://google.com\""),
             "external URL must not be modified:\n{html}"
@@ -950,7 +1087,15 @@ mod tests {
     fn rewrite_links_leaves_non_md_local_links_unchanged() {
         let link_map: HashMap<String, PathBuf> = HashMap::new();
         let md = "[Image](photo.png)\n";
-        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
+        let html = render_markdown_rewriting_links(
+            md,
+            "t",
+            Theme::Light,
+            &link_map,
+            &[],
+            &[],
+            Path::new(""),
+        );
         assert!(
             html.contains("href=\"photo.png\""),
             "non-md link must not be modified:\n{html}"
@@ -961,8 +1106,15 @@ mod tests {
     fn rewrite_links_empty_map_is_identity() {
         let link_map: HashMap<String, PathBuf> = HashMap::new();
         let md = "[Chapter](chapter.md)\n";
-        let html_rewrite =
-            render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[]);
+        let html_rewrite = render_markdown_rewriting_links(
+            md,
+            "t",
+            Theme::Light,
+            &link_map,
+            &[],
+            &[],
+            Path::new(""),
+        );
         let html_plain = render_markdown(md, "t", Theme::Light);
         assert_eq!(
             html_rewrite, html_plain,
@@ -1084,6 +1236,7 @@ mod tests {
             &link_map,
             &[], // no breadcrumb
             &[],
+            Path::new(""),
         );
         assert!(
             !html.contains("<nav class=\"mark-breadcrumb\">"),
@@ -1104,6 +1257,7 @@ mod tests {
             &link_map,
             &breadcrumb,
             &[],
+            Path::new(""),
         );
         assert!(
             html.contains("<nav class=\"mark-breadcrumb\">"),
@@ -1137,6 +1291,7 @@ mod tests {
             &link_map,
             &[],
             &all_files,
+            dir.path(),
         );
         assert!(
             html.contains("<nav class=\"mark-sidebar\">"),
@@ -1147,8 +1302,12 @@ mod tests {
             "sidebar toggle must be present:\n{html}"
         );
         assert!(
-            html.contains("mark-sidebar-current"),
+            html.contains("mark-sidebar-file mark-sidebar-current"),
             "current page must be highlighted in sidebar:\n{html}"
+        );
+        assert!(
+            html.contains("mark-sidebar-tree"),
+            "sidebar tree list must be present:\n{html}"
         );
         // Non-current pages must be links.
         let entry_href = format!("href=\"{}\"", entry_html.display());
@@ -1161,8 +1320,15 @@ mod tests {
     #[test]
     fn sidebar_absent_when_all_files_empty() {
         let link_map: HashMap<String, PathBuf> = HashMap::new();
-        let html =
-            render_markdown_rewriting_links("# Solo", "solo", Theme::Light, &link_map, &[], &[]);
+        let html = render_markdown_rewriting_links(
+            "# Solo",
+            "solo",
+            Theme::Light,
+            &link_map,
+            &[],
+            &[],
+            Path::new(""),
+        );
         assert!(
             !html.contains("<nav class=\"mark-sidebar\">"),
             "no sidebar nav element when all_files is empty:\n{html}"
@@ -1182,6 +1348,7 @@ mod tests {
             &link_map,
             &[],
             &all_files,
+            dir.path(),
         );
         assert!(
             html.contains("<nav class=\"mark-sidebar\">"),
@@ -1192,5 +1359,63 @@ mod tests {
             html.contains("mark-sidebar-label"),
             "dark theme sidebar label CSS must be present:\n{html}"
         );
+    }
+
+    #[test]
+    fn build_sidebar_tree_groups_nested_directories() {
+        let run_dir = PathBuf::from("/rendered/overview-123-abcdef12");
+        let all_files = vec![
+            ("overview".to_string(), run_dir.join("overview.html"), false),
+            (
+                "intro".to_string(),
+                run_dir.join("chapters/intro.html"),
+                false,
+            ),
+            (
+                "endpoints".to_string(),
+                run_dir.join("chapters/api/endpoints.html"),
+                true,
+            ),
+        ];
+
+        let tree = build_sidebar_tree(&all_files, &run_dir);
+        assert_eq!(tree.len(), 2, "root should contain file + top-level dir");
+        assert_eq!(tree[0].name, "overview");
+        assert_eq!(tree[0].path, Some(run_dir.join("overview.html")));
+        assert_eq!(tree[1].name, "chapters");
+        assert!(tree[1].path.is_none());
+        assert_eq!(tree[1].children[0].name, "intro");
+        assert_eq!(tree[1].children[1].name, "api");
+        assert_eq!(tree[1].children[1].children[0].name, "endpoints");
+        assert!(tree[1].children[1].children[0].is_current);
+    }
+
+    #[test]
+    fn sidebar_renders_collapsible_directories() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        let all_files = vec![
+            ("overview".to_string(), run_dir.join("overview.html"), false),
+            (
+                "intro".to_string(),
+                run_dir.join("chapters/intro.html"),
+                true,
+            ),
+        ];
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+
+        let html = render_markdown_rewriting_links(
+            "# Intro",
+            "intro",
+            Theme::Light,
+            &link_map,
+            &[],
+            &all_files,
+            &run_dir,
+        );
+
+        assert!(html.contains("class=\"mark-sidebar-dir\""), "got: {html}");
+        assert!(html.contains("type=\"checkbox\""), "got: {html}");
+        assert!(html.contains(">chapters/</label>"), "got: {html}");
     }
 }

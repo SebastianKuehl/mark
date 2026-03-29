@@ -22,9 +22,10 @@ mod render_flow {
 
         // Write it.
         let rendered_dir = dir.path().join("rendered");
-        let filename = mark::storage::output_filename(&md_path);
-        let out_path =
-            mark::storage::write_rendered(&rendered_dir, &filename, &html).expect("write html");
+        let run_dir = mark::storage::make_run_dir(&rendered_dir, &md_path).expect("run dir");
+        let out_path = run_dir.join("sample.html");
+        fs::create_dir_all(out_path.parent().expect("parent")).expect("mkdirs");
+        fs::write(&out_path, &html).expect("write html");
 
         // Verify.
         assert!(out_path.exists(), "output file should exist");
@@ -39,6 +40,7 @@ mod render_flow {
             "should contain bold"
         );
         assert!(out_path.extension().map(|e| e == "html").unwrap_or(false));
+        assert!(out_path.starts_with(&run_dir));
     }
 }
 
@@ -47,7 +49,7 @@ mod render_flow {
 mod link_extraction_integration {
     use std::collections::{HashMap, HashSet, VecDeque};
     use std::fs;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     /// Simulate the BFS loop from main.rs to verify circular links terminate
     /// without duplicate renders and without a stack overflow.
@@ -148,5 +150,59 @@ mod link_extraction_integration {
             count, 1,
             "shared.md must appear exactly once in ordered list"
         );
+    }
+
+    fn output_path_for_run(run_dir: &Path, entry_dir: &Path, file_canonical: &Path) -> PathBuf {
+        let relative = file_canonical
+            .strip_prefix(entry_dir)
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|_| {
+                file_canonical
+                    .file_name()
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| PathBuf::from("output"))
+            });
+        run_dir.join(relative.with_extension("html"))
+    }
+
+    #[test]
+    fn rendered_output_and_assets_preserve_folder_hierarchy() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let docs = dir.path().join("docs");
+        fs::create_dir_all(docs.join("chapters/api")).expect("mkdirs");
+        fs::create_dir_all(docs.join("assets/images")).expect("mkdirs");
+
+        let overview = docs.join("overview.md");
+        let intro = docs.join("chapters/intro.md");
+        let endpoints = docs.join("chapters/api/endpoints.md");
+        let logo = docs.join("assets/images/logo.png");
+
+        fs::write(
+            &overview,
+            "[Intro](chapters/intro.md)\n![Logo](assets/images/logo.png)\n",
+        )
+        .expect("write overview");
+        fs::write(&intro, "[Endpoints](api/endpoints.md)\n").expect("write intro");
+        fs::write(&endpoints, "# Endpoints\n").expect("write endpoints");
+        fs::write(&logo, b"\x89PNG").expect("write logo");
+
+        let entry_dir = overview
+            .parent()
+            .expect("entry dir")
+            .canonicalize()
+            .unwrap();
+        let run_dir = dir.path().join("rendered/overview-123-abcdef12");
+
+        let overview_out =
+            output_path_for_run(&run_dir, &entry_dir, &overview.canonicalize().unwrap());
+        let intro_out = output_path_for_run(&run_dir, &entry_dir, &intro.canonicalize().unwrap());
+        let endpoints_out =
+            output_path_for_run(&run_dir, &entry_dir, &endpoints.canonicalize().unwrap());
+        let asset_dest = run_dir.join("assets/images/logo.png");
+
+        assert_eq!(overview_out, run_dir.join("overview.html"));
+        assert_eq!(intro_out, run_dir.join("chapters/intro.html"));
+        assert_eq!(endpoints_out, run_dir.join("chapters/api/endpoints.html"));
+        assert_eq!(asset_dest, run_dir.join("assets/images/logo.png"));
     }
 }
