@@ -4,11 +4,14 @@ A cross-platform CLI that renders Markdown files to HTML and opens them in your 
 
 `mark` saves rendered HTML to `~/.mark/rendered/`, opens it immediately, and automatically cleans up files older than 30 days — no configuration needed.
 
+When the Markdown file contains links to other local `.md` files, `mark` renders those files too — recursively — and rewrites every inter-document link so you can navigate the whole documentation set directly in the browser.
+
 ---
 
 ## Features
 
 - Renders Markdown to a complete, self-contained HTML5 document with embedded CSS
+- **Recursively renders linked local Markdown files** — run `mark overview.md` and every linked `.md` is rendered and navigable in the browser
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` — never in your project directory
 - Auto-cleans rendered files older than 30 days on every run
@@ -321,6 +324,30 @@ Every fenced code block in the rendered HTML includes action buttons in a toolba
 - Inline comments (code followed by a comment on the same line) are **not** removed
 - Block comments (`/* ... */`) are **not** removed
 - Languages not in the supported list show only the `Copy` button
+
+---
+
+## Linked Markdown navigation
+
+When a Markdown file contains links to other local `.md` files, `mark` automatically renders all of them and rewrites every inter-document link to point to the corresponding rendered HTML file.
+
+```sh
+mark docs/overview.md
+```
+
+If `overview.md` links to `chapter1.md`, `chapter2.md`, and `chapter1.md` links to `appendix.md`, all four files are rendered in one invocation. Each rendered HTML file's links point to the other rendered files, so you can navigate the entire documentation set in the browser without any extra commands.
+
+- **Recursive** — follows links transitively to any depth
+- **Circular-safe** — already-visited files are never rendered twice
+- **Non-intrusive** — external URLs, image links, and non-Markdown file links are left unchanged
+- **Fragment-aware** — `./api.md#section` rewrites to the rendered HTML path with `#section` intact
+- **No new flags** — works automatically whenever local `.md` links are present
+
+For each linked file rendered beyond the entry point, `mark` prints:
+
+```
+  → rendered: chapter1.md → ~/.mark/rendered/chapter1-<ts>-<hash>.html
+```
 
 ---
 
