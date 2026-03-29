@@ -134,9 +134,34 @@ fn render_sidebar_controls(sidebar_visible: bool) -> String {
     )
 }
 
-fn render_theme_controls(theme_attr: &str) -> String {
+fn render_theme_option(theme: &str, label: &str, icon: &str) -> String {
     format!(
-        r#"<div class="fixed right-4 top-4 z-40 md:right-6 md:top-6"><div class="mark-theme-control relative rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-theme-toggle" aria-label="Theme: {theme_attr}. Change theme" title="Theme: {theme_attr}" aria-haspopup="menu" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon h-3.5 w-3.5" aria-hidden="true"><path d="M12 2v2"></path><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"></path><path d="M16 12a4 4 0 0 0-4-4"></path><path d="m19 5-1.256 1.256"></path><path d="M20 12h2"></path></svg></button><div id="mark-theme-menu" class="mark-theme-menu" role="menu" aria-label="Theme switcher" hidden><button type="button" class="mark-theme-option" data-theme-option="system" role="menuitemradio"><span class="mark-theme-option-label">System</span></button><button type="button" class="mark-theme-option" data-theme-option="light" role="menuitemradio"><span class="mark-theme-option-label">Light</span></button><button type="button" class="mark-theme-option" data-theme-option="dark" role="menuitemradio"><span class="mark-theme-option-label">Dark</span></button></div></div></div>"#,
+        r#"<button type="button" class="mark-theme-option" data-theme-option="{theme}" role="menuitemradio"><span class="mark-theme-option-icon" aria-hidden="true">{icon}</span><span class="mark-theme-option-label">{label}</span></button>"#
+    )
+}
+
+fn render_theme_controls(theme_attr: &str) -> String {
+    let theme_menu = [
+        render_theme_option(
+            "system",
+            "System",
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor h-3.5 w-3.5"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg>"#,
+        ),
+        render_theme_option(
+            "light",
+            "Light",
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun h-3.5 w-3.5"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>"#,
+        ),
+        render_theme_option(
+            "dark",
+            "Dark",
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-moon h-3.5 w-3.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"></path></svg>"#,
+        ),
+    ]
+    .join("");
+
+    format!(
+        r#"<div class="fixed right-4 top-4 z-40 md:right-6 md:top-6"><div class="mark-theme-control relative rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-theme-toggle" aria-label="Theme: {theme_attr}. Change theme" title="Theme: {theme_attr}" aria-haspopup="menu" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon h-3.5 w-3.5" aria-hidden="true"><path d="M12 2v2"></path><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"></path><path d="M16 12a4 4 0 0 0-4-4"></path><path d="m19 5-1.256 1.256"></path><path d="M20 12h2"></path></svg></button><div id="mark-theme-menu" class="mark-theme-menu" role="menu" aria-label="Theme switcher" hidden>{theme_menu}</div></div></div>"#,
     )
 }
 
@@ -185,9 +210,10 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-breadcrumb a{text-decoration:none}
 .mark-theme-menu{position:absolute;right:0;top:calc(100% + .75rem);display:grid;gap:.25rem;min-width:10rem;padding:.4rem;border:1px solid var(--border);border-radius:.75rem;background:var(--card);box-shadow:0 12px 30px #0000001a}
 .mark-theme-menu[hidden]{display:none}
-.mark-theme-option{display:flex;align-items:center;justify-content:space-between;width:100%;padding:.55rem .7rem;border-radius:.5rem;background:transparent;color:var(--foreground);cursor:pointer;text-align:left}
+.mark-theme-option{display:flex;align-items:center;gap:.65rem;width:100%;padding:.55rem .7rem;border-radius:.5rem;background:transparent;color:var(--foreground);cursor:pointer;text-align:left}
 .mark-theme-option:hover,.mark-theme-option[aria-pressed="true"]{background:var(--muted)}
-.mark-theme-option-label{pointer-events:none}
+.mark-theme-option-icon,.mark-theme-option-label{pointer-events:none}
+.mark-theme-option-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--muted-foreground)}
 .mark-sidebar-link,.mark-sidebar-current,.mark-sidebar-summary{display:flex;min-height:2.5rem;align-items:center}
 .mark-sidebar-group>summary::-webkit-details-marker{display:none}
 .mark-sidebar-group>summary::before{content:"▾";display:inline-block;margin-right:.5rem;color:var(--muted-foreground);transition:transform .15s ease}
@@ -1113,6 +1139,10 @@ mod tests {
         assert!(html.contains("data-theme-option=\"system\""));
         assert!(html.contains("data-theme-option=\"light\""));
         assert!(html.contains("data-theme-option=\"dark\""));
+        assert!(html.contains("mark-theme-option-icon"));
+        assert!(html.contains("lucide lucide-monitor h-3.5 w-3.5"));
+        assert!(html.contains("lucide lucide-sun h-3.5 w-3.5"));
+        assert!(html.contains("lucide lucide-moon h-3.5 w-3.5"));
         assert!(html.contains(">System</span>"));
         assert!(html.contains(">Light</span>"));
         assert!(html.contains(">Dark</span>"));

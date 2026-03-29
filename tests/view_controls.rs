@@ -121,6 +121,10 @@ mod view_controls {
         let html = fs::read_to_string(&rendered).expect("rendered html");
         assert!(html.contains("id=\"mark-sidebar\""), "{html}");
         assert!(html.contains("aria-label=\"Rendered file tree\""), "{html}");
+        assert!(html.contains("data-theme-option=\"system\""), "{html}");
+        assert!(html.contains("mark-theme-option-icon"), "{html}");
+        assert!(html.contains("lucide lucide-monitor h-3.5 w-3.5"), "{html}");
+        assert!(html.contains(">System</span>"), "{html}");
         assert!(!html.contains("#/overview.html"), "{html}");
         assert!(!html.contains("&lt;put rendered html here&gt;"), "{html}");
         assert!(!html.contains("href=\"chapters/intro.md\""), "{html}");
