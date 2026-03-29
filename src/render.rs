@@ -466,6 +466,82 @@ pub fn extract_local_md_links(markdown: &str, source_dir: &Path) -> Vec<(String,
     links
 }
 
+/// Extract all local **non-Markdown** asset links from `markdown` that resolve
+/// to existing files relative to `source_dir`.
+///
+/// A link or image target is included when:
+/// - it is not an external URL (`http://`, `https://`, `mailto:`, `//`, `#`),
+/// - its base path (without any `#fragment`) does **not** end with `.md` or
+///   `.markdown` (case-insensitive),
+/// - the resolved path exists on disk (confirmed via
+///   [`std::fs::canonicalize`]), **and**
+/// - the resolved path is contained within `source_dir` (path-traversal guard).
+///
+/// Both `[text](target)` links **and** `![alt](target)` images are collected.
+///
+/// # Returns
+/// A `Vec` of `(base_url, canonical_path)` tuples in document order,
+/// deduplicated by `base_url`.  `base_url` is the link destination with the
+/// `#fragment` stripped; it is used directly as the key in the rewrite map so
+/// that [`render_markdown_rewriting_links`] can find it (that function also
+/// strips the fragment before doing a map lookup).
+///
+/// Multiple distinct `base_url`s that resolve to the same canonical file are
+/// each returned so that all spelling variants of the same link are rewritten.
+/// Callers are responsible for idempotent copying (e.g. skip copy if
+/// destination already exists).
+pub fn extract_local_asset_links(markdown: &str, source_dir: &Path) -> Vec<(String, PathBuf)> {
+    let mut opts = Options::empty();
+    opts.insert(Options::ENABLE_TABLES);
+    opts.insert(Options::ENABLE_FOOTNOTES);
+    opts.insert(Options::ENABLE_STRIKETHROUGH);
+    opts.insert(Options::ENABLE_TASKLISTS);
+
+    // Canonicalize source_dir once for the containment check.  If it fails
+    // (e.g. the directory no longer exists) we fall back to the raw path;
+    // canonicalize per-link will still catch most traversal attempts because
+    // it resolves `..` components.
+    let source_dir_canonical =
+        std::fs::canonicalize(source_dir).unwrap_or_else(|_| source_dir.to_path_buf());
+
+    let parser = Parser::new_ext(markdown, opts);
+    let mut links: Vec<(String, PathBuf)> = Vec::new();
+    let mut seen_base: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    for event in parser {
+        let url_str: String = match event {
+            Event::Start(Tag::Link { ref dest_url, .. }) => dest_url.as_ref().to_owned(),
+            Event::Start(Tag::Image { ref dest_url, .. }) => dest_url.as_ref().to_owned(),
+            _ => continue,
+        };
+
+        if is_external_url(&url_str) {
+            continue;
+        }
+        let (base, _fragment) = split_fragment(&url_str);
+        if is_md_extension(base) {
+            continue;
+        }
+        if seen_base.contains(base) {
+            continue;
+        }
+        // Resolve and canonicalize using base (fragment stripped).
+        let resolved = source_dir.join(base);
+        if let Ok(canonical) = std::fs::canonicalize(&resolved) {
+            // Guard against path traversal: the resolved file must reside
+            // inside source_dir.
+            if !canonical.starts_with(&source_dir_canonical) {
+                continue;
+            }
+            if canonical.is_file() {
+                seen_base.insert(base.to_string());
+                links.push((base.to_string(), canonical));
+            }
+        }
+    }
+    links
+}
+
 // ── Rendering with link rewriting ────────────────────────────────────────────
 
 /// Render `markdown` to a complete HTML5 document, rewriting every local
@@ -806,6 +882,107 @@ mod tests {
         assert_eq!(
             html_rewrite, html_plain,
             "empty link_map must produce identical output to render_markdown"
+        );
+    }
+
+    // ── extract_local_asset_links tests ──────────────────────────────────────
+
+    #[test]
+    fn asset_links_finds_local_non_md_link() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let asset = dir.path().join("data.csv");
+        std::fs::write(&asset, "a,b,c").expect("write");
+
+        let md = "[Data](data.csv)\n";
+        let links = extract_local_asset_links(md, dir.path());
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].0, "data.csv");
+        assert_eq!(links[0].1, std::fs::canonicalize(&asset).unwrap());
+    }
+
+    #[test]
+    fn asset_links_finds_image_target() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let img = dir.path().join("logo.png");
+        std::fs::write(&img, b"\x89PNG").expect("write");
+
+        let md = "![Logo](logo.png)\n";
+        let links = extract_local_asset_links(md, dir.path());
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].0, "logo.png");
+    }
+
+    #[test]
+    fn asset_links_excludes_external_urls() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let md = "[Google](https://google.com/file.pdf)\n";
+        let links = extract_local_asset_links(md, dir.path());
+        assert!(links.is_empty(), "external URLs must be excluded");
+    }
+
+    #[test]
+    fn asset_links_excludes_md_links() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let target = dir.path().join("readme.md");
+        std::fs::write(&target, "# Hi").expect("write");
+
+        let md = "[Readme](readme.md)\n";
+        let links = extract_local_asset_links(md, dir.path());
+        assert!(
+            links.is_empty(),
+            ".md links must be excluded from asset extractor"
+        );
+    }
+
+    #[test]
+    fn asset_links_skips_missing_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let md = "[Ghost](ghost.txt)\n";
+        let links = extract_local_asset_links(md, dir.path());
+        assert!(links.is_empty(), "nonexistent files must not be extracted");
+    }
+
+    #[test]
+    fn asset_links_deduplicates_by_base_url() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let asset = dir.path().join("spec.txt");
+        std::fs::write(&asset, "content").expect("write");
+
+        // Same base URL linked twice – should deduplicate.
+        let md = "[A](spec.txt)\n[B](spec.txt)\n";
+        let links = extract_local_asset_links(md, dir.path());
+        assert_eq!(links.len(), 1, "duplicate base URLs must be deduplicated");
+    }
+
+    #[test]
+    fn asset_links_preserves_fragment_in_key() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let asset = dir.path().join("notes.txt");
+        std::fs::write(&asset, "hello").expect("write");
+
+        let md = "[Notes](notes.txt#section1)\n";
+        let links = extract_local_asset_links(md, dir.path());
+        assert_eq!(links.len(), 1);
+        // The key must be the base URL (fragment stripped) so that
+        // render_markdown_rewriting_links can look it up.
+        assert_eq!(links[0].0, "notes.txt");
+    }
+
+    #[test]
+    fn asset_links_rejects_path_traversal() {
+        // File exists in parent dir but must not be collected.
+        let parent = tempfile::tempdir().expect("tempdir");
+        let secret = parent.path().join("secret.txt");
+        std::fs::write(&secret, "top secret").expect("write");
+
+        let child = parent.path().join("sub");
+        std::fs::create_dir(&child).expect("mkdir");
+
+        let md = "[Escape](../secret.txt)\n";
+        let links = extract_local_asset_links(md, &child);
+        assert!(
+            links.is_empty(),
+            "path traversal outside source_dir must be rejected"
         );
     }
 }

@@ -203,6 +203,26 @@ fn main() -> Result<()> {
             }
         }
 
+        // Copy non-Markdown asset files and add them to the rewrite map.
+        let asset_links = render::extract_local_asset_links(&content, source_dir);
+        for (original_url, asset_canonical) in asset_links {
+            let file_name = match asset_canonical.file_name() {
+                Some(n) => n.to_owned(),
+                None => continue,
+            };
+            let dest = paths.rendered.join(&file_name);
+            if !dest.exists() {
+                if let Err(e) = std::fs::copy(&asset_canonical, &dest) {
+                    eprintln!(
+                        "Warning: could not copy asset {}: {e}",
+                        asset_canonical.display()
+                    );
+                    continue;
+                }
+            }
+            link_map.insert(original_url, dest);
+        }
+
         let html = render::render_markdown_rewriting_links(&content, stem, theme, &link_map);
         let out_name = output_name_map.get(canonical).expect("name was assigned");
         let out_path = storage::write_rendered(&paths.rendered, out_name, &html)?;
