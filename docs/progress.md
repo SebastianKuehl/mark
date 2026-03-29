@@ -20,7 +20,8 @@
 |----|------|-------|--------|-------|----------|--------|----------|---------|
 | M-015 | milestone | Template-Driven Render Shell | `in_progress` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
 | F-017 | feature | Use `src/index.html` as the rendered page template | `in_progress` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
-| P-017 | task | Implement template-driven render shell from `src/index.html` | `in_progress` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
+| P-017 | task | Implement template-driven render shell from `src/index.html` | `blocked` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | review found theme-switcher icon regression | 2026-03-29 |
+| P-018 | task | Restore theme-switcher icon + label parity in F-017 worktree | `in_progress` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
 | B-004 | bug | Shell completion suggests subcommands after FILE argument | `released` | anvil | `.worktrees/B-004-completion-after-file` | `fix/B-004-completion-after-file` | — | 2026-03-29 |
 | P-016 | task | Fix completion suggestions after positional FILE | `released` | anvil | `.worktrees/B-004-completion-after-file` | `fix/B-004-completion-after-file` | — | 2026-03-29 |
 | M-014 | milestone | View Controls and Render Modes | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |

@@ -102,6 +102,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-015](prompts/P-015-M-014-view-controls-and-render-modes.md) | M-014 (F-015+F-016) | View controls and render modes |
 | [P-016](prompts/P-016-B-004-completion-after-file.md) | B-004 | Fix completion suggestions after positional FILE |
 | [P-017](prompts/P-017-F-017-template-shell.md) | F-017 | Implement template-driven render shell from `src/index.html` |
+| [P-018](prompts/P-018-F-017-theme-icon-followup.md) | F-017 | Restore theme-switcher icon + label parity in the F-017 worktree |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -110,7 +111,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | `anvil` assigned to `F-017` / `P-017` (background) |
+| Active agents | `anvil` rework assigned to `F-017` / `P-018` (background) |
 | Open worktrees | `.worktrees/F-017-template-shell` |
 | Latest tag | `v0.5.1` |
 | Next planned work | F-017 in progress · B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
