@@ -18,6 +18,10 @@
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
+| M-014 | milestone | View Controls and Render Modes | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |
+| F-015 | feature | Render mode flags and persistent defaults | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |
+| F-016 | feature | Sidebar and theme controls | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |
+| P-015 | task | Implement M-014 view controls and render modes | `released` | anvil | `.worktrees/M-014-view-controls` | `feat/M-014-view-controls` | — | 2026-03-29 |
 | M-013 | milestone | Folder Hierarchy Preservation | `released` | anvil | `.worktrees/F-014-folder-hierarchy` | `feat/F-014-folder-hierarchy` | — | 2026-03-29 |
 | F-014 | feature | Preserve folder hierarchy in rendered output and sidebar tree | `released` | anvil | `.worktrees/F-014-folder-hierarchy` | `feat/F-014-folder-hierarchy` | — | 2026-03-29 |
 | P-014 | task | Implement F-014 folder hierarchy preservation | `released` | anvil | `.worktrees/F-014-folder-hierarchy` | `feat/F-014-folder-hierarchy` | — | 2026-03-29 |

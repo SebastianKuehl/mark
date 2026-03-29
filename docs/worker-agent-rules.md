@@ -69,6 +69,30 @@ README update needed: <yes / no, and why>
 
 Do not summarise as "done" — provide the full handoff so the Product Owner Agent can review.
 
+## Rate-Limit Stop and Notify
+
+If an API rate limit, token cap, service throttling response, or similar usage limit prevents reliable continuation, an anvil agent must:
+
+1. Stop work immediately
+2. Avoid repeated retries that are likely to fail for the same reason
+3. Preserve the current state without pretending the task is complete
+4. Notify the Product Owner Agent / master via output text
+
+The notice must include:
+
+```
+Item ID:        <if known>
+Prompt ID:      <if known>
+Worktree path:  .worktrees/<path>
+Branch name:    <branch>
+Completed:      <what was finished before stopping>
+Blocked:        <what remains blocked>
+Rate limit:     <exact limitation, if known>
+Resume point:   <safe next step once limits clear>
+```
+
+Do not continue implementation through a blocking rate-limit condition.
+
 ## Background Execution
 
 Anvil agents are always launched as background tasks. The Product Owner Agent does not block waiting for completion. Agents notify the Product Owner Agent upon completion using the handoff format above.

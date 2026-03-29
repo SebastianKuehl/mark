@@ -1,5 +1,14 @@
 # Releases
 
+## v0.5.0 — minor
+
+- **Date:** 2026-03-29
+- **Type:** minor
+- **Merged items:** M-014 (F-015, F-016) — View controls and render modes
+- **Summary:** Added explicit `--single/-s` and `--recursive/-r` render modes, persistent defaults for render mode and sidebar visibility, hidden-by-default recursive sidebar with `e` hotkey support, files-first recursive sidebar ordering, and an in-page `system` / `light` / `dark` theme switcher with icon + label controls.
+
+---
+
 ## v0.4.0 — minor
 
 - **Date:** 2026-03-29

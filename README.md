@@ -4,24 +4,27 @@ A cross-platform CLI that renders Markdown files to HTML and opens them in your 
 
 `mark` saves each render invocation under `~/.mark/rendered/<entry>-<timestamp>-<hash>/`, opens the entry page immediately, and automatically cleans up old render runs after 30 days — no configuration needed.
 
-When the Markdown file contains links to other local `.md` files, `mark` renders those files too — recursively — and rewrites every inter-document link so you can navigate the whole documentation set directly in the browser.
+When the Markdown file contains links to other local `.md` files, `mark` can either render just the requested file or recursively materialize the whole linked documentation set, depending on the selected render mode.
 
 ---
 
 ## Features
 
 - Renders Markdown to a complete, self-contained HTML5 document with embedded CSS
-- **Recursively renders linked local Markdown files** — run `mark overview.md` and every linked `.md` is rendered and navigable in the browser
+- **Supports explicit render modes** — use `--single` to render only the requested file or `--recursive` to render linked local Markdown files too
 - **Linked non-Markdown files** (`.txt`, `.png`, `.pdf`, etc.) are copied into the same render run with their relative paths preserved and their links rewritten — everything opens correctly
 - **Breadcrumb navigation** on every page below the entry-point, showing the path from root to the current file
-- **Collapsible sidebar tree** on every page, mirroring the source folder hierarchy with the current page highlighted
+- **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
+- **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
+- **In-page theme switcher** — switch between `system`, `light`, and `dark` without re-rendering
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` in per-run directories — never in your project directory
 - Auto-cleans rendered run directories older than 30 days on every run
 - `--cleanup` mode for manual housekeeping
 - `--no-open` mode for CI or scripting
-- Persistent theme support (`light` / `dark`) via `mark config set-theme`
+- Persistent theme support (`system` / `light` / `dark`) via `mark config set-theme`
+- Persistent render-mode and sidebar defaults via `mark config`
 - Per-invocation theme override via `--theme`
 - Works on Linux, macOS, and Windows
 - No network dependencies — all styling is embedded
@@ -102,6 +105,22 @@ mark --no-open README.md
 
 Useful in CI, scripts, or headless environments.
 
+### Render a single file only
+
+```sh
+mark --single README.md
+```
+
+This renders only the requested file, leaves local Markdown links untouched, prints a note when linked Markdown files were skipped, and omits the sidebar.
+
+### Render recursively
+
+```sh
+mark --recursive docs/overview.md
+```
+
+This renders the entry file plus recursively linked local Markdown files into the same run directory.
+
 ### Run cleanup only
 
 ```sh
@@ -121,11 +140,12 @@ mark --version
 
 ## Theme
 
-`mark` supports **light** (default) and **dark** render themes.
+`mark` supports **system** (default), **light**, and **dark** render themes.
 
 ### Set the theme permanently
 
 ```sh
+mark config set-theme system
 mark config set-theme dark
 mark config set-theme light
 ```
@@ -135,6 +155,7 @@ This writes the chosen theme to `~/.mark/config.toml` and is used for all future
 ### Override the theme for a single run
 
 ```sh
+mark --theme system README.md
 mark --theme dark README.md
 mark --theme light README.md
 ```
@@ -145,7 +166,7 @@ The `--theme` flag overrides the persisted config for that invocation only.
 
 1. `--theme` CLI flag (highest priority)
 2. Persisted value in `~/.mark/config.toml`
-3. Default: `light`
+3. Default: `system`
 
 ### Config file location
 
@@ -154,7 +175,34 @@ The `--theme` flag overrides the persisted config for that invocation only.
 Example contents:
 
 ```toml
-theme = "dark"
+theme = "system"
+```
+
+Rendered pages also include an in-page theme switcher in the top-right corner so you can change the active theme ad hoc without re-running `mark`.
+
+## Render mode and sidebar defaults
+
+Persist default behavior in `~/.mark/config.toml`:
+
+```sh
+mark config set-render-mode recursive
+mark config set-render-mode single
+mark config set-sidebar hidden
+mark config set-sidebar visible
+```
+
+Precedence:
+
+1. explicit CLI flags such as `--single`, `--recursive`, or `--theme`
+2. persisted config values
+3. hardcoded defaults (`recursive`, sidebar `hidden`, theme `system`)
+
+Example config:
+
+```toml
+theme = "system"
+render_mode = "recursive"
+sidebar = "hidden"
 ```
 
 
@@ -342,7 +390,7 @@ Every fenced code block in the rendered HTML includes action buttons in a toolba
 
 ## Linked Markdown navigation
 
-When a Markdown file contains links to other local `.md` files, `mark` automatically renders all of them and rewrites every inter-document link to point to the corresponding rendered HTML file.
+When a Markdown file contains links to other local `.md` files, `mark` can either render only the requested file or recursively render all of them and rewrite every inter-document link to point to the corresponding rendered HTML file.
 
 ```sh
 mark docs/overview.md
@@ -354,7 +402,7 @@ If `overview.md` links to `chapter1.md`, `chapter2.md`, and `chapter1.md` links 
 - **Circular-safe** — already-visited files are never rendered twice
 - **Non-intrusive** — external URLs, image links, and non-Markdown file links are left unchanged
 - **Fragment-aware** — `./api.md#section` rewrites to the rendered HTML path with `#section` intact
-- **No new flags** — works automatically whenever local `.md` links are present
+- **Explicit control** — `--recursive` forces linked rendering; `--single` keeps local Markdown links unrendered and notes the skipped links
 
 For each linked file rendered beyond the entry point, `mark` prints:
 
@@ -380,13 +428,13 @@ Each ancestor is a clickable link. The current page appears as plain text. The e
 
 ### Sidebar
 
-Every page (including the entry-point) shows a collapsible sidebar tree listing all files rendered in the current invocation. Directories are expandable/collapsible with pure-CSS checkbox toggles, the tree mirrors the source folder structure, the current page is highlighted, and all other pages are links.
+Recursive renders show a collapsible sidebar tree listing all files rendered in the current invocation. The sidebar is hidden by default, can be toggled with the ☰ button or the `e` hotkey, orders files before folders at every level, mirrors the source folder structure, highlights the current page, and links to all other rendered pages.
 
 ---
 
 ## Render cache
 
-`mark` remembers the last render for each source file in `~/.mark/render-cache.toml`. If the file hasn't changed since the last render:
+`mark` remembers the last render for each source file in `~/.mark/render-cache.toml`. For single-file renders, if the file and selected render settings haven't changed since the last render:
 
 ```
 Already rendered: ~/.mark/rendered/overview-1711648523-a3f2b1/overview.html
