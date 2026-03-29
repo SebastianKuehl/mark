@@ -181,7 +181,39 @@ On every normal render run, `mark` automatically deletes HTML files in `~/.mark/
 
 ---
 
-## Shell Completions
+## Home folder cleanup (`cleanup-home`)
+
+`mark cleanup-home` removes the entire `~/.mark` directory (or `%USERPROFILE%\.mark` on Windows) from your home folder.  This is a **destructive, irreversible operation** that deletes:
+
+- All rendered HTML files
+- Your `config.toml` (theme preference)
+- The installed `mark` binary inside `.mark/bin`
+
+### How it differs from `--cleanup`
+
+| Command | What it removes |
+|---------|-----------------|
+| `mark --cleanup` | Rendered HTML files older than 30 days only |
+| `mark cleanup-home` | The entire `.mark` app directory |
+
+### Usage
+
+```sh
+# Interactive — prompts for confirmation
+mark cleanup-home
+
+# Non-interactive — skips the prompt (useful in scripts)
+mark cleanup-home --yes
+```
+
+By default you must type `yes` at the confirmation prompt.  If the directory does not exist, the command exits successfully with a no-op message.
+
+### Windows note
+
+On Windows the running `mark.exe` binary lives inside `.mark/bin/`.  Because Windows locks executables that are in use, the binary itself may not be removable while `mark` is running.  In that case `mark cleanup-home` performs a best-effort deletion, skips the locked file, prints a warning, and asks you to re-run after the process exits.
+
+---
+
 
 `mark` can generate completion scripts for bash, zsh, fish, and PowerShell.
 

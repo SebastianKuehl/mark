@@ -46,6 +46,18 @@ pub enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
+    /// Remove the entire ~/.mark app directory from the home folder.
+    ///
+    /// This is a destructive operation that deletes ALL mark data including
+    /// rendered files, configuration, and the installed binary.  It is
+    /// separate from `mark --cleanup`, which only removes old rendered files.
+    ///
+    /// A confirmation prompt is shown by default; pass --yes to skip it.
+    CleanupHome {
+        /// Skip the confirmation prompt (for non-interactive use).
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 /// Config sub-actions.

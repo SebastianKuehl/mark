@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
 use mark::{
-    browser, cleanup,
+    browser, cleanup, cleanup_home,
     cli::{Commands, ConfigAction},
     config::{AppConfig, Theme},
     render, storage,
@@ -34,6 +34,35 @@ fn main() -> Result<()> {
                 println!("Theme set to '{theme}'.");
             }
         }
+        return Ok(());
+    }
+
+    // Handle `cleanup-home` subcommand.
+    if let Some(Commands::CleanupHome { yes }) = args.command {
+        let target = cleanup_home::resolve_app_dir()?;
+        cleanup_home::validate_target(&target)?;
+
+        if !target.exists() {
+            println!("Nothing to do: '{}' does not exist.", target.display());
+            return Ok(());
+        }
+
+        if !yes {
+            eprint!(
+                "This will permanently delete '{}' and ALL its contents.\n\
+                 Type 'yes' to confirm: ",
+                target.display()
+            );
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input)?;
+            if input.trim() != "yes" {
+                println!("Aborted.");
+                return Ok(());
+            }
+        }
+
+        cleanup_home::delete_app_dir(&target)?;
+        println!("Deleted '{}'.", target.display());
         return Ok(());
     }
 

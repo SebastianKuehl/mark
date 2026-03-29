@@ -1,5 +1,6 @@
 pub mod browser;
 pub mod cleanup;
+pub mod cleanup_home;
 pub mod cli;
 pub mod config;
 pub mod copy_clean;
