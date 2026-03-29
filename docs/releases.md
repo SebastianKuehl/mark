@@ -1,5 +1,14 @@
 # Releases
 
+## v0.4.0 — minor
+
+- **Date:** 2026-03-29
+- **Type:** minor
+- **Merged items:** F-014, M-013 — Folder hierarchy preservation
+- **Summary:** Each render now writes into its own `~/.mark/rendered/<entry>-<ts>-<hash>/` run directory. Rendered Markdown and copied assets preserve their source-relative folder hierarchy, the sidebar renders a collapsible folder tree, cleanup removes old run directories, and the render cache tracks run directories instead of individual HTML files.
+
+---
+
 ## v0.3.0 — minor
 
 - **Date:** 2026-03-29

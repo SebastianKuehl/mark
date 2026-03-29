@@ -2,7 +2,7 @@
 
 A cross-platform CLI that renders Markdown files to HTML and opens them in your default browser.
 
-`mark` saves rendered HTML to `~/.mark/rendered/`, opens it immediately, and automatically cleans up files older than 30 days — no configuration needed.
+`mark` saves each render invocation under `~/.mark/rendered/<entry>-<timestamp>-<hash>/`, opens the entry page immediately, and automatically cleans up old render runs after 30 days — no configuration needed.
 
 When the Markdown file contains links to other local `.md` files, `mark` renders those files too — recursively — and rewrites every inter-document link so you can navigate the whole documentation set directly in the browser.
 
@@ -12,13 +12,13 @@ When the Markdown file contains links to other local `.md` files, `mark` renders
 
 - Renders Markdown to a complete, self-contained HTML5 document with embedded CSS
 - **Recursively renders linked local Markdown files** — run `mark overview.md` and every linked `.md` is rendered and navigable in the browser
-- **Linked non-Markdown files** (`.txt`, `.png`, `.pdf`, etc.) are copied to `~/.mark/rendered/` and their links are rewritten — everything opens correctly
+- **Linked non-Markdown files** (`.txt`, `.png`, `.pdf`, etc.) are copied into the same render run with their relative paths preserved and their links rewritten — everything opens correctly
 - **Breadcrumb navigation** on every page below the entry-point, showing the path from root to the current file
-- **Collapsible sidebar** on every page listing all rendered files with the current page highlighted
+- **Collapsible sidebar tree** on every page, mirroring the source folder hierarchy with the current page highlighted
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - Opens the result in the system default browser
-- Stores rendered files under `~/.mark/rendered/` — never in your project directory
-- Auto-cleans rendered files older than 30 days on every run
+- Stores rendered files under `~/.mark/rendered/` in per-run directories — never in your project directory
+- Auto-cleans rendered run directories older than 30 days on every run
 - `--cleanup` mode for manual housekeeping
 - `--no-open` mode for CI or scripting
 - Persistent theme support (`light` / `dark`) via `mark config set-theme`
@@ -108,7 +108,7 @@ Useful in CI, scripts, or headless environments.
 mark --cleanup
 ```
 
-Deletes rendered HTML files older than 30 days from `~/.mark/rendered/` and prints a summary.
+Deletes rendered run directories older than 30 days from `~/.mark/rendered/` and prints a summary.
 
 ### Help and version
 
@@ -165,24 +165,33 @@ theme = "dark"
 |------|---------|
 | `~/.mark/` | Root app directory |
 | `~/.mark/bin/` | Installed `mark` binary |
-| `~/.mark/rendered/` | Generated HTML files |
+| `~/.mark/rendered/` | Per-invocation render directories |
 | `~/.mark/config.toml` | Persistent configuration |
 
-Rendered filenames follow the pattern `<source-stem>-<timestamp>-<hash>.html`, e.g.:
+Each invocation gets a run directory named `<entry-stem>-<timestamp>-<hash>/`, for example:
 
 ```
-README-1711648523-a3f2b1.html
+README-1711648523-a3f2b1/
 ```
 
-This ensures no collisions even when rendering the same file multiple times.
+Within that run directory, rendered Markdown and copied assets preserve their source-relative paths. For example:
+
+```
+~/.mark/rendered/README-1711648523-a3f2b1/README.html
+~/.mark/rendered/README-1711648523-a3f2b1/chapters/intro.html
+~/.mark/rendered/README-1711648523-a3f2b1/assets/logo.png
+```
+
+This keeps each render isolated and avoids filename collisions across nested folders or repeated runs.
 
 ---
 
 ## Cleanup behaviour
 
-On every normal render run, `mark` automatically deletes HTML files in `~/.mark/rendered/` whose **modified time** is more than 30 days in the past.
+On every normal render run, `mark` automatically deletes per-invocation render directories in `~/.mark/rendered/` whose contents are more than 30 days old.
 
-- Only `.html` files inside `~/.mark/rendered/` are deleted — never anything else
+- Only direct children of `~/.mark/rendered/` that belong to old render runs are deleted
+- Legacy top-level `.html` files from older versions are also cleaned up when they age out
 - Cleanup is best-effort: if one file cannot be deleted, a warning is printed and the run continues
 - Run `mark --cleanup` explicitly for a cleanup-only run with a printed summary
 
@@ -200,7 +209,7 @@ On every normal render run, `mark` automatically deletes HTML files in `~/.mark/
 
 | Command | What it removes |
 |---------|-----------------|
-| `mark --cleanup` | Rendered HTML files older than 30 days only |
+| `mark --cleanup` | Rendered run directories older than 30 days only |
 | `mark cleanup-home` | The entire `.mark` app directory |
 
 ### Usage
@@ -350,7 +359,7 @@ If `overview.md` links to `chapter1.md`, `chapter2.md`, and `chapter1.md` links 
 For each linked file rendered beyond the entry point, `mark` prints:
 
 ```
-  → rendered: chapter1.md → ~/.mark/rendered/chapter1-<ts>-<hash>.html
+  → rendered: chapter1.md → ~/.mark/rendered/overview-<ts>-<hash>/chapter1.html
 ```
 
 ---
@@ -371,7 +380,7 @@ Each ancestor is a clickable link. The current page appears as plain text. The e
 
 ### Sidebar
 
-Every page (including the entry-point) shows a collapsible sidebar listing all files rendered in the current invocation. The current page is highlighted; all others are links. Toggle it with the ☰ button — uses a pure-CSS checkbox toggle, no JavaScript.
+Every page (including the entry-point) shows a collapsible sidebar tree listing all files rendered in the current invocation. Directories are expandable/collapsible with pure-CSS checkbox toggles, the tree mirrors the source folder structure, the current page is highlighted, and all other pages are links.
 
 ---
 
@@ -380,7 +389,7 @@ Every page (including the entry-point) shows a collapsible sidebar listing all f
 `mark` remembers the last render for each source file in `~/.mark/render-cache.toml`. If the file hasn't changed since the last render:
 
 ```
-Already rendered: ~/.mark/rendered/overview-1711648523-a3f2b1.html
+Already rendered: ~/.mark/rendered/overview-1711648523-a3f2b1/overview.html
 Re-render? [y/N]:
 ```
 
@@ -389,7 +398,7 @@ Re-render? [y/N]:
 
 If the source file has changed (different mtime), `mark` re-renders silently without prompting.
 
-`mark --cleanup` prunes cache entries whose rendered HTML no longer exists on disk.
+`mark --cleanup` prunes cache entries whose render run directory no longer exists on disk.
 `mark --no-open` always re-renders without prompting (non-interactive mode).
 
 ---

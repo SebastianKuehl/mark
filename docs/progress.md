@@ -18,6 +18,9 @@
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
+| M-013 | milestone | Folder Hierarchy Preservation | `released` | anvil | `.worktrees/F-014-folder-hierarchy` | `feat/F-014-folder-hierarchy` | — | 2026-03-29 |
+| F-014 | feature | Preserve folder hierarchy in rendered output and sidebar tree | `released` | anvil | `.worktrees/F-014-folder-hierarchy` | `feat/F-014-folder-hierarchy` | — | 2026-03-29 |
+| P-014 | task | Implement F-014 folder hierarchy preservation | `released` | anvil | `.worktrees/F-014-folder-hierarchy` | `feat/F-014-folder-hierarchy` | — | 2026-03-29 |
 | B-001 | bug | Non-md linked files not copied | `released` | anvil | `.worktrees/B-001-copy-assets` | `fix/B-001-copy-assets` | — | 2026-03-29 |
 | M-011 | milestone | Navigation Chrome (breadcrumbs + sidebar) | `released` | anvil | `.worktrees/M-011-nav-chrome` | `feat/M-011-nav-chrome` | — | 2026-03-29 |
 | F-011 | feature | Breadcrumb navigation | `released` | anvil | `.worktrees/M-011-nav-chrome` | `feat/M-011-nav-chrome` | — | 2026-03-29 |
