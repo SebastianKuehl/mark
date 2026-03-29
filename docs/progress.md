@@ -19,11 +19,11 @@
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
 | B-001 | bug | Non-md linked files not copied | `in_progress` | anvil | `.worktrees/B-001-copy-assets` | `fix/B-001-copy-assets` | — | 2026-03-29 |
-| M-011 | milestone | Navigation Chrome (breadcrumbs + sidebar) | `blocked` | — | — | `feat/M-011-nav-chrome` | B-001 | 2026-03-29 |
-| F-011 | feature | Breadcrumb navigation | `blocked` | — | — | — | B-001 | 2026-03-29 |
-| F-012 | feature | Sidebar hierarchy | `blocked` | — | — | — | B-001 | 2026-03-29 |
-| F-013 | feature | Render memory + re-render confirmation | `blocked` | — | — | `feat/F-013-render-memory` | M-011 | 2026-03-29 |
-| M-012 | milestone | Render Memory | `blocked` | — | — | — | M-011 | 2026-03-29 |
+| M-011 | milestone | Navigation Chrome (breadcrumbs + sidebar) | `in_progress` | anvil | `.worktrees/M-011-nav-chrome` | `feat/M-011-nav-chrome` | PO resolves merge conflict with B-001 at merge time | 2026-03-29 |
+| F-011 | feature | Breadcrumb navigation | `in_progress` | anvil | `.worktrees/M-011-nav-chrome` | `feat/M-011-nav-chrome` | — | 2026-03-29 |
+| F-012 | feature | Sidebar hierarchy | `in_progress` | anvil | `.worktrees/M-011-nav-chrome` | `feat/M-011-nav-chrome` | — | 2026-03-29 |
+| F-013 | feature | Render memory + re-render confirmation | `in_progress` | anvil | `.worktrees/F-013-render-memory` | `feat/F-013-render-memory` | PO resolves merge conflict with M-011 at merge time | 2026-03-29 |
+| M-012 | milestone | Render Memory | `in_progress` | anvil | `.worktrees/F-013-render-memory` | `feat/F-013-render-memory` | — | 2026-03-29 |
 
 ## Released Items
 
