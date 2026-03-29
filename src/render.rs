@@ -14,6 +14,13 @@ pub struct SidebarNode {
     pub children: Vec<SidebarNode>,
 }
 
+pub struct RenderChrome<'a> {
+    pub breadcrumb: &'a [(String, PathBuf)],
+    pub all_files: &'a [(String, PathBuf, bool)],
+    pub run_dir: &'a Path,
+    pub sidebar_visible: bool,
+}
+
 /// Render Markdown source to a complete standalone HTML5 document.
 ///
 /// The output is self-contained: no external stylesheets or scripts are
@@ -39,7 +46,17 @@ pub fn render_markdown(markdown: &str, title: &str, theme: Theme) -> String {
     html::push_html(&mut body, parser);
     let body = post_process_code_blocks(&body);
 
-    build_html_document(title, &body, theme, &[], &[], Path::new(""))
+    build_html_document(
+        title,
+        &body,
+        theme,
+        RenderChrome {
+            breadcrumb: &[],
+            all_files: &[],
+            run_dir: Path::new(""),
+            sidebar_visible: false,
+        },
+    )
 }
 
 /// Wrap a rendered HTML body in a complete HTML5 document with embedded CSS and JS.
@@ -50,58 +67,10 @@ pub fn render_markdown(markdown: &str, title: &str, theme: Theme) -> String {
 ///
 /// `all_files` is the full list of `(display_name, html_path, is_current)`
 /// entries for the sidebar, in BFS discovery order.
-fn build_html_document(
-    title: &str,
-    body: &str,
-    theme: Theme,
-    breadcrumb: &[(String, PathBuf)],
-    all_files: &[(String, PathBuf, bool)],
-    run_dir: &Path,
-) -> String {
+fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChrome<'_>) -> String {
     let css = include_str!("style.css");
 
-    let copy_css = if theme == Theme::Dark {
-        r#".mark-code-block {
-  position: relative;
-  margin: 1em 0;
-}
-.mark-code-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.4em;
-  padding: 0.25em 0.5em;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-bottom: none;
-  border-radius: 4px 4px 0 0;
-}
-.mark-code-block pre {
-  margin-top: 0;
-  border-radius: 0 0 4px 4px;
-}
-.mark-btn {
-  font-size: 0.78em;
-  padding: 0.2em 0.6em;
-  border: 1px solid #555;
-  border-radius: 3px;
-  background: #333;
-  color: #ccc;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.mark-btn:hover {
-  background: #444;
-}
-.mark-btn.mark-copied {
-  color: #6dbf6d;
-  border-color: #6dbf6d;
-}
-.mark-btn.mark-failed {
-  color: #f66;
-  border-color: #f66;
-}"#
-    } else {
-        r#".mark-code-block {
+    let copy_css = r#".mark-code-block {
   position: relative;
   margin: 1em 0;
 }
@@ -138,8 +107,7 @@ fn build_html_document(
 .mark-btn.mark-failed {
   color: #b00;
   border-color: #b00;
-}"#
-    };
+}"#;
 
     let copy_js = r#"(function() {
   function flash(btn, msg, cls) {
@@ -185,6 +153,35 @@ fn build_html_document(
     }
   }
 
+  function updateThemeButtons(theme) {
+    document.querySelectorAll('[data-theme-option]').forEach(function(button) {
+      button.setAttribute('aria-pressed', button.dataset.themeOption === theme ? 'true' : 'false');
+    });
+  }
+
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    updateThemeButtons(theme);
+  }
+
+  function isEditableTarget(target) {
+    if (!target) {
+      return false;
+    }
+    if (target.closest('textarea, select')) {
+      return true;
+    }
+    if (target.closest('[contenteditable]:not([contenteditable="false"])')) {
+      return true;
+    }
+    var input = target.closest('input');
+    if (!input) {
+      return false;
+    }
+    var type = (input.getAttribute('type') || 'text').toLowerCase();
+    return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file'].includes(type);
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.mark-code-block').forEach(function(block) {
       var pre = block.querySelector('pre');
@@ -207,54 +204,124 @@ fn build_html_document(
         }
       }
     });
+
+    var currentTheme = document.documentElement.getAttribute('data-theme') || 'system';
+    updateThemeButtons(currentTheme);
+    document.querySelectorAll('[data-theme-option]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        setTheme(button.dataset.themeOption);
+      });
+    });
+
+    document.addEventListener('keydown', function(event) {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+      if ((event.key || '').toLowerCase() !== 'e' || isEditableTarget(event.target)) {
+        return;
+      }
+      var sidebarToggle = document.getElementById('mark-sidebar-toggle');
+      if (!sidebarToggle) {
+        return;
+      }
+      sidebarToggle.checked = !sidebarToggle.checked;
+      event.preventDefault();
+    });
   });
 })();"#;
 
     let theme_attr = match theme {
+        Theme::System => "system",
         Theme::Dark => "dark",
         Theme::Light => "light",
     };
 
-    // Dark theme overrides for base styles.
-    let theme_css = if theme == Theme::Dark {
-        r#"
-/* dark theme */
-body { color: #e0e0e0; background: #1a1a1a; }
-h1, h2 { border-bottom-color: #444; }
-a { color: #7ab4f5; }
-code { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
-pre { background: #2a2a2a; border-color: #444; }
-blockquote { border-left-color: #555; color: #aaa; background: #222; }
-th { background: #2a2a2a; }
-tr:nth-child(even) { background: #222; }
-th, td { border-color: #444; }
-hr { border-top-color: #444; }
-/* dark nav */
-.mark-sidebar-label { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
-.mark-sidebar-label:hover { background: #333; }
-.mark-sidebar { background: #222; border-right-color: #444; }
-.mark-sidebar li a { color: #7ab4f5; }
-.mark-sidebar li a:hover { background: #333; }
-.mark-sidebar-current span { color: #e0e0e0; }
-.mark-sidebar-tree ul { border-left-color: #444; }
-.mark-sidebar-file::before { border-top-color: #444; }
-.mark-sidebar-dir > label { color: #ddd; }
-.mark-sidebar-dir > label:hover { background: #333; }
-.mark-sidebar-dir > label::before { color: #999; }
-.mark-breadcrumb { background: #222; border-color: #444; }
-.mark-breadcrumb a { color: #7ab4f5; }
-.mark-breadcrumb-sep { color: #666; }
-.mark-breadcrumb-current { color: #ccc; }"#
-    } else {
-        ""
-    };
+    let theme_css = r#"
+html[data-theme="dark"] { color-scheme: dark; }
+
+html[data-theme="dark"] body { color: #e0e0e0; background: #1a1a1a; }
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2 { border-bottom-color: #444; }
+html[data-theme="dark"] a { color: #7ab4f5; }
+html[data-theme="dark"] code { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+html[data-theme="dark"] pre { background: #2a2a2a; border-color: #444; }
+html[data-theme="dark"] blockquote { border-left-color: #555; color: #aaa; background: #222; }
+html[data-theme="dark"] th { background: #2a2a2a; }
+html[data-theme="dark"] tr:nth-child(even) { background: #222; }
+html[data-theme="dark"] th,
+html[data-theme="dark"] td { border-color: #444; }
+html[data-theme="dark"] hr { border-top-color: #444; }
+html[data-theme="dark"] .mark-sidebar-label { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+html[data-theme="dark"] .mark-sidebar-label:hover { background: #333; }
+html[data-theme="dark"] .mark-sidebar { background: #222; border-right-color: #444; }
+html[data-theme="dark"] .mark-sidebar li a { color: #7ab4f5; }
+html[data-theme="dark"] .mark-sidebar li a:hover { background: #333; }
+html[data-theme="dark"] .mark-sidebar-current span { color: #e0e0e0; }
+html[data-theme="dark"] .mark-sidebar-tree ul { border-left-color: #444; }
+html[data-theme="dark"] .mark-sidebar-file::before { border-top-color: #444; }
+html[data-theme="dark"] .mark-sidebar-dir > label { color: #ddd; }
+html[data-theme="dark"] .mark-sidebar-dir > label:hover { background: #333; }
+html[data-theme="dark"] .mark-sidebar-dir > label::before { color: #999; }
+html[data-theme="dark"] .mark-breadcrumb,
+html[data-theme="dark"] .mark-page-controls { background: #222; border-color: #444; }
+html[data-theme="dark"] .mark-breadcrumb a { color: #7ab4f5; }
+html[data-theme="dark"] .mark-breadcrumb-sep { color: #666; }
+html[data-theme="dark"] .mark-breadcrumb-current { color: #ccc; }
+html[data-theme="dark"] .mark-theme-button { background: #2a2a2a; border-color: #555; color: #e0e0e0; }
+html[data-theme="dark"] .mark-theme-button:hover { background: #333; }
+html[data-theme="dark"] .mark-theme-button[aria-pressed="true"] { background: #183247; border-color: #4b82b4; color: #d8ecff; }
+html[data-theme="dark"] .mark-code-toolbar { background: #2a2a2a; border-color: #444; }
+html[data-theme="dark"] .mark-btn { background: #333; border-color: #555; color: #ccc; }
+html[data-theme="dark"] .mark-btn:hover { background: #444; }
+html[data-theme="dark"] .mark-btn.mark-copied { color: #6dbf6d; border-color: #6dbf6d; }
+html[data-theme="dark"] .mark-btn.mark-failed { color: #f66; border-color: #f66; }
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="system"] { color-scheme: dark; }
+  html[data-theme="system"] body { color: #e0e0e0; background: #1a1a1a; }
+  html[data-theme="system"] h1,
+  html[data-theme="system"] h2 { border-bottom-color: #444; }
+  html[data-theme="system"] a { color: #7ab4f5; }
+  html[data-theme="system"] code { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+  html[data-theme="system"] pre { background: #2a2a2a; border-color: #444; }
+  html[data-theme="system"] blockquote { border-left-color: #555; color: #aaa; background: #222; }
+  html[data-theme="system"] th { background: #2a2a2a; }
+  html[data-theme="system"] tr:nth-child(even) { background: #222; }
+  html[data-theme="system"] th,
+  html[data-theme="system"] td { border-color: #444; }
+  html[data-theme="system"] hr { border-top-color: #444; }
+  html[data-theme="system"] .mark-sidebar-label { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+  html[data-theme="system"] .mark-sidebar-label:hover { background: #333; }
+  html[data-theme="system"] .mark-sidebar { background: #222; border-right-color: #444; }
+  html[data-theme="system"] .mark-sidebar li a { color: #7ab4f5; }
+  html[data-theme="system"] .mark-sidebar li a:hover { background: #333; }
+  html[data-theme="system"] .mark-sidebar-current span { color: #e0e0e0; }
+  html[data-theme="system"] .mark-sidebar-tree ul { border-left-color: #444; }
+  html[data-theme="system"] .mark-sidebar-file::before { border-top-color: #444; }
+  html[data-theme="system"] .mark-sidebar-dir > label { color: #ddd; }
+  html[data-theme="system"] .mark-sidebar-dir > label:hover { background: #333; }
+  html[data-theme="system"] .mark-sidebar-dir > label::before { color: #999; }
+  html[data-theme="system"] .mark-breadcrumb,
+  html[data-theme="system"] .mark-page-controls { background: #222; border-color: #444; }
+  html[data-theme="system"] .mark-breadcrumb a { color: #7ab4f5; }
+  html[data-theme="system"] .mark-breadcrumb-sep { color: #666; }
+  html[data-theme="system"] .mark-breadcrumb-current { color: #ccc; }
+  html[data-theme="system"] .mark-theme-button { background: #2a2a2a; border-color: #555; color: #e0e0e0; }
+  html[data-theme="system"] .mark-theme-button:hover { background: #333; }
+  html[data-theme="system"] .mark-theme-button[aria-pressed="true"] { background: #183247; border-color: #4b82b4; color: #d8ecff; }
+  html[data-theme="system"] .mark-code-toolbar { background: #2a2a2a; border-color: #444; }
+  html[data-theme="system"] .mark-btn { background: #333; border-color: #555; color: #ccc; }
+  html[data-theme="system"] .mark-btn:hover { background: #444; }
+  html[data-theme="system"] .mark-btn.mark-copied { color: #6dbf6d; border-color: #6dbf6d; }
+  html[data-theme="system"] .mark-btn.mark-failed { color: #f66; border-color: #f66; }
+}"#;
 
     // ── Build breadcrumb HTML ────────────────────────────────────────────────
-    let breadcrumb_html = if breadcrumb.is_empty() {
+    let breadcrumb_html = if chrome.breadcrumb.is_empty() {
         String::new()
     } else {
         let mut bc = String::from("<nav class=\"mark-breadcrumb\">\n");
-        for (name, path) in breadcrumb {
+        for (name, path) in chrome.breadcrumb {
             let href = escape_html(&path.to_string_lossy());
             let display = escape_html(name);
             bc.push_str(&format!(
@@ -270,14 +337,21 @@ hr { border-top-color: #444; }
     };
 
     // ── Build sidebar HTML ───────────────────────────────────────────────────
-    let sidebar_html = if all_files.is_empty() {
+    let sidebar_html = if chrome.all_files.is_empty() {
         String::new()
     } else {
-        let tree = build_sidebar_tree(all_files, run_dir);
+        let tree = build_sidebar_tree(chrome.all_files, chrome.run_dir);
         let mut sb = String::new();
-        sb.push_str("<input type=\"checkbox\" id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\" checked>\n");
+        let checked = if chrome.sidebar_visible {
+            " checked"
+        } else {
+            ""
+        };
+        sb.push_str(&format!(
+            "<input type=\"checkbox\" id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\"{checked}>\n"
+        ));
         sb.push_str(
-            "<label for=\"mark-sidebar-toggle\" class=\"mark-sidebar-label\">&#9776;</label>\n",
+            "<label for=\"mark-sidebar-toggle\" class=\"mark-sidebar-label\" title=\"Toggle sidebar (e)\" aria-label=\"Toggle sidebar (e)\">&#9776;</label>\n",
         );
         sb.push_str("<nav class=\"mark-sidebar\">\n<ul class=\"mark-sidebar-tree\">\n");
         let mut id_counter = 0usize;
@@ -285,6 +359,15 @@ hr { border-top-color: #444; }
         sb.push_str("</ul>\n</nav>\n");
         sb
     };
+
+    let theme_controls = r#"<div class="mark-page-controls" aria-label="View controls">
+<span class="mark-page-controls-label">Theme</span>
+<div class="mark-theme-toggle" role="group" aria-label="Theme switcher">
+<button type="button" class="mark-theme-button" data-theme-option="system"><span class="mark-theme-icon" aria-hidden="true">🖥</span><span>System</span></button>
+<button type="button" class="mark-theme-button" data-theme-option="light"><span class="mark-theme-icon" aria-hidden="true">☀️</span><span>Light</span></button>
+<button type="button" class="mark-theme-button" data-theme-option="dark"><span class="mark-theme-icon" aria-hidden="true">🌙</span><span>Dark</span></button>
+</div>
+</div>"#;
 
     // Content is wrapped so the sidebar toggle can push it via CSS sibling selector.
     format!(
@@ -304,6 +387,7 @@ hr { border-top-color: #444; }
 </head>
 <body>
 {sidebar_html}<div class="mark-content-wrapper">
+{theme_controls}
 <article>
 {breadcrumb_html}{body}
 </article>
@@ -320,6 +404,7 @@ hr { border-top-color: #444; }
         theme_css = theme_css,
         copy_css = copy_css,
         sidebar_html = sidebar_html,
+        theme_controls = theme_controls,
         breadcrumb_html = breadcrumb_html,
         body = body,
         copy_js = copy_js,
@@ -443,7 +528,25 @@ pub fn build_sidebar_tree(
         );
     }
 
+    sort_sidebar_nodes(&mut tree);
     tree
+}
+
+fn sort_sidebar_nodes(nodes: &mut [SidebarNode]) {
+    nodes.sort_by(|left, right| {
+        let left_is_dir = left.path.is_none();
+        let right_is_dir = right.path.is_none();
+        left_is_dir
+            .cmp(&right_is_dir)
+            .then_with(|| left.name.to_lowercase().cmp(&right.name.to_lowercase()))
+            .then_with(|| left.name.cmp(&right.name))
+    });
+
+    for node in nodes.iter_mut() {
+        if !node.children.is_empty() {
+            sort_sidebar_nodes(&mut node.children);
+        }
+    }
 }
 
 /// Escape special HTML characters in a plain-text value.
@@ -771,11 +874,9 @@ pub fn render_markdown_rewriting_links(
     title: &str,
     theme: Theme,
     link_map: &HashMap<String, PathBuf>,
-    breadcrumb: &[(String, PathBuf)],
-    all_files: &[(String, PathBuf, bool)],
-    run_dir: &Path,
+    chrome: RenderChrome<'_>,
 ) -> String {
-    if link_map.is_empty() && breadcrumb.is_empty() && all_files.is_empty() {
+    if link_map.is_empty() && chrome.breadcrumb.is_empty() && chrome.all_files.is_empty() {
         return render_markdown(markdown, title, theme);
     }
 
@@ -825,6 +926,43 @@ pub fn render_markdown_rewriting_links(
                     })
                 }
             }
+            Event::Start(Tag::Image {
+                link_type,
+                dest_url,
+                title: link_title,
+                id,
+            }) => {
+                let url = dest_url.as_ref();
+                if is_external_url(url) {
+                    return Event::Start(Tag::Image {
+                        link_type,
+                        dest_url,
+                        title: link_title,
+                        id,
+                    });
+                }
+                let (base, fragment) = split_fragment(url);
+                if let Some(html_path) = link_map.get(base) {
+                    let new_url: String = if fragment.is_empty() {
+                        html_path.to_string_lossy().into_owned()
+                    } else {
+                        format!("{}{}", html_path.to_string_lossy(), fragment)
+                    };
+                    Event::Start(Tag::Image {
+                        link_type,
+                        dest_url: new_url.into(),
+                        title: link_title,
+                        id,
+                    })
+                } else {
+                    Event::Start(Tag::Image {
+                        link_type,
+                        dest_url,
+                        title: link_title,
+                        id,
+                    })
+                }
+            }
             other => other,
         })
         .collect();
@@ -832,13 +970,27 @@ pub fn render_markdown_rewriting_links(
     let mut body = String::new();
     html::push_html(&mut body, events.into_iter());
     let body = post_process_code_blocks(&body);
-    build_html_document(title, &body, theme, breadcrumb, all_files, run_dir)
+    build_html_document(title, &body, theme, chrome)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::config::Theme;
+
+    fn chrome<'a>(
+        breadcrumb: &'a [(String, PathBuf)],
+        all_files: &'a [(String, PathBuf, bool)],
+        run_dir: &'a Path,
+        sidebar_visible: bool,
+    ) -> RenderChrome<'a> {
+        RenderChrome {
+            breadcrumb,
+            all_files,
+            run_dir,
+            sidebar_visible,
+        }
+    }
 
     #[test]
     fn render_produces_nonempty_html() {
@@ -887,6 +1039,12 @@ mod tests {
     }
 
     #[test]
+    fn render_system_theme_has_data_attribute() {
+        let html = render_markdown("x", "t", Theme::System);
+        assert!(html.contains(r#"data-theme="system""#));
+    }
+
+    #[test]
     fn render_dark_theme_has_data_attribute() {
         let html = render_markdown("x", "t", Theme::Dark);
         assert!(html.contains(r#"data-theme="dark""#));
@@ -900,9 +1058,22 @@ mod tests {
     }
 
     #[test]
-    fn render_light_theme_no_dark_css() {
-        let html = render_markdown("x", "t", Theme::Light);
-        assert!(!html.contains("background: #1a1a1a"));
+    fn render_includes_theme_toggle_controls() {
+        let html = render_markdown("x", "t", Theme::System);
+        assert!(html.contains("data-theme-option=\"system\""));
+        assert!(html.contains("data-theme-option=\"light\""));
+        assert!(html.contains("data-theme-option=\"dark\""));
+        assert!(html.contains(">System</span>"));
+        assert!(html.contains(">Light</span>"));
+        assert!(html.contains(">Dark</span>"));
+    }
+
+    #[test]
+    fn render_includes_theme_and_sidebar_client_side_scripts() {
+        let html = render_markdown("x", "t", Theme::System);
+        assert!(html.contains("document.addEventListener('keydown'"));
+        assert!(html.contains("isEditableTarget"));
+        assert!(html.contains("setTheme(button.dataset.themeOption)"));
     }
 
     #[test]
@@ -1034,8 +1205,13 @@ mod tests {
         link_map.insert("api.md".to_string(), html_path.clone());
 
         let md = "[API](api.md)\n";
-        let html =
-            render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[], dir.path());
+        let html = render_markdown_rewriting_links(
+            md,
+            "t",
+            Theme::Light,
+            &link_map,
+            chrome(&[], &[], dir.path(), false),
+        );
         let expected = format!("href=\"{}\"", html_path.display());
         assert!(
             html.contains(&expected),
@@ -1055,8 +1231,13 @@ mod tests {
         link_map.insert("api.md".to_string(), html_path.clone());
 
         let md = "[Section](api.md#endpoints)\n";
-        let html =
-            render_markdown_rewriting_links(md, "t", Theme::Light, &link_map, &[], &[], dir.path());
+        let html = render_markdown_rewriting_links(
+            md,
+            "t",
+            Theme::Light,
+            &link_map,
+            chrome(&[], &[], dir.path(), false),
+        );
         let expected = format!("href=\"{}#endpoints\"", html_path.display());
         assert!(
             html.contains(&expected),
@@ -1073,9 +1254,7 @@ mod tests {
             "t",
             Theme::Light,
             &link_map,
-            &[],
-            &[],
-            Path::new(""),
+            chrome(&[], &[], Path::new(""), false),
         );
         assert!(
             html.contains("href=\"https://google.com\""),
@@ -1092,14 +1271,31 @@ mod tests {
             "t",
             Theme::Light,
             &link_map,
-            &[],
-            &[],
-            Path::new(""),
+            chrome(&[], &[], Path::new(""), false),
         );
         assert!(
             html.contains("href=\"photo.png\""),
             "non-md link must not be modified:\n{html}"
         );
+    }
+
+    #[test]
+    fn rewrite_links_rewrites_image_sources_when_present_in_map() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let asset_path = dir.path().join("assets/logo.png");
+        let mut link_map = HashMap::new();
+        link_map.insert("logo.png".to_string(), asset_path.clone());
+
+        let md = "![Logo](logo.png)\n";
+        let html = render_markdown_rewriting_links(
+            md,
+            "t",
+            Theme::Light,
+            &link_map,
+            chrome(&[], &[], dir.path(), false),
+        );
+        let expected = format!("src=\"{}\"", asset_path.display());
+        assert!(html.contains(&expected), "{html}");
     }
 
     #[test]
@@ -1111,9 +1307,7 @@ mod tests {
             "t",
             Theme::Light,
             &link_map,
-            &[],
-            &[],
-            Path::new(""),
+            chrome(&[], &[], Path::new(""), false),
         );
         let html_plain = render_markdown(md, "t", Theme::Light);
         assert_eq!(
@@ -1234,9 +1428,7 @@ mod tests {
             "entry",
             Theme::Light,
             &link_map,
-            &[], // no breadcrumb
-            &[],
-            Path::new(""),
+            chrome(&[], &[], Path::new(""), false), // no breadcrumb
         );
         assert!(
             !html.contains("<nav class=\"mark-breadcrumb\">"),
@@ -1255,9 +1447,7 @@ mod tests {
             "chapter",
             Theme::Light,
             &link_map,
-            &breadcrumb,
-            &[],
-            Path::new(""),
+            chrome(&breadcrumb, &[], Path::new(""), false),
         );
         assert!(
             html.contains("<nav class=\"mark-breadcrumb\">"),
@@ -1289,9 +1479,7 @@ mod tests {
             "chapter",
             Theme::Light,
             &link_map,
-            &[],
-            &all_files,
-            dir.path(),
+            chrome(&[], &all_files, dir.path(), false),
         );
         assert!(
             html.contains("<nav class=\"mark-sidebar\">"),
@@ -1315,6 +1503,48 @@ mod tests {
             html.contains(&entry_href),
             "non-current entry must be a link in sidebar:\n{html}"
         );
+        assert!(
+            html.contains("title=\"Toggle sidebar (e)\""),
+            "sidebar toggle should advertise the e hotkey:\n{html}"
+        );
+    }
+
+    #[test]
+    fn sidebar_is_hidden_by_default_when_not_requested_visible() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let html_path = dir.path().join("entry-abc.html");
+        let all_files = vec![("entry".to_string(), html_path, true)];
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html = render_markdown_rewriting_links(
+            "# Entry",
+            "entry",
+            Theme::System,
+            &link_map,
+            chrome(&[], &all_files, dir.path(), false),
+        );
+        assert!(
+            html.contains("id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\">"),
+            "sidebar checkbox should start unchecked when hidden by default:\n{html}"
+        );
+    }
+
+    #[test]
+    fn sidebar_can_start_visible_from_config_default() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let html_path = dir.path().join("entry-abc.html");
+        let all_files = vec![("entry".to_string(), html_path, true)];
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html = render_markdown_rewriting_links(
+            "# Entry",
+            "entry",
+            Theme::System,
+            &link_map,
+            chrome(&[], &all_files, dir.path(), true),
+        );
+        assert!(
+            html.contains("id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\" checked>"),
+            "sidebar checkbox should reflect a visible default:\n{html}"
+        );
     }
 
     #[test]
@@ -1325,9 +1555,7 @@ mod tests {
             "solo",
             Theme::Light,
             &link_map,
-            &[],
-            &[],
-            Path::new(""),
+            chrome(&[], &[], Path::new(""), false),
         );
         assert!(
             !html.contains("<nav class=\"mark-sidebar\">"),
@@ -1346,9 +1574,7 @@ mod tests {
             "entry",
             Theme::Dark,
             &link_map,
-            &[],
-            &all_files,
-            dir.path(),
+            chrome(&[], &all_files, dir.path(), false),
         );
         assert!(
             html.contains("<nav class=\"mark-sidebar\">"),
@@ -1391,6 +1617,38 @@ mod tests {
     }
 
     #[test]
+    fn build_sidebar_tree_sorts_files_before_directories_recursively() {
+        let run_dir = PathBuf::from("/rendered/overview-123-abcdef12");
+        let all_files = vec![
+            (
+                "zeta".to_string(),
+                run_dir.join("chapters/zeta.html"),
+                false,
+            ),
+            ("overview".to_string(), run_dir.join("overview.html"), false),
+            (
+                "alpha".to_string(),
+                run_dir.join("chapters/alpha.html"),
+                false,
+            ),
+            (
+                "appendix".to_string(),
+                run_dir.join("appendix/readme.html"),
+                false,
+            ),
+            ("beta".to_string(), run_dir.join("beta.html"), true),
+        ];
+
+        let tree = build_sidebar_tree(&all_files, &run_dir);
+        assert_eq!(tree[0].name, "beta");
+        assert_eq!(tree[1].name, "overview");
+        assert_eq!(tree[2].name, "appendix");
+        assert_eq!(tree[3].name, "chapters");
+        assert_eq!(tree[3].children[0].name, "alpha");
+        assert_eq!(tree[3].children[1].name, "zeta");
+    }
+
+    #[test]
     fn sidebar_renders_collapsible_directories() {
         let dir = tempfile::tempdir().expect("tempdir");
         let run_dir = dir.path().join("overview-123-abcdef12");
@@ -1409,9 +1667,7 @@ mod tests {
             "intro",
             Theme::Light,
             &link_map,
-            &[],
-            &all_files,
-            &run_dir,
+            chrome(&[], &all_files, &run_dir, false),
         );
 
         assert!(html.contains("class=\"mark-sidebar-dir\""), "got: {html}");

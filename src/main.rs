@@ -4,7 +4,7 @@ use clap_complete::generate;
 use mark::{
     browser, cache, cleanup, cleanup_home,
     cli::{Commands, ConfigAction},
-    config::{AppConfig, Theme},
+    config::{AppConfig, RenderMode, SidebarVisibility, Theme},
     render, storage,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -107,6 +107,27 @@ fn copy_asset_into_run(asset_canonical: &Path, dest: &Path) -> Result<()> {
     Ok(())
 }
 
+fn resolve_render_mode(args: &mark::cli::Cli, cfg: &AppConfig) -> RenderMode {
+    if args.single {
+        RenderMode::Single
+    } else if args.recursive {
+        RenderMode::Recursive
+    } else {
+        cfg.render_mode
+    }
+}
+
+fn format_skipped_links_note(skipped_links: &[String]) -> Option<String> {
+    if skipped_links.is_empty() {
+        None
+    } else {
+        Some(format!(
+            "Note: single mode skipped local Markdown links: {}",
+            skipped_links.join(", ")
+        ))
+    }
+}
+
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
 
@@ -131,6 +152,18 @@ fn main() -> Result<()> {
                 cfg.theme = theme;
                 cfg.save(&paths.config)?;
                 println!("Theme set to '{theme}'.");
+            }
+            ConfigAction::SetRenderMode { mode } => {
+                let mut cfg = AppConfig::load(&paths.config)?;
+                cfg.render_mode = mode;
+                cfg.save(&paths.config)?;
+                println!("Render mode set to '{mode}'.");
+            }
+            ConfigAction::SetSidebar { sidebar } => {
+                let mut cfg = AppConfig::load(&paths.config)?;
+                cfg.sidebar = sidebar;
+                cfg.save(&paths.config)?;
+                println!("Sidebar default set to '{sidebar}'.");
             }
         }
         return Ok(());
@@ -194,6 +227,12 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    // Resolve output settings: CLI override > persisted config > defaults.
+    let cfg = AppConfig::load(&paths.config)?;
+    let render_mode = resolve_render_mode(&args, &cfg);
+    let sidebar = cfg.sidebar;
+    let theme: Theme = args.theme.unwrap_or(cfg.theme);
+
     let file = args
         .file
         .expect("file is required when not using --cleanup");
@@ -204,10 +243,6 @@ fn main() -> Result<()> {
 
     let markdown = std::fs::read_to_string(&file)
         .map_err(|e| anyhow::anyhow!("Failed to read {}: {e}", file.display()))?;
-
-    // Resolve theme: CLI override > persisted config > default light.
-    let cfg = AppConfig::load(&paths.config)?;
-    let theme: Theme = args.theme.unwrap_or(cfg.theme);
 
     // ── Phase 1: BFS discovery of all transitively reachable .md files ────────
     //
@@ -243,9 +278,11 @@ fn main() -> Result<()> {
                 entry_canonical.parent().unwrap_or_else(|| Path::new(".")),
                 &entry_canonical,
             );
-            if cached.source_mtime_secs == mtime
+            if render_mode == RenderMode::Single
+                && cached.source_mtime_secs == mtime
                 && cached.rendered_html.exists()
                 && cached_entry_html.exists()
+                && cache::RenderCache::matches_options(cached, theme, render_mode, sidebar)
             {
                 eprint!(
                     "Already rendered: {}\nRe-render? [y/N]: ",
@@ -278,37 +315,49 @@ fn main() -> Result<()> {
     // Track the BFS discovery parent of each file (for breadcrumb construction).
     let mut parent_map: HashMap<PathBuf, PathBuf> = HashMap::new();
 
-    let mut queue: VecDeque<PathBuf> = VecDeque::new();
-    queue.push_back(entry_canonical.clone());
+    let skipped_md_links: Vec<String> = if render_mode == RenderMode::Single {
+        render::extract_local_md_links(
+            &markdown,
+            entry_canonical.parent().unwrap_or_else(|| Path::new(".")),
+        )
+        .into_iter()
+        .map(|(base, _)| base)
+        .collect()
+    } else {
+        let mut queue: VecDeque<PathBuf> = VecDeque::new();
+        queue.push_back(entry_canonical.clone());
 
-    while let Some(current) = queue.pop_front() {
-        let content = content_cache.get(&current).cloned().unwrap_or_default();
-        let source_dir = current
-            .parent()
-            .unwrap_or_else(|| std::path::Path::new("."));
+        while let Some(current) = queue.pop_front() {
+            let content = content_cache.get(&current).cloned().unwrap_or_default();
+            let source_dir = current
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new("."));
 
-        let links = render::extract_local_md_links(&content, source_dir);
-        for (_base, canonical) in links {
-            if visited.contains(&canonical) {
-                continue;
-            }
-            visited.insert(canonical.clone());
-            match std::fs::read_to_string(&canonical) {
-                Ok(md) => {
-                    content_cache.insert(canonical.clone(), md);
-                    parent_map.insert(canonical.clone(), current.clone());
-                    ordered.push(canonical.clone());
-                    queue.push_back(canonical);
+            let links = render::extract_local_md_links(&content, source_dir);
+            for (_base, canonical) in links {
+                if visited.contains(&canonical) {
+                    continue;
                 }
-                Err(e) => {
-                    eprintln!(
-                        "Warning: could not read linked file {}: {e}",
-                        canonical.display()
-                    );
+                visited.insert(canonical.clone());
+                match std::fs::read_to_string(&canonical) {
+                    Ok(md) => {
+                        content_cache.insert(canonical.clone(), md);
+                        parent_map.insert(canonical.clone(), current.clone());
+                        ordered.push(canonical.clone());
+                        queue.push_back(canonical);
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "Warning: could not read linked file {}: {e}",
+                            canonical.display()
+                        );
+                    }
                 }
             }
         }
-    }
+
+        Vec::new()
+    };
 
     // ── Phase 2: assign output paths inside a per-run directory up-front ──────
     //
@@ -346,20 +395,24 @@ fn main() -> Result<()> {
 
     // Build the full sidebar list once: (display_name, rendered_html_path, is_current=false).
     // We'll flip is_current per file during rendering.
-    let all_files_base: Vec<(String, PathBuf)> = ordered
-        .iter()
-        .map(|canonical| {
-            let name = canonical
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("output")
-                .to_string();
-            let out_path = output_path_map
-                .get(canonical)
-                .expect("output path was assigned");
-            (name, out_path.clone())
-        })
-        .collect();
+    let all_files_base: Vec<(String, PathBuf)> = if render_mode == RenderMode::Single {
+        Vec::new()
+    } else {
+        ordered
+            .iter()
+            .map(|canonical| {
+                let name = canonical
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("output")
+                    .to_string();
+                let out_path = output_path_map
+                    .get(canonical)
+                    .expect("output path was assigned");
+                (name, out_path.clone())
+            })
+            .collect()
+    };
 
     for (idx, canonical) in ordered.iter().enumerate() {
         let content = content_cache.get(canonical).cloned().unwrap_or_default();
@@ -372,11 +425,13 @@ fn main() -> Result<()> {
             .unwrap_or_else(|| std::path::Path::new("."));
 
         // Build a rewrite map: base_target → absolute rendered HTML path.
-        let links = render::extract_local_md_links(&content, source_dir);
         let mut link_map: HashMap<String, PathBuf> = HashMap::new();
-        for (base, target_canonical) in links {
-            if let Some(output_path) = output_path_map.get(&target_canonical) {
-                link_map.insert(base, output_path.clone());
+        if render_mode == RenderMode::Recursive {
+            let links = render::extract_local_md_links(&content, source_dir);
+            for (base, target_canonical) in links {
+                if let Some(output_path) = output_path_map.get(&target_canonical) {
+                    link_map.insert(base, output_path.clone());
+                }
             }
         }
 
@@ -410,7 +465,7 @@ fn main() -> Result<()> {
 
         // Build the breadcrumb: walk parent_map from this file up to entry,
         // then reverse so it reads entry → … → parent.
-        let breadcrumb: Vec<(String, PathBuf)> = if idx == 0 {
+        let breadcrumb: Vec<(String, PathBuf)> = if idx == 0 || render_mode == RenderMode::Single {
             vec![]
         } else {
             let mut chain: Vec<(String, PathBuf)> = Vec::new();
@@ -436,9 +491,12 @@ fn main() -> Result<()> {
             stem,
             theme,
             &link_map,
-            &breadcrumb,
-            &all_files,
-            &run_dir,
+            render::RenderChrome {
+                breadcrumb: &breadcrumb,
+                all_files: &all_files,
+                run_dir: &run_dir,
+                sidebar_visible: sidebar == SidebarVisibility::Visible,
+            },
         );
         let out_path = output_path_map
             .get(canonical)
@@ -463,6 +521,9 @@ fn main() -> Result<()> {
 
     let out_path = entry_out_path.expect("entry file was rendered");
     println!("Rendered: {}", out_path.display());
+    if let Some(note) = format_skipped_links_note(&skipped_md_links) {
+        println!("{note}");
+    }
 
     // ── Update render cache with the new entry-point output ──────────────────
     if let Some(mtime) = entry_mtime_secs {
@@ -471,6 +532,9 @@ fn main() -> Result<()> {
             cache::CacheEntry {
                 rendered_html: run_dir.clone(),
                 source_mtime_secs: mtime,
+                theme: Some(theme),
+                render_mode: Some(render_mode),
+                sidebar: Some(sidebar),
             },
         );
         render_cache.save();
@@ -575,5 +639,41 @@ mod tests {
         let dest = asset_output_path_for_run(&run_dir, entry_dir, asset, &reserved);
         assert_ne!(dest, run_dir.join("chapters/intro.html"));
         assert!(dest.starts_with(run_dir.join("_assets")));
+    }
+
+    #[test]
+    fn resolve_render_mode_prefers_cli_over_config() {
+        let cfg = AppConfig {
+            theme: Theme::System,
+            render_mode: RenderMode::Recursive,
+            sidebar: SidebarVisibility::Hidden,
+        };
+        let cli = mark::cli::Cli::parse_from(["mark", "--single", "notes.md"]);
+        assert_eq!(resolve_render_mode(&cli, &cfg), RenderMode::Single);
+    }
+
+    #[test]
+    fn resolve_render_mode_falls_back_to_config() {
+        let cfg = AppConfig {
+            theme: Theme::System,
+            render_mode: RenderMode::Single,
+            sidebar: SidebarVisibility::Hidden,
+        };
+        let cli = mark::cli::Cli::parse_from(["mark", "notes.md"]);
+        assert_eq!(resolve_render_mode(&cli, &cfg), RenderMode::Single);
+    }
+
+    #[test]
+    fn skipped_links_note_is_omitted_when_empty() {
+        assert_eq!(format_skipped_links_note(&[]), None);
+    }
+
+    #[test]
+    fn skipped_links_note_lists_links() {
+        let note =
+            format_skipped_links_note(&["guide.md".to_string(), "nested/api.md".to_string()])
+                .expect("note");
+        assert!(note.contains("guide.md"));
+        assert!(note.contains("nested/api.md"));
     }
 }

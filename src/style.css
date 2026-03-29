@@ -12,7 +12,7 @@ body {
     color: #222;
     background: #fff;
     margin: 0;
-    padding: 2rem 1rem;
+    padding: 4rem 1rem 2rem;
 }
 
 article {
@@ -106,6 +106,61 @@ img {
 }
 
 /* ── Sidebar + breadcrumb layout ────────────────────────────────────────── */
+
+.mark-page-controls {
+    position: fixed;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 220;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.5rem;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 999px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.mark-page-controls-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.mark-theme-toggle {
+    display: inline-flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.mark-theme-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 999px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.mark-theme-button:hover {
+    background: #eaeaea;
+}
+
+.mark-theme-button[aria-pressed="true"] {
+    background: #e4f0fb;
+    border-color: #7ba7d9;
+    color: #0d3f66;
+}
+
+.mark-theme-icon {
+    font-size: 0.95rem;
+}
 
 /* Hide the raw checkbox */
 .mark-sidebar-toggle {
@@ -284,6 +339,14 @@ img {
 
 /* Narrow viewports: sidebar overlays, content not offset */
 @media (max-width: 700px) {
+    .mark-page-controls {
+        position: static;
+        margin: 0 auto 1rem;
+        width: fit-content;
+        max-width: 100%;
+        border-radius: 1rem;
+    }
+
     .mark-sidebar-toggle:checked ~ .mark-content-wrapper {
         margin-left: 0;
     }
