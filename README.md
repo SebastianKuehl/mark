@@ -12,6 +12,10 @@ When the Markdown file contains links to other local `.md` files, `mark` renders
 
 - Renders Markdown to a complete, self-contained HTML5 document with embedded CSS
 - **Recursively renders linked local Markdown files** — run `mark overview.md` and every linked `.md` is rendered and navigable in the browser
+- **Linked non-Markdown files** (`.txt`, `.png`, `.pdf`, etc.) are copied to `~/.mark/rendered/` and their links are rewritten — everything opens correctly
+- **Breadcrumb navigation** on every page below the entry-point, showing the path from root to the current file
+- **Collapsible sidebar** on every page listing all rendered files with the current page highlighted
+- **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` — never in your project directory
 - Auto-cleans rendered files older than 30 days on every run
@@ -348,6 +352,45 @@ For each linked file rendered beyond the entry point, `mark` prints:
 ```
   → rendered: chapter1.md → ~/.mark/rendered/chapter1-<ts>-<hash>.html
 ```
+
+---
+
+## Navigation chrome
+
+Every page in a multi-file render set gets two navigation elements injected automatically — no flags needed.
+
+### Breadcrumbs
+
+Pages below the entry-point show a breadcrumb trail at the top:
+
+```
+overview › chapter1 › appendix
+```
+
+Each ancestor is a clickable link. The current page appears as plain text. The entry-point itself shows no breadcrumb.
+
+### Sidebar
+
+Every page (including the entry-point) shows a collapsible sidebar listing all files rendered in the current invocation. The current page is highlighted; all others are links. Toggle it with the ☰ button — uses a pure-CSS checkbox toggle, no JavaScript.
+
+---
+
+## Render cache
+
+`mark` remembers the last render for each source file in `~/.mark/render-cache.toml`. If the file hasn't changed since the last render:
+
+```
+Already rendered: ~/.mark/rendered/overview-1711648523-a3f2b1.html
+Re-render? [y/N]:
+```
+
+- **N / Enter** — opens the existing rendered file immediately, skips rendering.
+- **Y** — re-renders and updates the cache.
+
+If the source file has changed (different mtime), `mark` re-renders silently without prompting.
+
+`mark --cleanup` prunes cache entries whose rendered HTML no longer exists on disk.
+`mark --no-open` always re-renders without prompting (non-interactive mode).
 
 ---
 

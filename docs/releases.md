@@ -1,5 +1,14 @@
 # Releases
 
+## v0.3.0 — minor
+
+- **Date:** 2026-03-29
+- **Type:** minor
+- **Merged items:** M-011 (F-011, F-012), F-013/M-012, B-001
+- **Summary:** Full navigation chrome: breadcrumbs on linked pages, collapsible CSS sidebar on all pages. Render cache (`~/.mark/render-cache.toml`) prompts before re-rendering unchanged files. Non-Markdown linked files (assets) are copied to `~/.mark/rendered/` and their links are rewritten. 94 tests total.
+
+---
+
 ## v0.2.1 — patch
 
 - **Date:** 2026-03-29

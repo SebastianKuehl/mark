@@ -83,8 +83,8 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | 1 (anvil on B-001) |
-| Open worktrees | `.worktrees/B-001-copy-assets` |
-| Latest tag | `v0.2.0` |
-| Next planned work | M-011 (breadcrumbs+sidebar) after B-001; F-013 after M-011 |
+| Active agents | None |
+| Open worktrees | None |
+| Latest tag | `v0.3.0` |
+| Next planned work | B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |
