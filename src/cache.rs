@@ -9,6 +9,7 @@
 //! source_mtime_secs = 1711648523
 //! ```
 
+use crate::config::{RenderMode, SidebarVisibility, Theme};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -20,6 +21,17 @@ pub struct CacheEntry {
     pub rendered_html: PathBuf,
     /// Unix timestamp (seconds) of the source file's mtime at render time.
     pub source_mtime_secs: u64,
+    /// Theme used when producing the cached render. `None` represents a legacy
+    /// cache entry from before render settings were tracked and must not be
+    /// reused for settings-sensitive output.
+    #[serde(default)]
+    pub theme: Option<Theme>,
+    /// Render mode used when producing the cached render.
+    #[serde(default)]
+    pub render_mode: Option<RenderMode>,
+    /// Sidebar visibility default used when producing the cached render.
+    #[serde(default)]
+    pub sidebar: Option<SidebarVisibility>,
 }
 
 /// In-memory render cache backed by a TOML file on disk.
@@ -92,6 +104,18 @@ impl RenderCache {
             .insert(source.to_string_lossy().into_owned(), entry);
     }
 
+    /// Returns true when the cache entry matches the requested render options.
+    pub fn matches_options(
+        entry: &CacheEntry,
+        theme: Theme,
+        render_mode: RenderMode,
+        sidebar: SidebarVisibility,
+    ) -> bool {
+        entry.theme == Some(theme)
+            && entry.render_mode == Some(render_mode)
+            && entry.sidebar == Some(sidebar)
+    }
+
     /// Remove entries whose `rendered_html` run directory no longer exists on disk.
     ///
     /// Called by `--cleanup` to prune stale cache state.
@@ -137,6 +161,9 @@ mod tests {
         let entry = CacheEntry {
             rendered_html: PathBuf::from("/home/user/.mark/rendered/notes-123-abc"),
             source_mtime_secs: 1_700_000_000,
+            theme: Some(Theme::System),
+            render_mode: Some(RenderMode::Recursive),
+            sidebar: Some(SidebarVisibility::Hidden),
         };
         cache.set(source, entry.clone());
         cache.save();
@@ -162,6 +189,9 @@ mod tests {
         let entry = CacheEntry {
             rendered_html: PathBuf::from("/tmp/doc-1-00000001"),
             source_mtime_secs: 42,
+            theme: Some(Theme::System),
+            render_mode: Some(RenderMode::Recursive),
+            sidebar: Some(SidebarVisibility::Hidden),
         };
         cache.set(source, entry.clone());
         assert_eq!(cache.get(source), Some(&entry));
@@ -178,11 +208,17 @@ mod tests {
             CacheEntry {
                 rendered_html: PathBuf::from("/old-run"),
                 source_mtime_secs: 1,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         let newer = CacheEntry {
             rendered_html: PathBuf::from("/new-run"),
             source_mtime_secs: 2,
+            theme: Some(Theme::Dark),
+            render_mode: Some(RenderMode::Single),
+            sidebar: Some(SidebarVisibility::Visible),
         };
         cache.set(source, newer.clone());
         assert_eq!(cache.get(source), Some(&newer));
@@ -201,6 +237,9 @@ mod tests {
             CacheEntry {
                 rendered_html: PathBuf::from("/out-run"),
                 source_mtime_secs: mtime,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         let entry = cache.get(source).expect("entry");
@@ -217,6 +256,9 @@ mod tests {
             CacheEntry {
                 rendered_html: PathBuf::from("/out-run"),
                 source_mtime_secs: 100,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         let entry = cache.get(source).expect("entry");
@@ -239,6 +281,9 @@ mod tests {
             CacheEntry {
                 rendered_html: run_dir.clone(),
                 source_mtime_secs: 1,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         cache.remove_missing_entries();
@@ -258,6 +303,9 @@ mod tests {
             CacheEntry {
                 rendered_html: dir.path().join("ghost-run"),
                 source_mtime_secs: 1,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         assert!(
@@ -281,6 +329,9 @@ mod tests {
             CacheEntry {
                 rendered_html: legacy_html,
                 source_mtime_secs: 1,
+                theme: None,
+                render_mode: None,
+                sidebar: None,
             },
         );
 
@@ -306,6 +357,9 @@ mod tests {
             CacheEntry {
                 rendered_html: run_dir_good.clone(),
                 source_mtime_secs: 1,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         cache.set(
@@ -313,6 +367,9 @@ mod tests {
             CacheEntry {
                 rendered_html: dir.path().join("gone-run"),
                 source_mtime_secs: 2,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
 
@@ -333,6 +390,9 @@ mod tests {
             CacheEntry {
                 rendered_html: PathBuf::from("/x-run"),
                 source_mtime_secs: 7,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         cache.save();
@@ -351,6 +411,9 @@ mod tests {
             CacheEntry {
                 rendered_html: run_dir.clone(),
                 source_mtime_secs: 99,
+                theme: Some(Theme::System),
+                render_mode: Some(RenderMode::Recursive),
+                sidebar: Some(SidebarVisibility::Hidden),
             },
         );
         cache.save();
@@ -362,5 +425,45 @@ mod tests {
                 .map(|entry| entry.rendered_html.clone()),
             Some(run_dir)
         );
+    }
+
+    #[test]
+    fn matches_options_rejects_legacy_entries() {
+        let entry = CacheEntry {
+            rendered_html: PathBuf::from("/out-run"),
+            source_mtime_secs: 100,
+            theme: None,
+            render_mode: None,
+            sidebar: None,
+        };
+        assert!(!RenderCache::matches_options(
+            &entry,
+            Theme::System,
+            RenderMode::Recursive,
+            SidebarVisibility::Hidden
+        ));
+    }
+
+    #[test]
+    fn matches_options_accepts_exact_settings_match() {
+        let entry = CacheEntry {
+            rendered_html: PathBuf::from("/out-run"),
+            source_mtime_secs: 100,
+            theme: Some(Theme::Dark),
+            render_mode: Some(RenderMode::Single),
+            sidebar: Some(SidebarVisibility::Visible),
+        };
+        assert!(RenderCache::matches_options(
+            &entry,
+            Theme::Dark,
+            RenderMode::Single,
+            SidebarVisibility::Visible
+        ));
+        assert!(!RenderCache::matches_options(
+            &entry,
+            Theme::System,
+            RenderMode::Single,
+            SidebarVisibility::Visible
+        ));
     }
 }

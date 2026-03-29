@@ -8,6 +8,7 @@ use std::str::FromStr;
 #[serde(rename_all = "lowercase")]
 pub enum Theme {
     #[default]
+    System,
     Light,
     Dark,
 }
@@ -17,10 +18,11 @@ impl FromStr for Theme {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
+            "system" => Ok(Theme::System),
             "light" => Ok(Theme::Light),
             "dark" => Ok(Theme::Dark),
             other => Err(format!(
-                "invalid theme '{other}': expected 'light' or 'dark'"
+                "invalid theme '{other}': expected 'system', 'light', or 'dark'"
             )),
         }
     }
@@ -29,8 +31,73 @@ impl FromStr for Theme {
 impl std::fmt::Display for Theme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Theme::System => write!(f, "system"),
             Theme::Light => write!(f, "light"),
             Theme::Dark => write!(f, "dark"),
+        }
+    }
+}
+
+/// The render mode to use when materializing output.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RenderMode {
+    Single,
+    #[default]
+    Recursive,
+}
+
+impl FromStr for RenderMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "single" => Ok(RenderMode::Single),
+            "recursive" => Ok(RenderMode::Recursive),
+            other => Err(format!(
+                "invalid render mode '{other}': expected 'single' or 'recursive'"
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for RenderMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RenderMode::Single => write!(f, "single"),
+            RenderMode::Recursive => write!(f, "recursive"),
+        }
+    }
+}
+
+/// The default sidebar visibility when rendering recursive output.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SidebarVisibility {
+    #[default]
+    Hidden,
+    Visible,
+}
+
+impl FromStr for SidebarVisibility {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "hidden" => Ok(SidebarVisibility::Hidden),
+            "visible" => Ok(SidebarVisibility::Visible),
+            other => Err(format!(
+                "invalid sidebar visibility '{other}': expected 'hidden' or 'visible'"
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for SidebarVisibility {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SidebarVisibility::Hidden => write!(f, "hidden"),
+            SidebarVisibility::Visible => write!(f, "visible"),
         }
     }
 }
@@ -40,6 +107,10 @@ impl std::fmt::Display for Theme {
 pub struct AppConfig {
     #[serde(default)]
     pub theme: Theme,
+    #[serde(default)]
+    pub render_mode: RenderMode,
+    #[serde(default)]
+    pub sidebar: SidebarVisibility,
 }
 
 impl AppConfig {
@@ -72,6 +143,7 @@ mod tests {
 
     #[test]
     fn theme_from_str_valid() {
+        assert_eq!("system".parse::<Theme>().unwrap(), Theme::System);
         assert_eq!("light".parse::<Theme>().unwrap(), Theme::Light);
         assert_eq!("dark".parse::<Theme>().unwrap(), Theme::Dark);
         assert_eq!("Dark".parse::<Theme>().unwrap(), Theme::Dark);
@@ -84,26 +156,69 @@ mod tests {
     }
 
     #[test]
-    fn default_theme_is_light() {
-        assert_eq!(Theme::default(), Theme::Light);
-        assert_eq!(AppConfig::default().theme, Theme::Light);
+    fn render_mode_from_str_valid() {
+        assert_eq!("single".parse::<RenderMode>().unwrap(), RenderMode::Single);
+        assert_eq!(
+            "recursive".parse::<RenderMode>().unwrap(),
+            RenderMode::Recursive
+        );
+    }
+
+    #[test]
+    fn render_mode_from_str_invalid() {
+        assert!("loop".parse::<RenderMode>().is_err());
+        assert!("".parse::<RenderMode>().is_err());
+    }
+
+    #[test]
+    fn sidebar_visibility_from_str_valid() {
+        assert_eq!(
+            "hidden".parse::<SidebarVisibility>().unwrap(),
+            SidebarVisibility::Hidden
+        );
+        assert_eq!(
+            "visible".parse::<SidebarVisibility>().unwrap(),
+            SidebarVisibility::Visible
+        );
+    }
+
+    #[test]
+    fn sidebar_visibility_from_str_invalid() {
+        assert!("open".parse::<SidebarVisibility>().is_err());
+        assert!("".parse::<SidebarVisibility>().is_err());
+    }
+
+    #[test]
+    fn default_config_uses_system_recursive_hidden() {
+        assert_eq!(Theme::default(), Theme::System);
+        assert_eq!(AppConfig::default().theme, Theme::System);
+        assert_eq!(AppConfig::default().render_mode, RenderMode::Recursive);
+        assert_eq!(AppConfig::default().sidebar, SidebarVisibility::Hidden);
     }
 
     #[test]
     fn load_missing_file_returns_default() {
         let dir = tempdir().unwrap();
         let cfg = AppConfig::load(&dir.path().join("config.toml")).unwrap();
-        assert_eq!(cfg.theme, Theme::Light);
+        assert_eq!(cfg.theme, Theme::System);
+        assert_eq!(cfg.render_mode, RenderMode::Recursive);
+        assert_eq!(cfg.sidebar, SidebarVisibility::Hidden);
     }
 
     #[test]
     fn save_and_load_roundtrip() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("config.toml");
-        let cfg = AppConfig { theme: Theme::Dark };
+        let cfg = AppConfig {
+            theme: Theme::Dark,
+            render_mode: RenderMode::Single,
+            sidebar: SidebarVisibility::Visible,
+        };
         cfg.save(&path).unwrap();
         let loaded = AppConfig::load(&path).unwrap();
         assert_eq!(loaded.theme, Theme::Dark);
+        assert_eq!(loaded.render_mode, RenderMode::Single);
+        assert_eq!(loaded.sidebar, SidebarVisibility::Visible);
     }
 
     #[test]
@@ -111,7 +226,9 @@ mod tests {
         let dir = tempdir().unwrap();
         let path = dir.path().join("nested").join("config.toml");
         let cfg = AppConfig {
-            theme: Theme::Light,
+            theme: Theme::System,
+            render_mode: RenderMode::Recursive,
+            sidebar: SidebarVisibility::Hidden,
         };
         cfg.save(&path).unwrap();
         assert!(path.exists());

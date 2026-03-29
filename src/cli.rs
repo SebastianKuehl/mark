@@ -1,4 +1,4 @@
-use crate::config::Theme;
+use crate::config::{RenderMode, SidebarVisibility, Theme};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use std::path::PathBuf;
@@ -19,7 +19,15 @@ pub struct Cli {
     #[arg(long)]
     pub no_open: bool,
 
-    /// Override the render theme for this invocation (light or dark)
+    /// Render only the requested file.
+    #[arg(long, short = 's', conflicts_with = "recursive")]
+    pub single: bool,
+
+    /// Recursively render linked Markdown files.
+    #[arg(long, short = 'r', conflicts_with = "single")]
+    pub recursive: bool,
+
+    /// Override the render theme for this invocation (system, light, or dark)
     #[arg(long, value_name = "THEME")]
     pub theme: Option<Theme>,
 
@@ -63,11 +71,55 @@ pub enum Commands {
 /// Config sub-actions.
 #[derive(Subcommand, Debug)]
 pub enum ConfigAction {
-    /// Set the persistent render theme (light or dark).
+    /// Set the persistent render theme (system, light, or dark).
     ///
-    /// Example: mark config set-theme dark
+    /// Example: mark config set-theme system
     SetTheme {
-        /// Theme to use: light or dark
+        /// Theme to use: system, light, or dark
         theme: Theme,
     },
+    /// Set the persistent render mode.
+    ///
+    /// Example: mark config set-render-mode single
+    SetRenderMode {
+        /// Render mode to use by default: single or recursive
+        mode: RenderMode,
+    },
+    /// Set the persistent sidebar visibility.
+    ///
+    /// Example: mark config set-sidebar hidden
+    SetSidebar {
+        /// Sidebar visibility to use by default: hidden or visible
+        sidebar: SidebarVisibility,
+    },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn single_and_recursive_flags_conflict() {
+        let result = Cli::try_parse_from(["mark", "--single", "--recursive", "notes.md"]);
+        assert!(result.is_err(), "single and recursive should conflict");
+    }
+
+    #[test]
+    fn config_supports_render_mode_and_sidebar_commands() {
+        let cli = Cli::try_parse_from(["mark", "config", "set-render-mode", "single"]).unwrap();
+        match cli.command {
+            Some(Commands::Config {
+                action: ConfigAction::SetRenderMode { mode },
+            }) => assert_eq!(mode, RenderMode::Single),
+            other => panic!("unexpected command: {other:?}"),
+        }
+
+        let cli = Cli::try_parse_from(["mark", "config", "set-sidebar", "visible"]).unwrap();
+        match cli.command {
+            Some(Commands::Config {
+                action: ConfigAction::SetSidebar { sidebar },
+            }) => assert_eq!(sidebar, SidebarVisibility::Visible),
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
 }
