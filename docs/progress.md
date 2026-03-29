@@ -18,8 +18,19 @@
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
-| F-010 | feature | Recursive linked Markdown rendering | `released` | anvil | `.worktrees/F-010-linked-md` | `feat/F-010-linked-md` | — | 2026-03-29 |
-| M-010 | milestone | Linked Markdown Navigation | `released` | — | — | — | — | 2026-03-29 |
+| B-001 | bug | Non-md linked files not copied | `in_progress` | anvil | `.worktrees/B-001-copy-assets` | `fix/B-001-copy-assets` | — | 2026-03-29 |
+| M-011 | milestone | Navigation Chrome (breadcrumbs + sidebar) | `blocked` | — | — | `feat/M-011-nav-chrome` | B-001 | 2026-03-29 |
+| F-011 | feature | Breadcrumb navigation | `blocked` | — | — | — | B-001 | 2026-03-29 |
+| F-012 | feature | Sidebar hierarchy | `blocked` | — | — | — | B-001 | 2026-03-29 |
+| F-013 | feature | Render memory + re-render confirmation | `blocked` | — | — | `feat/F-013-render-memory` | M-011 | 2026-03-29 |
+| M-012 | milestone | Render Memory | `blocked` | — | — | — | M-011 | 2026-03-29 |
+
+## Released Items
+
+| ID | Type | Title | Status | Release |
+|----|------|-------|--------|---------|
+| F-010 | feature | Recursive linked Markdown rendering | `released` | v0.2.0 |
+| M-010 | milestone | Linked Markdown Navigation | `released` | v0.2.0 |
 
 ---
 

@@ -34,6 +34,8 @@
 | ID | Title | Status | Doc |
 |----|-------|--------|-----|
 | M-010 | Linked Markdown Navigation | ✅ released | [M-010](milestones/M-010-linked-markdown-navigation.md) |
+| M-011 | Navigation Chrome (breadcrumbs + sidebar) | 🔒 blocked on B-001 | [M-011](milestones/M-011-navigation-chrome.md) |
+| M-012 | Render Memory | 🔒 blocked on M-011 | [M-012](milestones/M-012-render-memory.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
 ---
@@ -43,14 +45,17 @@
 | ID | Title | Status | Doc |
 |----|-------|--------|-----|
 | [F-010](features/F-010-linked-markdown-rendering.md) | Recursive linked Markdown rendering | ✅ released | [F-010](features/F-010-linked-markdown-rendering.md) |
+| [F-011](features/F-011-breadcrumbs.md) | Breadcrumb navigation | 🔒 blocked on B-001 | [F-011](features/F-011-breadcrumbs.md) |
+| [F-012](features/F-012-sidebar.md) | Sidebar hierarchy | 🔒 blocked on B-001 | [F-012](features/F-012-sidebar.md) |
+| [F-013](features/F-013-render-memory.md) | Render memory + re-render confirmation | 🔒 blocked on M-011 | [F-013](features/F-013-render-memory.md) |
 
 ---
 
 ## 🐛 Bugs
 
-_No open bugs._
-
-→ Bug docs live in [`bugs/`](bugs/) when they exist.
+| ID | Title | Severity | Status | Doc |
+|----|-------|----------|--------|-----|
+| [B-001](bugs/B-001-non-md-files-not-copied.md) | Non-Markdown linked files not copied | Medium | 🔧 in_progress | [B-001](bugs/B-001-non-md-files-not-copied.md) |
 
 ---
 
@@ -67,6 +72,9 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | ID | Linked Item | Doc |
 |----|-------------|-----|
 | [P-010](prompts/P-010-F-010-linked-markdown-rendering.md) | F-010 | Recursive linked Markdown rendering |
+| [P-011](prompts/P-011-B-001-copy-assets.md) | B-001 | Non-md linked files not copied |
+| [P-012](prompts/P-012-M-011-nav-chrome.md) | M-011 (F-011+F-012) | Breadcrumbs + sidebar |
+| [P-013](prompts/P-013-F-013-render-memory.md) | F-013 | Render memory |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -75,8 +83,8 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | None |
-| Open worktrees | None |
+| Active agents | 1 (anvil on B-001) |
+| Open worktrees | `.worktrees/B-001-copy-assets` |
 | Latest tag | `v0.2.0` |
-| Next planned work | — (no items queued) |
+| Next planned work | M-011 (breadcrumbs+sidebar) after B-001; F-013 after M-011 |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |
