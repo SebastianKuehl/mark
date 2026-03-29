@@ -7,6 +7,8 @@ use mark::{
     config::{AppConfig, Theme},
     render, storage,
 };
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::path::PathBuf;
 
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
@@ -105,29 +107,119 @@ fn main() -> Result<()> {
     let markdown = std::fs::read_to_string(&file)
         .map_err(|e| anyhow::anyhow!("Failed to read {}: {e}", file.display()))?;
 
-    let title = file
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("output");
-
     // Resolve theme: CLI override > persisted config > default light.
     let cfg = AppConfig::load(&paths.config)?;
     let theme: Theme = args.theme.unwrap_or(cfg.theme);
 
-    let html = render::render_markdown(&markdown, title, theme);
+    // ── Phase 1: BFS discovery of all transitively reachable .md files ────────
+    //
+    // We canonicalize paths so that `./a.md` and `a.md` are treated as the
+    // same file, and so circular references (A → B → A) terminate safely.
+
+    let entry_canonical = std::fs::canonicalize(&file)
+        .map_err(|e| anyhow::anyhow!("Failed to canonicalize {}: {e}", file.display()))?;
+
+    let mut visited: HashSet<PathBuf> = HashSet::new();
+    visited.insert(entry_canonical.clone());
+
+    // Ordered list of canonical paths: entry first, then linked files in BFS order.
+    let mut ordered: Vec<PathBuf> = vec![entry_canonical.clone()];
+
+    // Cache markdown content keyed by canonical path.
+    let mut content_cache: HashMap<PathBuf, String> = HashMap::new();
+    content_cache.insert(entry_canonical.clone(), markdown.clone());
+
+    let mut queue: VecDeque<PathBuf> = VecDeque::new();
+    queue.push_back(entry_canonical.clone());
+
+    while let Some(current) = queue.pop_front() {
+        let content = content_cache.get(&current).cloned().unwrap_or_default();
+        let source_dir = current
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."));
+
+        let links = render::extract_local_md_links(&content, source_dir);
+        for (_base, canonical) in links {
+            if visited.contains(&canonical) {
+                continue;
+            }
+            visited.insert(canonical.clone());
+            match std::fs::read_to_string(&canonical) {
+                Ok(md) => {
+                    content_cache.insert(canonical.clone(), md);
+                    ordered.push(canonical.clone());
+                    queue.push_back(canonical);
+                }
+                Err(e) => {
+                    eprintln!(
+                        "Warning: could not read linked file {}: {e}",
+                        canonical.display()
+                    );
+                }
+            }
+        }
+    }
+
+    // ── Phase 2: assign output filenames to every file up-front ───────────────
+    //
+    // We generate names before rendering so that each file's link_map can
+    // reference the final HTML paths of its targets.
+
+    let mut output_name_map: HashMap<PathBuf, String> = HashMap::new();
+    for canonical in &ordered {
+        output_name_map.insert(canonical.clone(), storage::output_filename(canonical));
+    }
+
+    // ── Phase 3: render + write each file with link rewriting ─────────────────
 
     paths.ensure_rendered_dir()?;
 
-    // Clean up old rendered files before writing the new one.
+    // Clean up stale rendered files before writing the new ones.
     match cleanup::cleanup_old_files(&paths.rendered) {
         Ok(n) if n > 0 => println!("Cleaned up {n} old rendered file(s)."),
         Ok(_) => {}
         Err(e) => eprintln!("Warning: cleanup failed: {e}"),
     }
 
-    let out_name = storage::output_filename(&file);
-    let out_path = storage::write_rendered(&paths.rendered, &out_name, &html)?;
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let mut entry_out_path: Option<PathBuf> = None;
 
+    for (idx, canonical) in ordered.iter().enumerate() {
+        let content = content_cache.get(canonical).cloned().unwrap_or_default();
+        let stem = canonical
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("output");
+        let source_dir = canonical
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("."));
+
+        // Build a rewrite map: base_target → absolute rendered HTML path.
+        let links = render::extract_local_md_links(&content, source_dir);
+        let mut link_map: HashMap<String, PathBuf> = HashMap::new();
+        for (base, target_canonical) in links {
+            if let Some(html_name) = output_name_map.get(&target_canonical) {
+                link_map.insert(base, paths.rendered.join(html_name));
+            }
+        }
+
+        let html = render::render_markdown_rewriting_links(&content, stem, theme, &link_map);
+        let out_name = output_name_map.get(canonical).expect("name was assigned");
+        let out_path = storage::write_rendered(&paths.rendered, out_name, &html)?;
+
+        if idx == 0 {
+            entry_out_path = Some(out_path);
+        } else {
+            // Print a summary line for each additional file.
+            let display_src = canonical
+                .strip_prefix(&cwd)
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| canonical.display().to_string());
+            println!("  → rendered: {display_src} → {}", out_path.display());
+        }
+    }
+
+    let out_path = entry_out_path.expect("entry file was rendered");
     println!("Rendered: {}", out_path.display());
 
     if !args.no_open {

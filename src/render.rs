@@ -1,4 +1,7 @@
-use pulldown_cmark::{html, Options, Parser};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+
+use pulldown_cmark::{html, Event, Options, Parser, Tag};
 
 use crate::config::Theme;
 use crate::copy_clean::{is_supported_language, strip_full_line_comments};
@@ -381,6 +384,170 @@ pub(crate) fn post_process_code_blocks(html: &str) -> String {
     output
 }
 
+// ── Link extraction ──────────────────────────────────────────────────────────
+
+/// Returns `true` if the URL looks like an external or non-file reference that
+/// should never be rewritten.
+fn is_external_url(url: &str) -> bool {
+    url.starts_with("http://")
+        || url.starts_with("https://")
+        || url.starts_with("mailto:")
+        || url.starts_with("//")
+        || url.starts_with('#')
+}
+
+/// Split `url` into `(base, fragment)` at the first `#`.
+///
+/// If there is no `#`, `fragment` is an empty string.
+fn split_fragment(url: &str) -> (&str, &str) {
+    match url.find('#') {
+        Some(pos) => (&url[..pos], &url[pos..]),
+        None => (url, ""),
+    }
+}
+
+/// Returns `true` if `path` ends with `.md` or `.markdown` (case-insensitive).
+fn is_md_extension(path: &str) -> bool {
+    let lower = path.to_lowercase();
+    lower.ends_with(".md") || lower.ends_with(".markdown")
+}
+
+/// Extract all local Markdown links from `markdown` that resolve to existing
+/// files relative to `source_dir`.
+///
+/// A link is included when:
+/// - it is not an external URL (`http://`, `https://`, `mailto:`, `//`, `#`),
+/// - its base path (without any `#fragment`) ends with `.md` or `.markdown`
+///   (case-insensitive), and
+/// - the resolved path exists on disk (confirmed via
+///   [`std::fs::canonicalize`]).
+///
+/// Image links are **not** included; only `[text](target)` / `[text][ref]`
+/// style links are considered.
+///
+/// # Returns
+/// A `Vec` of `(target_base, canonical_path)` tuples in document order,
+/// deduplicated by `target_base`.  `target_base` is the link destination with
+/// the fragment stripped so it can be used as the key in a rewrite map.
+pub fn extract_local_md_links(markdown: &str, source_dir: &Path) -> Vec<(String, PathBuf)> {
+    let mut opts = Options::empty();
+    opts.insert(Options::ENABLE_TABLES);
+    opts.insert(Options::ENABLE_FOOTNOTES);
+    opts.insert(Options::ENABLE_STRIKETHROUGH);
+    opts.insert(Options::ENABLE_TASKLISTS);
+
+    let parser = Parser::new_ext(markdown, opts);
+    let mut links: Vec<(String, PathBuf)> = Vec::new();
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    for event in parser {
+        if let Event::Start(Tag::Link { dest_url, .. }) = event {
+            let url = dest_url.as_ref();
+            if is_external_url(url) {
+                continue;
+            }
+            let (base, _fragment) = split_fragment(url);
+            if !is_md_extension(base) {
+                continue;
+            }
+            if seen.contains(base) {
+                continue;
+            }
+            // Resolve and canonicalize.
+            let resolved = source_dir.join(base);
+            if let Ok(canonical) = std::fs::canonicalize(&resolved) {
+                if canonical.is_file() {
+                    seen.insert(base.to_string());
+                    links.push((base.to_string(), canonical));
+                }
+            }
+        }
+    }
+    links
+}
+
+// ── Rendering with link rewriting ────────────────────────────────────────────
+
+/// Render `markdown` to a complete HTML5 document, rewriting every local
+/// `.md` link destination to the corresponding rendered `.html` path.
+///
+/// `link_map` maps a link's **base target** (the part before any `#`) to the
+/// absolute [`PathBuf`] of its rendered HTML file.  Anchor fragments in the
+/// original link are preserved on the rewritten `href`.
+///
+/// External URLs and links whose base is not present in `link_map` are left
+/// unchanged.  When `link_map` is empty the output is identical to
+/// [`render_markdown`].
+///
+/// The rewriting is performed by transforming pulldown-cmark link events
+/// before passing them to the HTML serialiser, so it operates on the parsed
+/// AST rather than the raw HTML string.
+pub fn render_markdown_rewriting_links(
+    markdown: &str,
+    title: &str,
+    theme: Theme,
+    link_map: &HashMap<String, PathBuf>,
+) -> String {
+    if link_map.is_empty() {
+        return render_markdown(markdown, title, theme);
+    }
+
+    let mut opts = Options::empty();
+    opts.insert(Options::ENABLE_TABLES);
+    opts.insert(Options::ENABLE_FOOTNOTES);
+    opts.insert(Options::ENABLE_STRIKETHROUGH);
+    opts.insert(Options::ENABLE_TASKLISTS);
+
+    // Collect into a Vec so we own all event data before calling push_html.
+    let events: Vec<Event<'_>> = Parser::new_ext(markdown, opts)
+        .map(|event| match event {
+            Event::Start(Tag::Link {
+                link_type,
+                dest_url,
+                title: link_title,
+                id,
+            }) => {
+                let url = dest_url.as_ref();
+                if is_external_url(url) {
+                    return Event::Start(Tag::Link {
+                        link_type,
+                        dest_url,
+                        title: link_title,
+                        id,
+                    });
+                }
+                let (base, fragment) = split_fragment(url);
+                if let Some(html_path) = link_map.get(base) {
+                    let new_url: String = if fragment.is_empty() {
+                        html_path.to_string_lossy().into_owned()
+                    } else {
+                        format!("{}{}", html_path.to_string_lossy(), fragment)
+                    };
+                    Event::Start(Tag::Link {
+                        link_type,
+                        dest_url: new_url.into(),
+                        title: link_title,
+                        id,
+                    })
+                } else {
+                    Event::Start(Tag::Link {
+                        link_type,
+                        dest_url,
+                        title: link_title,
+                        id,
+                    })
+                }
+            }
+            other => other,
+        })
+        .collect();
+
+    let mut body = String::new();
+    html::push_html(&mut body, events.into_iter());
+    let body = post_process_code_blocks(&body);
+    build_html_document(title, &body, theme)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -490,6 +657,155 @@ mod tests {
         assert!(
             !html.contains(r#"class="mark-btn mark-copy-clean-btn""#),
             "clean button element should NOT be present when no language specified"
+        );
+    }
+
+    // ── extract_local_md_links tests ─────────────────────────────────────────
+
+    #[test]
+    fn extract_links_finds_local_md() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // Create a target file so canonicalize succeeds.
+        let target = dir.path().join("chapter.md");
+        std::fs::write(&target, "# Chapter").expect("write");
+
+        let md = "[Chapter](chapter.md)\n";
+        let links = extract_local_md_links(md, dir.path());
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].0, "chapter.md");
+        assert_eq!(links[0].1, target.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn extract_links_skips_external_urls() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let md = "[Google](https://google.com)\n[Local](http://localhost/foo.md)\n";
+        let links = extract_local_md_links(md, dir.path());
+        assert!(links.is_empty(), "external links must not be extracted");
+    }
+
+    #[test]
+    fn extract_links_skips_pure_anchors() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let md = "[Section](#heading)\n";
+        let links = extract_local_md_links(md, dir.path());
+        assert!(links.is_empty(), "pure anchor links must not be extracted");
+    }
+
+    #[test]
+    fn extract_links_skips_non_md_extensions() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // Create a real file so the only filter is the extension.
+        let pdf = dir.path().join("report.pdf");
+        std::fs::write(&pdf, "data").expect("write");
+        let md = "[Report](report.pdf)\n[Image](photo.png)\n";
+        let links = extract_local_md_links(md, dir.path());
+        assert!(links.is_empty(), "non-.md links must not be extracted");
+    }
+
+    #[test]
+    fn extract_links_deduplicates_same_target() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let target = dir.path().join("api.md");
+        std::fs::write(&target, "# API").expect("write");
+        let md = "[API](api.md)\n[API again](api.md)\n";
+        let links = extract_local_md_links(md, dir.path());
+        assert_eq!(links.len(), 1, "duplicate links must appear only once");
+    }
+
+    #[test]
+    fn extract_links_strips_fragment_for_key() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let target = dir.path().join("api.md");
+        std::fs::write(&target, "# API").expect("write");
+        let md = "[Section](api.md#endpoints)\n";
+        let links = extract_local_md_links(md, dir.path());
+        assert_eq!(links.len(), 1);
+        // The key must be the base without the fragment.
+        assert_eq!(links[0].0, "api.md");
+    }
+
+    #[test]
+    fn extract_links_ignores_nonexistent_files() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // No actual file created — canonicalize will fail.
+        let md = "[Ghost](ghost.md)\n";
+        let links = extract_local_md_links(md, dir.path());
+        assert!(links.is_empty(), "nonexistent files must not be extracted");
+    }
+
+    // ── render_markdown_rewriting_links tests ─────────────────────────────────
+
+    #[test]
+    fn rewrite_links_replaces_md_href() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let target = dir.path().join("api.md");
+        std::fs::write(&target, "# API").expect("write");
+
+        let html_path = dir.path().join("api-123-abcd1234.html");
+        let mut link_map = HashMap::new();
+        link_map.insert("api.md".to_string(), html_path.clone());
+
+        let md = "[API](api.md)\n";
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let expected = format!("href=\"{}\"", html_path.display());
+        assert!(
+            html.contains(&expected),
+            "expected rewritten href in html:\n{html}"
+        );
+        assert!(
+            !html.contains("href=\"api.md\""),
+            "original .md href must not survive"
+        );
+    }
+
+    #[test]
+    fn rewrite_links_preserves_fragment() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let html_path = dir.path().join("api-123-abcd1234.html");
+        let mut link_map = HashMap::new();
+        link_map.insert("api.md".to_string(), html_path.clone());
+
+        let md = "[Section](api.md#endpoints)\n";
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let expected = format!("href=\"{}#endpoints\"", html_path.display());
+        assert!(
+            html.contains(&expected),
+            "fragment must be preserved:\n{html}"
+        );
+    }
+
+    #[test]
+    fn rewrite_links_leaves_external_urls_unchanged() {
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let md = "[Google](https://google.com)\n";
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        assert!(
+            html.contains("href=\"https://google.com\""),
+            "external URL must not be modified:\n{html}"
+        );
+    }
+
+    #[test]
+    fn rewrite_links_leaves_non_md_local_links_unchanged() {
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let md = "[Image](photo.png)\n";
+        let html = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        assert!(
+            html.contains("href=\"photo.png\""),
+            "non-md link must not be modified:\n{html}"
+        );
+    }
+
+    #[test]
+    fn rewrite_links_empty_map_is_identity() {
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let md = "[Chapter](chapter.md)\n";
+        let html_rewrite = render_markdown_rewriting_links(md, "t", Theme::Light, &link_map);
+        let html_plain = render_markdown(md, "t", Theme::Light);
+        assert_eq!(
+            html_rewrite, html_plain,
+            "empty link_map must produce identical output to render_markdown"
         );
     }
 }
