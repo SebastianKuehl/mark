@@ -49,4 +49,4 @@ The generated Bash completion function remains in the top-level `mark` completio
 4. If a full behavioral fix requires a documented limitation instead of a code-only fix, the implementation must explicitly justify that outcome and update the appropriate docs.
 
 ## Status
-in_progress
+released

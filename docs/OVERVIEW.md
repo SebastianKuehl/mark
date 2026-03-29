@@ -23,7 +23,7 @@
 
 Only the instructor and the Product Owner Agent may update `README.md`.
 
-Current active execution item: `B-004`.
+Current active execution item: `—`.
 
 ---
 
@@ -31,6 +31,7 @@ Current active execution item: `B-004`.
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.5.1](releases.md#v051--patch) | patch | Bash completions stop suggesting root subcommands after the positional `FILE` argument |
 | [v0.5.0](releases.md#v050--minor) | minor | Single vs recursive render modes, hidden-by-default sidebar controls, in-page theme switcher |
 | [v0.2.0](releases.md#v020--minor) | minor | Recursive linked Markdown rendering + HTML link rewriting |
 | [v0.1.2](releases.md#v012--patch) | patch | `cleanup-home` subcommand |
@@ -75,7 +76,7 @@ Current active execution item: `B-004`.
 | [B-001](bugs/B-001-non-md-files-not-copied.md) | Non-Markdown linked files not copied | Medium | ✅ released | [B-001](bugs/B-001-non-md-files-not-copied.md) |
 | [B-002](bugs/B-002-cache-linked-file-staleness.md) | Render cache misses linked-file changes | Medium | 📝 planned | [B-002](bugs/B-002-cache-linked-file-staleness.md) |
 | [B-003](bugs/B-003-cache-theme-mismatch.md) | Theme change not reflected on cache hit | Low | 📝 planned | [B-003](bugs/B-003-cache-theme-mismatch.md) |
-| [B-004](bugs/B-004-completion-subcommands-after-file.md) | Completion suggests subcommands after FILE | Medium | 🚧 in_progress | [B-004](bugs/B-004-completion-subcommands-after-file.md) |
+| [B-004](bugs/B-004-completion-subcommands-after-file.md) | Completion suggests subcommands after FILE | Medium | ✅ released | [B-004](bugs/B-004-completion-subcommands-after-file.md) |
 
 ---
 
@@ -106,8 +107,8 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | `anvil` assigned to `B-004` / `P-016` (background) |
-| Open worktrees | `.worktrees/B-004-completion-after-file` |
-| Latest tag | `v0.5.0` |
-| Next planned work | B-004 in progress · B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
+| Active agents | none |
+| Open worktrees | none |
+| Latest tag | `v0.5.1` |
+| Next planned work | B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

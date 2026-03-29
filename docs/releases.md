@@ -1,5 +1,14 @@
 # Releases
 
+## v0.5.1 — patch
+
+- **Date:** 2026-03-29
+- **Type:** patch
+- **Merged items:** B-004 — Completion suggests subcommands after FILE
+- **Summary:** Bash completion generation now stops suggesting root subcommands like `config` and `cleanup-home` after the positional `FILE` argument is already present, while preserving normal root-level subcommand completion before a file is supplied. Includes regression coverage for the generated Bash completion behavior.
+
+---
+
 ## v0.5.0 — minor
 
 - **Date:** 2026-03-29
