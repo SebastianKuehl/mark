@@ -344,3 +344,54 @@ Update the README with:
 - single-run theme override support
 - updated rendering for dark and light themes
 - tests and documentation
+
+---
+
+## Milestone 9: Home folder cleanup command
+
+### Goal
+- Add a destructive cleanup command that removes the app folder in the user's
+  home directory:
+  - `~/.mark`
+  - `%USERPROFILE%\.mark`
+
+### CLI requirements
+Add a command such as:
+- `mark cleanup-home`
+
+Add confirmation bypass support such as:
+- `mark cleanup-home --yes`
+
+### Behavior
+- This command must be separate from the existing `mark --cleanup`
+- By default, require explicit confirmation before deletion
+- `--yes` must skip the confirmation prompt for non-interactive use
+- If the app directory does not exist, succeed with a clear no-op message
+- Only delete the resolved `.mark` directory, never parent directories or
+  arbitrary paths
+- Handle platform-specific issues safely, especially Windows executable locking
+- If full deletion cannot be completed, fail clearly or perform best-effort
+  cleanup with a clear message
+
+### Safety
+- Validate the target path before deletion
+- Never allow deletion outside the intended app directory
+- Keep the implementation conservative and explicit
+
+### Testing
+Add at least:
+- tests for safe target path resolution
+- tests for command behavior against temporary directories
+- coverage for missing-directory behavior
+
+### Documentation
+Update the README with:
+- what `cleanup-home` does
+- how it differs from `--cleanup`
+- confirmation behavior
+- any Windows-specific caveats
+
+### Deliverables
+- working home-folder cleanup command
+- safe deletion logic
+- tests and updated documentation

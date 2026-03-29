@@ -304,6 +304,35 @@ Documentation:
 - document how to override it for a single run
 - document precedence rules
 
+### 11c. Home folder cleanup command
+
+The CLI should support a destructive cleanup command that removes the app folder
+from the user's home directory.
+
+Requirements:
+- Add a command separate from `--cleanup`, for example:
+  - `mark cleanup-home`
+- Support non-interactive confirmation bypass:
+  - `mark cleanup-home --yes`
+
+Behavior:
+- By default, require explicit confirmation before deleting the app directory
+- Remove the resolved `.mark` directory recursively
+- If the directory does not exist, return success with a clear no-op message
+- Only delete the resolved `.mark` directory
+- Never delete parent directories or arbitrary user-supplied paths
+
+Safety:
+- Validate the resolved target path before deletion
+- Keep deletion logic conservative
+- Handle platform-specific issues safely, especially Windows executable locking
+  when the running binary lives inside `.mark/bin`
+
+Documentation:
+- document how this command differs from `mark --cleanup`
+- document confirmation behavior
+- document any platform-specific caveats
+
 ### 12. Safety and behavior notes
 
 - Treat the input Markdown as local user content

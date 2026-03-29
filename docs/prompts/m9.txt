@@ -1,0 +1,30 @@
+Read:
+- docs/project-spec.md
+- docs/agent-rules.md
+- docs/milestones.md
+
+Implement Milestone 9 only.
+
+Constraints:
+- Add a destructive cleanup command that removes the user's app folder:
+  - ~/.mark
+  - %USERPROFILE%\.mark
+- This must be separate from the existing `--cleanup` command
+- Require confirmation by default
+- Support a non-interactive confirmation bypass, e.g. `--yes`
+- Only ever delete the resolved `.mark` app directory
+- Handle Windows self-delete/executable-locking safely
+- Update tests and README
+
+After changes, run:
+- cargo fmt --all
+- cargo check
+- cargo test
+
+If practical, also run:
+- cargo clippy --all-targets --all-features -- -D warnings
+
+Then stop and provide:
+- summary of files changed
+- commands run
+- any remaining issues
