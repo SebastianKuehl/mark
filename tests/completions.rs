@@ -146,4 +146,19 @@ printf '%s\n' "${COMPREPLY[@]}""#,
             "'file' argument must use ValueHint::FilePath for shell completions"
         );
     }
+
+    #[test]
+    fn help_describes_current_directory_fallback_when_file_is_omitted() {
+        let mut cmd = Cli::command();
+        let mut help = Vec::new();
+        cmd.write_long_help(&mut help)
+            .expect("long help should render");
+        let help = String::from_utf8(help).expect("help should be valid utf-8");
+        assert!(
+            help.contains(
+                "When FILE is omitted, mark discovers Markdown files in the current directory"
+            ),
+            "{help}"
+        );
+    }
 }

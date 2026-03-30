@@ -11,11 +11,12 @@ use std::path::PathBuf;
     long_version = concat!("v", env!("CARGO_PKG_VERSION")),
     about,
     long_about = None,
+    after_help = "When FILE is omitted, mark discovers Markdown files in the current directory and opens the first discovered page.",
     disable_version_flag = true,
     override_usage = "mark [OPTIONS] [FILE]\n       mark [OPTIONS] <COMMAND>",
 )]
 pub struct Cli {
-    /// Markdown file to render
+    /// Markdown file to render. When omitted, discover Markdown files in the current directory.
     #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub file: Option<PathBuf>,
 
@@ -148,6 +149,13 @@ mod tests {
     fn file_parses_as_file_render() {
         let cli = Cli::try_parse_from(["mark", "notes.md"]).unwrap();
         assert_eq!(cli.file, Some(PathBuf::from("notes.md")));
+        assert!(cli.command.is_none());
+    }
+
+    #[test]
+    fn no_file_parses_as_current_directory_render() {
+        let cli = Cli::try_parse_from(["mark"]).unwrap();
+        assert!(cli.file.is_none());
         assert!(cli.command.is_none());
     }
 

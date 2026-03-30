@@ -222,4 +222,61 @@ mod view_controls {
         assert!(html.contains("--mark-sidebar-button-radius:18px"), "{html}");
         assert!(html.contains("--mark-theme-button-radius:14px"), "{html}");
     }
+
+    #[test]
+    fn no_argument_mode_renders_current_directory_markdown_and_opens_first_file() {
+        let sandbox = tempfile::tempdir().expect("tempdir");
+        let home = sandbox.path().join("home");
+        let docs = sandbox.path().join("docs");
+        fs::create_dir_all(&home).expect("home");
+        fs::create_dir_all(&docs).expect("docs");
+
+        fs::write(docs.join("b.md"), "# B\n").expect("write b");
+        fs::write(docs.join("a.markdown"), "# A\n").expect("write a");
+        fs::write(docs.join("notes.txt"), "not markdown\n").expect("write txt");
+
+        let output = run_mark(&home, &docs, &["--no-open"]);
+        assert!(
+            output.status.success(),
+            "stdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(stdout.contains("→ rendered:"), "{stdout}");
+
+        let rendered = rendered_path(&stdout);
+        assert_eq!(
+            rendered.file_name().and_then(|name| name.to_str()),
+            Some("a.html")
+        );
+        let run_dir = rendered.parent().expect("run dir");
+        assert!(run_dir.join("b.html").exists(), "{stdout}");
+        assert!(!run_dir.join("notes.html").exists(), "{stdout}");
+    }
+
+    #[test]
+    fn no_argument_mode_errors_when_current_directory_has_no_markdown_files() {
+        let sandbox = tempfile::tempdir().expect("tempdir");
+        let home = sandbox.path().join("home");
+        let docs = sandbox.path().join("docs");
+        fs::create_dir_all(&home).expect("home");
+        fs::create_dir_all(&docs).expect("docs");
+        fs::write(docs.join("notes.txt"), "not markdown\n").expect("write txt");
+
+        let output = run_mark(&home, &docs, &["--no-open"]);
+        assert!(
+            !output.status.success(),
+            "stdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("No Markdown files found in current directory"),
+            "{stderr}"
+        );
+    }
 }

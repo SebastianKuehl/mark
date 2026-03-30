@@ -21,6 +21,41 @@ fn path_mtime_secs(path: &Path) -> Option<u64> {
         })
 }
 
+fn is_markdown_file(path: &Path) -> bool {
+    path.is_file()
+        && path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .map(|ext| {
+                let ext = ext.to_ascii_lowercase();
+                ext == "md" || ext == "markdown"
+            })
+            .unwrap_or(false)
+}
+
+fn discover_markdown_files(dir: &Path) -> Result<Vec<PathBuf>> {
+    let mut files = Vec::new();
+    for entry in std::fs::read_dir(dir)
+        .map_err(|e| anyhow::anyhow!("Failed to read directory {}: {e}", dir.display()))?
+    {
+        let entry = entry
+            .map_err(|e| anyhow::anyhow!("Failed to read directory {}: {e}", dir.display()))?;
+        let path = entry.path();
+        if !is_markdown_file(&path) {
+            continue;
+        }
+        let canonical = std::fs::canonicalize(&path).map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to canonicalize discovered Markdown file {}: {e}",
+                path.display()
+            )
+        })?;
+        files.push(canonical);
+    }
+    files.sort();
+    Ok(files)
+}
+
 fn stable_path_hash(path: &Path) -> u32 {
     path.as_os_str()
         .as_encoded_bytes()
@@ -363,14 +398,20 @@ fn main() -> Result<()> {
         )
         .exit();
     }
-    if args.file.is_none() && !args.cleanup {
-        let mut cmd = mark::cli::Cli::command();
-        cmd.error(
-            clap::error::ErrorKind::MissingRequiredArgument,
-            "either FILE or --cleanup is required",
-        )
-        .exit();
-    }
+    let discovered_files = if args.file.is_none() && !args.cleanup {
+        let cwd = std::env::current_dir()
+            .map_err(|e| anyhow::anyhow!("Failed to determine current directory: {e}"))?;
+        let files = discover_markdown_files(&cwd)?;
+        if files.is_empty() {
+            anyhow::bail!(
+                "No Markdown files found in current directory: {}",
+                cwd.display()
+            );
+        }
+        Some(files)
+    } else {
+        None
+    };
 
     let paths = storage::AppPaths::resolve()?;
 
@@ -391,14 +432,17 @@ fn main() -> Result<()> {
 
     let file = args
         .file
+        .clone()
+        .or_else(|| {
+            discovered_files
+                .as_ref()
+                .and_then(|files| files.first().cloned())
+        })
         .expect("file is required when not using --cleanup");
 
-    if !file.exists() {
+    if args.file.is_some() && !file.exists() {
         anyhow::bail!("Input file not found: {}", file.display());
     }
-
-    let markdown = std::fs::read_to_string(&file)
-        .map_err(|e| anyhow::anyhow!("Failed to read {}: {e}", file.display()))?;
 
     // ── Phase 1: BFS discovery of all transitively reachable .md files ────────
     //
@@ -407,7 +451,20 @@ fn main() -> Result<()> {
 
     let entry_canonical = std::fs::canonicalize(&file)
         .map_err(|e| anyhow::anyhow!("Failed to canonicalize {}: {e}", file.display()))?;
+    let mut seed_files = discovered_files.unwrap_or_else(|| vec![entry_canonical.clone()]);
+    if !seed_files.contains(&entry_canonical) {
+        seed_files.insert(0, entry_canonical.clone());
+    }
+    if let Some(idx) = seed_files.iter().position(|path| *path == entry_canonical) {
+        seed_files.swap(0, idx);
+    }
 
+    let mut content_cache: HashMap<PathBuf, String> = HashMap::new();
+    for canonical in &seed_files {
+        let markdown = std::fs::read_to_string(canonical)
+            .map_err(|e| anyhow::anyhow!("Failed to read {}: {e}", canonical.display()))?;
+        content_cache.insert(canonical.clone(), markdown);
+    }
     // ── Render cache: load before discovery so it's available for early-exit
     // and for the post-render update at the bottom of main.
     let mut render_cache = cache::RenderCache::load(paths.render_cache.clone());
@@ -419,30 +476,31 @@ fn main() -> Result<()> {
         .unwrap_or_else(|| Path::new("."))
         .to_path_buf();
 
-    let mut visited: HashSet<PathBuf> = HashSet::new();
-    visited.insert(entry_canonical.clone());
+    let mut visited: HashSet<PathBuf> = seed_files.iter().cloned().collect();
 
-    // Ordered list of canonical paths: entry first, then linked files in BFS order.
-    let mut ordered: Vec<PathBuf> = vec![entry_canonical.clone()];
-
-    // Cache markdown content keyed by canonical path.
-    let mut content_cache: HashMap<PathBuf, String> = HashMap::new();
-    content_cache.insert(entry_canonical.clone(), markdown.clone());
+    // Ordered list of canonical paths: entry first, then discovered cwd files,
+    // then linked files in BFS order.
+    let mut ordered: Vec<PathBuf> = seed_files.clone();
 
     // Track the BFS discovery parent of each file (for breadcrumb construction).
     let mut parent_map: HashMap<PathBuf, PathBuf> = HashMap::new();
 
     let skipped_md_links: Vec<String> = if render_mode == RenderMode::Single {
-        render::extract_local_md_links(
-            &markdown,
-            entry_canonical.parent().unwrap_or_else(|| Path::new(".")),
-        )
-        .into_iter()
-        .map(|(base, _)| base)
-        .collect()
+        let mut skipped = Vec::new();
+        let mut seen = HashSet::new();
+        for canonical in &ordered {
+            let content = content_cache.get(canonical).cloned().unwrap_or_default();
+            let source_dir = canonical.parent().unwrap_or_else(|| Path::new("."));
+            for (base, _) in render::extract_local_md_links(&content, source_dir) {
+                if seen.insert(base.clone()) {
+                    skipped.push(base);
+                }
+            }
+        }
+        skipped
     } else {
         let mut queue: VecDeque<PathBuf> = VecDeque::new();
-        queue.push_back(entry_canonical.clone());
+        queue.extend(ordered.iter().cloned());
 
         while let Some(current) = queue.pop_front() {
             let content = content_cache.get(&current).cloned().unwrap_or_default();
@@ -850,5 +908,23 @@ mod tests {
                 .expect("note");
         assert!(note.contains("guide.md"));
         assert!(note.contains("nested/api.md"));
+    }
+
+    #[test]
+    fn discover_markdown_files_returns_sorted_top_level_markdown_files() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(dir.path().join("nested")).expect("nested");
+        std::fs::write(dir.path().join("b.md"), "# B").expect("write b");
+        std::fs::write(dir.path().join("a.markdown"), "# A").expect("write a");
+        std::fs::write(dir.path().join("note.txt"), "nope").expect("write txt");
+        std::fs::write(dir.path().join("nested/inside.md"), "# Nested").expect("write nested");
+
+        let discovered = discover_markdown_files(dir.path()).expect("discover markdown");
+        let discovered_names: Vec<_> = discovered
+            .iter()
+            .map(|path| path.file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
+
+        assert_eq!(discovered_names, vec!["a.markdown", "b.md"]);
     }
 }
