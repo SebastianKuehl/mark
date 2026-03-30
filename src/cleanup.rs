@@ -14,6 +14,34 @@ pub fn prune_render_cache(cache_path: &Path) {
     cache.save();
 }
 
+/// Delete a file if it exists.
+pub fn delete_file_if_exists(path: &Path) -> anyhow::Result<bool> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(true),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(err) => Err(anyhow::anyhow!(
+            "Failed to remove '{}': {err}",
+            path.display()
+        )),
+    }
+}
+
+/// Delete the rendered output directory if it exists, then prune stale cache entries.
+pub fn delete_rendered_dir(rendered_dir: &Path, cache_path: &Path) -> anyhow::Result<bool> {
+    let removed = match std::fs::remove_dir_all(rendered_dir) {
+        Ok(()) => true,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => false,
+        Err(err) => {
+            return Err(anyhow::anyhow!(
+                "Failed to remove '{}': {err}",
+                rendered_dir.display()
+            ))
+        }
+    };
+    prune_render_cache(cache_path);
+    Ok(removed)
+}
+
 /// Delete per-invocation render directories in `rendered_dir` whose oldest file
 /// (or the directory itself when empty) is older than 30 days. Also removes
 /// legacy top-level `.html` files from the pre-run-dir layout using the same
@@ -215,6 +243,42 @@ mod tests {
         let missing = dir.path().join("no_such_dir");
         let deleted = cleanup_old_files(&missing).expect("cleanup");
         assert_eq!(deleted, 0);
+    }
+
+    #[test]
+    fn delete_file_if_exists_removes_existing_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let config = dir.path().join("config.toml");
+        write_file(&config, "theme = 'light'");
+
+        let deleted = delete_file_if_exists(&config).expect("delete");
+
+        assert!(deleted);
+        assert!(!config.exists());
+    }
+
+    #[test]
+    fn delete_file_if_exists_returns_false_for_missing_file() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let config = dir.path().join("config.toml");
+
+        let deleted = delete_file_if_exists(&config).expect("delete");
+
+        assert!(!deleted);
+    }
+
+    #[test]
+    fn delete_rendered_dir_removes_directory_when_present() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let rendered = dir.path().join("rendered");
+        fs::create_dir_all(rendered.join("run-1")).expect("mkdir");
+        write_file(&rendered.join("run-1/out.html"), "<p>hello</p>");
+
+        let removed =
+            delete_rendered_dir(&rendered, &dir.path().join("render-cache.toml")).expect("delete");
+
+        assert!(removed);
+        assert!(!rendered.exists());
     }
 
     #[test]

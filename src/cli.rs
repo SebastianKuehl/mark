@@ -1,5 +1,5 @@
 use crate::config::{RenderMode, SidebarVisibility, Theme};
-use clap::{Parser, Subcommand};
+use clap::{ArgGroup, Args, Parser, Subcommand};
 use clap_complete::Shell;
 use std::path::PathBuf;
 
@@ -19,10 +19,6 @@ pub struct Cli {
     /// Markdown file to render. When omitted, discover Markdown files in the current directory.
     #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
     pub file: Option<PathBuf>,
-
-    /// Delete rendered files older than 30 days without rendering anything
-    #[arg(long)]
-    pub cleanup: bool,
 
     /// Render without opening the browser
     #[arg(long)]
@@ -63,18 +59,16 @@ pub enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
-    /// Remove the entire ~/.mark app directory from the home folder.
+    /// Remove app data from ~/.mark using an explicit wipe mode.
     ///
-    /// This is a destructive operation that deletes ALL mark data including
-    /// rendered files, configuration, and the installed binary.  It is
-    /// separate from `mark --cleanup`, which only removes old rendered files.
+    /// Exactly one wipe target is required:
+    ///   --all         Delete the entire ~/.mark directory
+    ///   --config      Delete only ~/.mark/config.toml
+    ///   --renders     Delete only ~/.mark/rendered
+    ///   --old-renders Delete render output older than 30 days
     ///
-    /// A confirmation prompt is shown by default; pass --yes to skip it.
-    CleanupHome {
-        /// Skip the confirmation prompt (for non-interactive use).
-        #[arg(long)]
-        yes: bool,
-    },
+    /// A confirmation prompt is shown for --all by default; pass --yes to skip it.
+    Wipe(WipeArgs),
     /// Export a Markdown file directly to PDF via headless browser print.
     ///
     /// Example: mark pdf docs/file.md out/file.pdf
@@ -86,6 +80,35 @@ pub enum Commands {
         #[arg(value_name = "OUTPUT", value_hint = clap::ValueHint::FilePath)]
         output: PathBuf,
     },
+}
+
+#[derive(Args, Debug)]
+#[command(group(
+    ArgGroup::new("wipe_target")
+        .args(["all", "config", "renders", "old_renders"])
+        .required(true)
+        .multiple(false)
+))]
+pub struct WipeArgs {
+    /// Delete the entire ~/.mark directory.
+    #[arg(long)]
+    pub all: bool,
+
+    /// Delete only ~/.mark/config.toml.
+    #[arg(long)]
+    pub config: bool,
+
+    /// Delete only ~/.mark/rendered.
+    #[arg(long)]
+    pub renders: bool,
+
+    /// Delete only render output older than 30 days.
+    #[arg(long = "old-renders")]
+    pub old_renders: bool,
+
+    /// Skip the confirmation prompt for destructive wipes.
+    #[arg(long)]
+    pub yes: bool,
 }
 
 /// Config sub-actions.
@@ -138,6 +161,7 @@ pub enum ConfigAction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::CommandFactory;
 
     #[test]
     fn single_and_recursive_flags_conflict() {
@@ -169,6 +193,44 @@ mod tests {
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn wipe_requires_exactly_one_target() {
+        let err = Cli::try_parse_from(["mark", "wipe"]).unwrap_err();
+        assert_eq!(err.kind(), clap::error::ErrorKind::MissingRequiredArgument);
+
+        let err = Cli::try_parse_from(["mark", "wipe", "--config", "--renders"]).unwrap_err();
+        assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
+    }
+
+    #[test]
+    fn wipe_modes_parse() {
+        let cli = Cli::try_parse_from(["mark", "wipe", "--old-renders"]).unwrap();
+        match cli.command {
+            Some(Commands::Wipe(WipeArgs {
+                old_renders: true,
+                yes: false,
+                ..
+            })) => {}
+            other => panic!("unexpected command: {other:?}"),
+        }
+
+        let cli = Cli::try_parse_from(["mark", "wipe", "--all", "--yes"]).unwrap();
+        match cli.command {
+            Some(Commands::Wipe(WipeArgs {
+                all: true,
+                yes: true,
+                ..
+            })) => {}
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn root_cleanup_flag_is_rejected() {
+        let err = Cli::try_parse_from(["mark", "--cleanup"]).unwrap_err();
+        assert_eq!(err.kind(), clap::error::ErrorKind::UnknownArgument);
     }
 
     #[test]
@@ -239,5 +301,23 @@ mod tests {
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn help_lists_wipe_modes_and_hides_legacy_cleanup_surface() {
+        let mut cmd = Cli::command();
+        let mut wipe = cmd
+            .find_subcommand_mut("wipe")
+            .expect("wipe subcommand should exist")
+            .clone();
+        let mut help = Vec::new();
+        wipe.write_long_help(&mut help).expect("help");
+        let help = String::from_utf8(help).expect("utf8");
+
+        assert!(help.contains("wipe"), "{help}");
+        assert!(help.contains("--old-renders"), "{help}");
+        assert!(help.contains("--config"), "{help}");
+        assert!(!help.contains("cleanup-home"), "{help}");
+        assert!(!help.contains("--cleanup"), "{help}");
     }
 }

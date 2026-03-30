@@ -69,8 +69,8 @@ printf '%s\n' "${COMPREPLY[@]}""#,
             "root completions should still include subcommands before FILE"
         );
         assert!(
-            completions.iter().any(|item| item == "cleanup-home"),
-            "root completions should still include cleanup-home before FILE"
+            completions.iter().any(|item| item == "wipe"),
+            "root completions should still include wipe before FILE"
         );
     }
 
@@ -83,12 +83,34 @@ printf '%s\n' "${COMPREPLY[@]}""#,
             "config should not be suggested after FILE is already present"
         );
         assert!(
-            !completions.iter().any(|item| item == "cleanup-home"),
-            "cleanup-home should not be suggested after FILE is already present"
+            !completions.iter().any(|item| item == "wipe"),
+            "wipe should not be suggested after FILE is already present"
         );
         assert!(
             completions.iter().any(|item| item == "--single"),
             "valid top-level flags should still be suggested after FILE"
+        );
+    }
+
+    #[test]
+    fn bash_completion_exposes_wipe_modes() {
+        let script = generate_completions(Shell::Bash);
+        let completions = run_bash_completion(&script, &["mark", "wipe", ""]);
+        assert!(
+            completions.iter().any(|item| item == "--all"),
+            "{completions:?}"
+        );
+        assert!(
+            completions.iter().any(|item| item == "--config"),
+            "{completions:?}"
+        );
+        assert!(
+            completions.iter().any(|item| item == "--renders"),
+            "{completions:?}"
+        );
+        assert!(
+            completions.iter().any(|item| item == "--old-renders"),
+            "{completions:?}"
         );
     }
 

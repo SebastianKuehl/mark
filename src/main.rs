@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use mark::{
     browser, cache, cleanup, cleanup_home,
-    cli::{Commands, ConfigAction},
+    cli::{Commands, ConfigAction, WipeArgs},
     completions,
     config::{AppConfig, AppearanceConfig, RenderMode, SidebarVisibility, Theme},
     render, storage,
@@ -354,51 +354,18 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Handle `cleanup-home` subcommand.
-    if let Some(Commands::CleanupHome { yes }) = args.command {
-        let target = cleanup_home::resolve_app_dir()?;
-        cleanup_home::validate_target(&target)?;
-
-        if !target.exists() {
-            println!("Nothing to do: '{}' does not exist.", target.display());
-            return Ok(());
-        }
-
-        if !yes {
-            eprint!(
-                "This will permanently delete '{}' and ALL its contents.\n\
-                 Type 'yes' to confirm: ",
-                target.display()
-            );
-            let mut input = String::new();
-            std::io::stdin().read_line(&mut input)?;
-            if input.trim() != "yes" {
-                println!("Aborted.");
-                return Ok(());
-            }
-        }
-
-        cleanup_home::delete_app_dir(&target)?;
-        println!("Deleted '{}'.", target.display());
-        return Ok(());
-    }
-
     // Handle `pdf` subcommand.
     if let Some(Commands::Pdf { source, output }) = args.command {
         return handle_pdf(&source, &output);
     }
 
-    // Without a subcommand, replicate the old ArgGroup semantics:
-    // exactly one of FILE or --cleanup must be provided.
-    if args.file.is_some() && args.cleanup {
-        let mut cmd = mark::cli::Cli::command();
-        cmd.error(
-            clap::error::ErrorKind::ArgumentConflict,
-            "FILE and --cleanup cannot be used together",
-        )
-        .exit();
+    // Handle `wipe` subcommand.
+    if let Some(Commands::Wipe(wipe)) = args.command {
+        let paths = storage::AppPaths::resolve()?;
+        return handle_wipe(paths, wipe);
     }
-    let discovered_files = if args.file.is_none() && !args.cleanup {
+
+    let discovered_files = if args.file.is_none() {
         let cwd = std::env::current_dir()
             .map_err(|e| anyhow::anyhow!("Failed to determine current directory: {e}"))?;
         let files = discover_markdown_files(&cwd)?;
@@ -415,14 +382,6 @@ fn main() -> Result<()> {
 
     let paths = storage::AppPaths::resolve()?;
 
-    if args.cleanup {
-        paths.ensure_rendered_dir()?;
-        let deleted = cleanup::cleanup_old_files(&paths.rendered)?;
-        cleanup::prune_render_cache(&paths.render_cache);
-        println!("Cleanup complete: {deleted} run dir(s) removed.");
-        return Ok(());
-    }
-
     // Resolve output settings: CLI override > persisted config > defaults.
     let cfg = AppConfig::load(&paths.config)?;
     let render_mode = resolve_render_mode(&args, &cfg);
@@ -438,7 +397,7 @@ fn main() -> Result<()> {
                 .as_ref()
                 .and_then(|files| files.first().cloned())
         })
-        .expect("file is required when not using --cleanup");
+        .expect("file is required when not using a subcommand");
 
     if args.file.is_some() && !file.exists() {
         anyhow::bail!("Input file not found: {}", file.display());
@@ -778,6 +737,72 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn confirm_full_wipe(target: &Path) -> Result<bool> {
+    eprint!(
+        "This will permanently delete '{}' and ALL its contents.\n\
+         Type 'yes' to confirm: ",
+        target.display()
+    );
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input)?;
+    Ok(input.trim() == "yes")
+}
+
+fn handle_wipe(paths: storage::AppPaths, wipe: WipeArgs) -> Result<()> {
+    if wipe.all {
+        cleanup_home::validate_target(&paths.root)?;
+        if !paths.root.exists() {
+            println!("Nothing to do: '{}' does not exist.", paths.root.display());
+            return Ok(());
+        }
+
+        if !wipe.yes && !confirm_full_wipe(&paths.root)? {
+            println!("Aborted.");
+            return Ok(());
+        }
+
+        cleanup_home::delete_app_dir(&paths.root)?;
+        println!("Deleted '{}'.", paths.root.display());
+        return Ok(());
+    }
+
+    if wipe.config {
+        let deleted = cleanup::delete_file_if_exists(&paths.config)?;
+        if deleted {
+            println!("Deleted config '{}'.", paths.config.display());
+        } else {
+            println!(
+                "Nothing to do: '{}' does not exist.",
+                paths.config.display()
+            );
+        }
+        return Ok(());
+    }
+
+    if wipe.renders {
+        let deleted = cleanup::delete_rendered_dir(&paths.rendered, &paths.render_cache)?;
+        if deleted {
+            println!("Deleted rendered output '{}'.", paths.rendered.display());
+        } else {
+            println!(
+                "Nothing to do: '{}' does not exist.",
+                paths.rendered.display()
+            );
+        }
+        return Ok(());
+    }
+
+    if wipe.old_renders {
+        paths.ensure_rendered_dir()?;
+        let deleted = cleanup::cleanup_old_files(&paths.rendered)?;
+        cleanup::prune_render_cache(&paths.render_cache);
+        println!("Cleanup complete: {deleted} stale render item(s) removed.");
+        return Ok(());
+    }
+
+    unreachable!("clap requires exactly one wipe mode")
 }
 
 #[cfg(test)]
