@@ -39,7 +39,7 @@ terminal command section to a collapsible accordion with a Save button.
 High
 
 ## Status
-ready
+released
 
 ## Target Release
-TBD
+v0.7.1

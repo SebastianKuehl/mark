@@ -1,5 +1,23 @@
 # Releases
 
+## v0.8.0 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-019, F-021
+- **Summary:** Recursive render scope restriction. BFS link-following is now scoped to the entry file's parent directory and its subdirectories. Links to `.md` files or assets outside that subtree are silently skipped and their HTML hrefs are left unchanged. Prevents unintended rendering of sibling or parent directory content.
+
+---
+
+## v0.7.1 — patch
+
+- **Date:** 2026-03-30
+- **Type:** patch
+- **Merged items:** M-018, B-007, F-020
+- **Summary:** Reader shell UX refinements. `c` hotkey now toggles the config pane open/closed (was open-only). Document letter top edge aligned with the header chrome. "Terminal command" block in the config pane is now a collapsed `<details>` accordion by default. A full-width "Save" button appears below the accordion — disabled until any layout value differs from the rendered defaults; on click it copies the generated command to the clipboard.
+
+---
+
 ## v0.7.0 — minor
 
 - **Date:** 2026-03-30

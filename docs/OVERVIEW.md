@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `—` (M-017 released as v0.7.0).
+Current active milestone: `—` (M-019 released as v0.8.0; backlog empty).
 
 ---
 
@@ -32,6 +32,8 @@ Current active milestone: `—` (M-017 released as v0.7.0).
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.8.0](releases.md#v080--minor) | minor | Recursive render scope restriction — BFS follows only links within entry file's directory subtree |
+| [v0.7.1](releases.md#v071--patch) | patch | Reader shell UX — c hotkey toggles, letter alignment, accordion terminal command, save button |
 | [v0.7.0](releases.md#v070--minor) | minor | Reader controls polish — config menu (⚙/c), t light/dark toggle, live layout preview, rem units, subtle bg glow, stray checkbox removed |
 | [v0.6.1](releases.md#v061--minor) | minor | Reader customization controls — `mark config set-layout`, in-page layout form, settings-aware cache, sidebar footer pinned, template dep removed |
 | [v0.6.0](releases.md#v060--minor) | minor | Render shell milestone landed (initially via `src/index.html`, now superseded by the self-contained shell in `src/render.rs`) |
@@ -58,8 +60,8 @@ Current active milestone: `—` (M-017 released as v0.7.0).
 | M-015 | Historical Template-Shell Migration | ✅ released | [M-015](milestones/M-015-template-render-shell.md) |
 | M-016 | Reader Customization Controls | ✅ released | [M-016](milestones/M-016-reader-customization-controls.md) |
 | M-017 | Reader Controls Polish | ✅ released | [M-017](milestones/M-017-reader-controls-polish.md) |
-| M-018 | Reader Shell UX Refinements | 📝 ready | [M-018](milestones/M-018-reader-shell-ux-refinements.md) |
-| M-019 | Recursive Render Scope Restriction | 📝 ready | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
+| M-018 | Reader Shell UX Refinements | ✅ released | [M-018](milestones/M-018-reader-shell-ux-refinements.md) |
+| M-019 | Recursive Render Scope Restriction | ✅ released | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
 ---
@@ -129,7 +131,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 |------|--------------|
 | Active agents | none |
 | Open worktrees | none |
-| Latest tag | `v0.7.0` |
-| Recently merged work | M-017 · F-019 · B-006 (v0.7.0) |
-| Next planned work | M-018 (B-007 + F-020) · M-019 (F-021) · B-002 · B-003 |
+| Latest tag | `v0.8.0` |
+| Recently merged work | M-019 · F-021 (v0.8.0) · M-018 · B-007 · F-020 (v0.7.1) |
+| Next planned work | B-002 · B-003 (backlog otherwise empty) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

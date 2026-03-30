@@ -43,4 +43,4 @@ no effect.
 5. Tests cover the toggle round-trip.
 
 ## Status
-ready
+released

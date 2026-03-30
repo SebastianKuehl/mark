@@ -33,7 +33,7 @@ boundary are silently skipped rather than rendered or copied.
 High
 
 ## Status
-ready
+released
 
 ## Target Release
-TBD
+v0.8.0

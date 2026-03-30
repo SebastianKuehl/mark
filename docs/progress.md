@@ -21,11 +21,11 @@
 | M-016 | milestone | Reader Customization Controls | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | F-018 | feature | Persistent reader appearance controls | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | B-005 | bug | Sidebar footer hotkeys can disappear behind tall hierarchies | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
-| M-018 | milestone | Reader Shell UX Refinements | `ready` | — | — | — | planning only; waiting for execution authorization | 2026-03-30 |
-| F-020 | feature | Reader shell UX refinements (letter alignment, accordion, save button) | `ready` | — | — | — | M-018; paired with B-007 | 2026-03-30 |
-| B-007 | bug | `c` hotkey only opens config pane, does not toggle it | `ready` | — | — | — | M-018; paired with F-020 | 2026-03-30 |
-| M-019 | milestone | Recursive Render Scope Restriction | `ready` | — | — | — | planning only; waiting for execution authorization | 2026-03-30 |
-| F-021 | feature | Restrict recursive rendering to entry file's directory subtree | `ready` | — | — | — | M-019; depends on F-010 BFS loop | 2026-03-30 |
+| M-018 | milestone | Reader Shell UX Refinements | `released` | anvil | anvil | — | `main` | — | 2026-03-30 |
+| F-020 | feature | Reader shell UX refinements (letter alignment, accordion, save button) | `released` | anvil | anvil | — | `main` | — | 2026-03-30 |
+| B-007 | bug | `c` hotkey only opens config pane, does not toggle it | `released` | anvil | anvil | — | `main` | — | 2026-03-30 |
+| M-019 | milestone | Recursive Render Scope Restriction | `released` | anvil | anvil | — | `main` | — | 2026-03-30 |
+| F-021 | feature | Restrict recursive rendering to entry file's directory subtree | `released` | anvil | anvil | — | `main` | — | 2026-03-30 |
 | M-017 | milestone | Reader Controls Polish | `released` | anvil | `.worktrees/M-017-reader-polish` | `feat/M-017-reader-polish` | — | 2026-03-30 |
 | F-019 | feature | Config menu hotkeys and live reader-layout preview polish | `released` | anvil | `.worktrees/M-017-reader-polish` | `feat/M-017-reader-polish` | — | 2026-03-30 |
 | B-006 | bug | Stray unlabeled checkbox appears in the reader shell | `released` | anvil | `.worktrees/M-017-reader-polish` | `feat/M-017-reader-polish` | — | 2026-03-30 |

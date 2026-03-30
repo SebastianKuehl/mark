@@ -17,7 +17,7 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
 - **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
 - **Self-contained application shell** — rendered pages now use the embedded Rust-built shell and stylesheet shipped with `mark`, with no dependency on a checked-in `index.html` template
-- **Reader config menu** — press `c` or click the ⚙ button to open the config panel; tune font size, letter width (rem), letter corner radius, and button radii, then copy the generated `mark config set-layout ...` command; changes preview live on the current page
+- **Reader config menu** — press `c` to toggle the config panel open/closed, or click the ⚙ button; tune font size, letter width (rem), letter corner radius, and button radii; the "Terminal command" accordion shows the generated `mark config set-layout ...` command; the "Save" button (enabled only when values differ from defaults) copies the command to the clipboard; changes preview live on the current page
 - **In-page theme switcher** — press `t` to toggle between `light` and `dark`; the config menu also contains the theme controls
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - Opens the result in the system default browser
@@ -121,7 +121,7 @@ This renders only the requested file, leaves local Markdown links untouched, pri
 mark --recursive docs/overview.md
 ```
 
-This renders the entry file plus recursively linked local Markdown files into the same run directory.
+This renders the entry file plus recursively linked local Markdown files into the same run directory. Only files within the entry file's parent directory (and its subdirectories) are rendered — links to files outside that subtree are silently skipped.
 
 ### Run cleanup only
 
@@ -411,6 +411,7 @@ mark docs/overview.md
 If `overview.md` links to `chapter1.md`, `chapter2.md`, and `chapter1.md` links to `appendix.md`, all four files are rendered in one invocation. Each rendered HTML file's links point to the other rendered files, so you can navigate the entire documentation set in the browser without any extra commands.
 
 - **Recursive** — follows links transitively to any depth
+- **Scoped** — only follows links within the entry file's directory subtree; links outside that boundary are skipped and their hrefs left unchanged
 - **Circular-safe** — already-visited files are never rendered twice
 - **Non-intrusive** — external URLs, image links, and non-Markdown file links are left unchanged
 - **Fragment-aware** — `./api.md#section` rewrites to the rendered HTML path with `#section` intact
