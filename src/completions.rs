@@ -6,7 +6,7 @@ use crate::cli::Cli;
 const MARK_BASH_OPTS: &str =
     "-s -r -V -h --cleanup --no-open --single --recursive --theme --version --help";
 const MARK_BASH_OPTS_WITH_SUBCOMMANDS: &str =
-    "-s -r -V -h --cleanup --no-open --single --recursive --theme --version --help [FILE] completions config cleanup-home help";
+    "-s -r -V -h --cleanup --no-open --single --recursive --theme --version --help [FILE] completions config cleanup-home pdf help";
 const BASH_REGISTRATION_MARKER: &str = "\nif [[ \"${BASH_VERSINFO[0]}\"";
 const BASH_COMPGEN_LINE: &str = "            COMPREPLY=( $(compgen -W \"${opts}\" -- \"${cur}\") )";
 const BASH_FILE_GUARD: &str = r#"
