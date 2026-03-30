@@ -44,6 +44,188 @@ mod render_flow {
     }
 }
 
+/// Integration tests for BFS scope restriction (F-021 / M-019).
+///
+/// Verifies that recursive rendering only follows links whose resolved
+/// canonical path is within the entry file's parent directory.
+#[cfg(test)]
+mod scope_restriction {
+    use std::collections::{HashMap, HashSet, VecDeque};
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    /// BFS helper that mirrors the scope-restricted loop in `main.rs`.
+    fn run_bfs(entry_canonical: &Path, entry_dir: &Path) -> Vec<PathBuf> {
+        let mut visited: HashSet<PathBuf> = HashSet::new();
+        visited.insert(entry_canonical.to_path_buf());
+
+        let mut ordered: Vec<PathBuf> = vec![entry_canonical.to_path_buf()];
+        let mut content_cache: HashMap<PathBuf, String> = HashMap::new();
+        content_cache.insert(
+            entry_canonical.to_path_buf(),
+            fs::read_to_string(entry_canonical).unwrap(),
+        );
+
+        let mut queue: VecDeque<PathBuf> = VecDeque::new();
+        queue.push_back(entry_canonical.to_path_buf());
+
+        while let Some(current) = queue.pop_front() {
+            let content = content_cache.get(&current).cloned().unwrap_or_default();
+            let source_dir = current.parent().unwrap_or_else(|| Path::new("."));
+            let links = mark::render::extract_local_md_links(&content, source_dir);
+            for (_base, canonical) in links {
+                // Scope guard — same logic as main.rs.
+                if !canonical.starts_with(entry_dir) {
+                    continue;
+                }
+                if visited.contains(&canonical) {
+                    continue;
+                }
+                visited.insert(canonical.clone());
+                if let Ok(md) = fs::read_to_string(&canonical) {
+                    content_cache.insert(canonical.clone(), md);
+                    ordered.push(canonical.clone());
+                    queue.push_back(canonical);
+                }
+            }
+        }
+
+        ordered
+    }
+
+    /// An in-scope link (docs/subdir/page.md) is followed and appears in the
+    /// ordered render list.
+    #[test]
+    fn in_scope_link_is_followed() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let docs = root.path().join("docs");
+        let subdir = docs.join("subdir");
+        fs::create_dir_all(&subdir).unwrap();
+
+        let entry = docs.join("entry.md");
+        let page = subdir.join("page.md");
+        fs::write(&entry, "[Page](subdir/page.md)\n").unwrap();
+        fs::write(&page, "# Page\n").unwrap();
+
+        let entry_canonical = entry.canonicalize().unwrap();
+        let entry_dir = entry_canonical.parent().unwrap().to_path_buf();
+
+        let ordered = run_bfs(&entry_canonical, &entry_dir);
+
+        assert_eq!(
+            ordered.len(),
+            2,
+            "entry + page should both be rendered: {ordered:?}"
+        );
+        assert!(
+            ordered.contains(&page.canonicalize().unwrap()),
+            "page.md must be in render list"
+        );
+    }
+
+    /// An out-of-scope link (../other/out.md — outside the entry directory) is
+    /// silently skipped and does NOT appear in the ordered render list.
+    #[test]
+    fn out_of_scope_md_link_is_skipped() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let docs = root.path().join("docs");
+        let other = root.path().join("other");
+        fs::create_dir_all(&docs).unwrap();
+        fs::create_dir_all(&other).unwrap();
+
+        let entry = docs.join("entry.md");
+        let outside = other.join("out.md");
+        fs::write(&entry, "[Out](../other/out.md)\n").unwrap();
+        fs::write(&outside, "# Out\n").unwrap();
+
+        let entry_canonical = entry.canonicalize().unwrap();
+        let entry_dir = entry_canonical.parent().unwrap().to_path_buf();
+
+        let ordered = run_bfs(&entry_canonical, &entry_dir);
+
+        assert_eq!(
+            ordered.len(),
+            1,
+            "only entry should be rendered, not out.md: {ordered:?}"
+        );
+        assert!(
+            !ordered.contains(&outside.canonicalize().unwrap()),
+            "out.md must NOT be in render list"
+        );
+    }
+
+    /// When an out-of-scope Markdown link appears in the entry file the rendered
+    /// HTML must preserve the original href unchanged (not rewritten to `.html`).
+    #[test]
+    fn out_of_scope_link_href_is_unchanged_in_html() {
+        use std::collections::HashMap;
+
+        // The link_map is empty for the out-of-scope file because it was never
+        // queued during BFS — mirroring what main.rs does.
+        let link_map: HashMap<String, std::path::PathBuf> = HashMap::new();
+
+        let markdown = "[Out](../other/out.md)\n";
+        let html = mark::render::render_markdown_rewriting_links(
+            markdown,
+            "entry",
+            mark::config::Theme::Light,
+            &link_map,
+            mark::render::RenderChrome {
+                breadcrumb: &[],
+                all_files: &[],
+                run_dir: std::path::Path::new(""),
+                sidebar_visible: false,
+                appearance: mark::config::AppearanceConfig::default(),
+            },
+        );
+
+        // The href must be the original relative path, NOT rewritten to .html.
+        assert!(
+            html.contains(r#"href="../other/out.md""#),
+            "out-of-scope href must be unchanged; html snippet: {}",
+            &html[html.find("<a").unwrap_or(0)
+                ..std::cmp::min(html.len(), html.find("<a").unwrap_or(0) + 200)]
+        );
+        assert!(
+            !html.contains("out.html"),
+            "out-of-scope href must NOT be rewritten to .html"
+        );
+    }
+
+    /// `docs2/` directory must NOT be mistaken for being inside `docs/` when
+    /// doing the starts_with scope check on Path objects.
+    #[test]
+    fn docs2_directory_not_confused_with_docs() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let docs = root.path().join("docs");
+        let docs2 = root.path().join("docs2");
+        fs::create_dir_all(&docs).unwrap();
+        fs::create_dir_all(&docs2).unwrap();
+
+        let entry = docs.join("entry.md");
+        let sibling = docs2.join("sibling.md");
+        // Note: the relative link "../docs2/sibling.md" resolves outside docs/.
+        fs::write(&entry, "[Sibling](../docs2/sibling.md)\n").unwrap();
+        fs::write(&sibling, "# Sibling\n").unwrap();
+
+        let entry_canonical = entry.canonicalize().unwrap();
+        let entry_dir = entry_canonical.parent().unwrap().to_path_buf();
+
+        // Sanity: docs2 does NOT start_with docs (Path comparison).
+        assert!(
+            !docs2.starts_with(&docs),
+            "docs2 must not be considered a subdirectory of docs"
+        );
+
+        let ordered = run_bfs(&entry_canonical, &entry_dir);
+        assert_eq!(
+            ordered.len(),
+            1,
+            "sibling in docs2 must be skipped: {ordered:?}"
+        );
+    }
+}
+
 /// Integration tests for recursive link extraction and circular-reference safety.
 #[cfg(test)]
 mod link_extraction_integration {

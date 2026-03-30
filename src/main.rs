@@ -329,6 +329,13 @@ fn main() -> Result<()> {
         }
     }
 
+    // The entry directory is the canonical parent of the entry file.  All
+    // recursive rendering is restricted to files within this subtree.
+    let entry_dir = entry_canonical
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .to_path_buf();
+
     let mut visited: HashSet<PathBuf> = HashSet::new();
     visited.insert(entry_canonical.clone());
 
@@ -362,6 +369,10 @@ fn main() -> Result<()> {
 
             let links = render::extract_local_md_links(&content, source_dir);
             for (_base, canonical) in links {
+                // Scope restriction: only follow links within the entry directory.
+                if !canonical.starts_with(&entry_dir) {
+                    continue;
+                }
                 if visited.contains(&canonical) {
                     continue;
                 }
@@ -390,11 +401,6 @@ fn main() -> Result<()> {
     //
     // We generate paths before rendering so that each file's link_map can
     // reference the final HTML paths of its targets.
-
-    let entry_dir = entry_canonical
-        .parent()
-        .unwrap_or_else(|| Path::new("."))
-        .to_path_buf();
     let run_dir = storage::make_run_dir(&paths.rendered, &entry_canonical)?;
     let mut output_path_map: HashMap<PathBuf, PathBuf> = HashMap::new();
     for canonical in &ordered {
@@ -463,8 +469,14 @@ fn main() -> Result<()> {
         }
 
         // Copy non-Markdown asset files and add them to the rewrite map.
+        // Assets outside the entry directory scope are silently skipped; their
+        // link href is left unchanged in the rendered HTML.
         let asset_links = render::extract_local_asset_links(&content, source_dir);
         for (original_url, asset_canonical) in asset_links {
+            // Scope restriction: only copy assets within the entry directory.
+            if !asset_canonical.starts_with(&entry_dir) {
+                continue;
+            }
             let dest = asset_output_path_for_run(
                 &run_dir,
                 &entry_dir,
