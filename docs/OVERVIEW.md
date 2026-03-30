@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `—` (reader shell polish released in v0.9.2).
+Current active milestone: `—` (config sidebar polish released in v0.9.3).
 
 ---
 
@@ -32,6 +32,7 @@ Current active milestone: `—` (reader shell polish released in v0.9.2).
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.9.3](releases.md#v093--patch) | patch | Config pane is now a right sidebar and `t` no longer closes it while toggling theme |
 | [v0.9.2](releases.md#v092--patch) | patch | Black-text PDF export, `Primary`+`Shift`+`E`, config hotkey help, sidebar footer removed, crate version synced |
 | [v0.9.1](releases.md#v091--patch) | patch | Render cache now invalidates on linked Markdown file changes and safely reuses unchanged recursive renders |
 | [v0.9.0](releases.md#v090--minor) | minor | PDF export button, final letter top alignment fix, flat terminal-command accordion with visible Copy button |

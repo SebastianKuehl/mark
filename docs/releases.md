@@ -1,5 +1,14 @@
 # Releases
 
+## v0.9.3 — patch
+
+- **Date:** 2026-03-30
+- **Type:** patch
+- **Merged items:** config pane sidebar polish
+- **Summary:** The config UI now opens as a proper fixed right sidebar so its content remains usable instead of overflowing past the viewport. The `t` hotkey now changes theme without closing the config panel, preserving the open state while you preview theme changes. The crate version was synced to `v0.9.3` in both `Cargo.toml` and `Cargo.lock`.
+
+---
+
 ## v0.9.2 — patch
 
 - **Date:** 2026-03-30
