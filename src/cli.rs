@@ -92,6 +92,27 @@ pub enum ConfigAction {
         /// Sidebar visibility to use by default: hidden or visible
         sidebar: SidebarVisibility,
     },
+    /// Set persistent reader appearance settings.
+    ///
+    /// Example:
+    /// mark config set-layout --font-size 17 --letter-width 8.5 --letter-radius 14 --sidebar-button-radius 999 --theme-button-radius 999
+    SetLayout {
+        /// Base font size for the rendered letter sheet, in px.
+        #[arg(long, value_name = "PX")]
+        font_size: u16,
+        /// Maximum letter width, in inches.
+        #[arg(long, value_name = "IN")]
+        letter_width: f32,
+        /// Corner radius for the rendered letter sheet, in px.
+        #[arg(long, value_name = "PX")]
+        letter_radius: u16,
+        /// Corner radius for the sidebar toggle button, in px.
+        #[arg(long, value_name = "PX")]
+        sidebar_button_radius: u16,
+        /// Corner radius for the theme/settings button, in px.
+        #[arg(long, value_name = "PX")]
+        theme_button_radius: u16,
+    },
 }
 
 #[cfg(test)]
@@ -105,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn config_supports_render_mode_and_sidebar_commands() {
+    fn config_supports_render_mode_sidebar_and_layout_commands() {
         let cli = Cli::try_parse_from(["mark", "config", "set-render-mode", "single"]).unwrap();
         match cli.command {
             Some(Commands::Config {
@@ -119,6 +140,42 @@ mod tests {
             Some(Commands::Config {
                 action: ConfigAction::SetSidebar { sidebar },
             }) => assert_eq!(sidebar, SidebarVisibility::Visible),
+            other => panic!("unexpected command: {other:?}"),
+        }
+
+        let cli = Cli::try_parse_from([
+            "mark",
+            "config",
+            "set-layout",
+            "--font-size",
+            "18",
+            "--letter-width",
+            "7.75",
+            "--letter-radius",
+            "20",
+            "--sidebar-button-radius",
+            "18",
+            "--theme-button-radius",
+            "14",
+        ])
+        .unwrap();
+        match cli.command {
+            Some(Commands::Config {
+                action:
+                    ConfigAction::SetLayout {
+                        font_size,
+                        letter_width,
+                        letter_radius,
+                        sidebar_button_radius,
+                        theme_button_radius,
+                    },
+            }) => {
+                assert_eq!(font_size, 18);
+                assert!((letter_width - 7.75).abs() < f32::EPSILON);
+                assert_eq!(letter_radius, 20);
+                assert_eq!(sidebar_button_radius, 18);
+                assert_eq!(theme_button_radius, 14);
+            }
             other => panic!("unexpected command: {other:?}"),
         }
     }

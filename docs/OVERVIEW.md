@@ -7,12 +7,12 @@
 
 ## 🗂 Project
 
-| Document | Purpose |
-|----------|---------|
-| [scope.md](scope.md) | Project summary, in/out of scope, constraints, success criteria |
-| [project-spec.md](project-spec.md) | Original build specification |
-| [worker-agent-rules.md](worker-agent-rules.md) | Rules governing all anvil implementation agents |
-| [../README.md](../README.md) | Public-facing user documentation |
+| Document                                       | Purpose                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------- |
+| [scope.md](scope.md)                           | Project summary, in/out of scope, constraints, success criteria |
+| [project-spec.md](project-spec.md)             | Original build specification                                    |
+| [worker-agent-rules.md](worker-agent-rules.md) | Rules governing all anvil implementation agents                 |
+| [../README.md](../README.md)                   | Public-facing user documentation                                |
 
 ### ID Conventions
 
@@ -53,6 +53,7 @@ Current active execution item: `—`.
 | M-013 | Folder Hierarchy Preservation | ✅ released | [M-013](milestones/M-013-folder-hierarchy.md) |
 | M-014 | View Controls and Render Modes | ✅ released | [M-014](milestones/M-014-view-controls-and-render-modes.md) |
 | M-015 | Template-Driven Render Shell | ✅ released | [M-015](milestones/M-015-template-render-shell.md) |
+| M-016 | Reader Customization Controls | 🟡 merged | [M-016](milestones/M-016-reader-customization-controls.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
 ---
@@ -69,6 +70,7 @@ Current active execution item: `—`.
 | [F-015](features/F-015-render-mode-defaults.md) | Render mode flags and persistent defaults | ✅ released | [F-015](features/F-015-render-mode-defaults.md) |
 | [F-016](features/F-016-sidebar-theme-controls.md) | Sidebar and theme controls | ✅ released | [F-016](features/F-016-sidebar-theme-controls.md) |
 | [F-017](features/F-017-template-shell.md) | Use `src/index.html` as the rendered page template | ✅ released | [F-017](features/F-017-template-shell.md) |
+| [F-018](features/F-018-reader-appearance-controls.md) | Persistent reader appearance controls | 🟡 merged | [F-018](features/F-018-reader-appearance-controls.md) |
 
 ---
 
@@ -80,6 +82,7 @@ Current active execution item: `—`.
 | [B-002](bugs/B-002-cache-linked-file-staleness.md) | Render cache misses linked-file changes | Medium | 📝 planned | [B-002](bugs/B-002-cache-linked-file-staleness.md) |
 | [B-003](bugs/B-003-cache-theme-mismatch.md) | Theme change not reflected on cache hit | Low | 📝 planned | [B-003](bugs/B-003-cache-theme-mismatch.md) |
 | [B-004](bugs/B-004-completion-subcommands-after-file.md) | Completion suggests subcommands after FILE | Medium | ✅ released | [B-004](bugs/B-004-completion-subcommands-after-file.md) |
+| [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) | Sidebar footer hotkeys can disappear behind tall hierarchies | Medium | 🟡 merged | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) |
 
 ---
 
@@ -115,5 +118,6 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | Active agents | none |
 | Open worktrees | none |
 | Latest tag | `v0.6.0` |
+| Recently merged work | M-016 · F-018 · B-005 |
 | Next planned work | B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

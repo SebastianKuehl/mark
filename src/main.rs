@@ -4,7 +4,7 @@ use mark::{
     browser, cache, cleanup, cleanup_home,
     cli::{Commands, ConfigAction},
     completions,
-    config::{AppConfig, RenderMode, SidebarVisibility, Theme},
+    config::{AppConfig, AppearanceConfig, RenderMode, SidebarVisibility, Theme},
     render, storage,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -164,6 +164,27 @@ fn main() -> Result<()> {
                 cfg.save(&paths.config)?;
                 println!("Sidebar default set to '{sidebar}'.");
             }
+            ConfigAction::SetLayout {
+                font_size,
+                letter_width,
+                letter_radius,
+                sidebar_button_radius,
+                theme_button_radius,
+            } => {
+                let mut cfg = AppConfig::load(&paths.config)?;
+                cfg.appearance = AppearanceConfig {
+                    font_size_px: font_size,
+                    letter_width_in: letter_width,
+                    letter_radius_px: letter_radius,
+                    sidebar_button_radius_px: sidebar_button_radius,
+                    theme_button_radius_px: theme_button_radius,
+                };
+                cfg.save(&paths.config)?;
+                println!(
+                    "Reader layout settings saved to '{}'.",
+                    paths.config.display()
+                );
+            }
         }
         return Ok(());
     }
@@ -231,6 +252,7 @@ fn main() -> Result<()> {
     let render_mode = resolve_render_mode(&args, &cfg);
     let sidebar = cfg.sidebar;
     let theme: Theme = args.theme.unwrap_or(cfg.theme);
+    let appearance = cfg.appearance;
 
     let file = args
         .file
@@ -281,7 +303,13 @@ fn main() -> Result<()> {
                 && cached.source_mtime_secs == mtime
                 && cached.rendered_html.exists()
                 && cached_entry_html.exists()
-                && cache::RenderCache::matches_options(cached, theme, render_mode, sidebar)
+                && cache::RenderCache::matches_options(
+                    cached,
+                    theme,
+                    render_mode,
+                    sidebar,
+                    appearance,
+                )
             {
                 eprint!(
                     "Already rendered: {}\nRe-render? [y/N]: ",
@@ -495,6 +523,7 @@ fn main() -> Result<()> {
                 all_files: &all_files,
                 run_dir: &run_dir,
                 sidebar_visible: sidebar == SidebarVisibility::Visible,
+                appearance,
             },
         );
         let out_path = output_path_map
@@ -534,6 +563,7 @@ fn main() -> Result<()> {
                 theme: Some(theme),
                 render_mode: Some(render_mode),
                 sidebar: Some(sidebar),
+                appearance: Some(appearance),
             },
         );
         render_cache.save();
@@ -646,6 +676,7 @@ mod tests {
             theme: Theme::System,
             render_mode: RenderMode::Recursive,
             sidebar: SidebarVisibility::Hidden,
+            appearance: AppearanceConfig::default(),
         };
         let cli = mark::cli::Cli::parse_from(["mark", "--single", "notes.md"]);
         assert_eq!(resolve_render_mode(&cli, &cfg), RenderMode::Single);
@@ -657,6 +688,7 @@ mod tests {
             theme: Theme::System,
             render_mode: RenderMode::Single,
             sidebar: SidebarVisibility::Hidden,
+            appearance: AppearanceConfig::default(),
         };
         let cli = mark::cli::Cli::parse_from(["mark", "notes.md"]);
         assert_eq!(resolve_render_mode(&cli, &cfg), RenderMode::Single);

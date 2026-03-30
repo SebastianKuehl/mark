@@ -17,6 +17,7 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
 - **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
 - **Bundled application shell** — rendered pages now reuse the checked-in app shell and component styling shipped with `mark`
+- **Reader appearance controls** — tune font size, letter width, letter corner radius, and the sidebar/theme button radii from the rendered page, then copy a generated `mark config set-layout ...` command
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - **In-page theme switcher** — switch between `system`, `light`, and `dark` without re-rendering
 - Opens the result in the system default browser
@@ -190,6 +191,7 @@ mark config set-render-mode recursive
 mark config set-render-mode single
 mark config set-sidebar hidden
 mark config set-sidebar visible
+mark config set-layout --font-size 17 --letter-width 8.5 --letter-radius 12 --sidebar-button-radius 999 --theme-button-radius 999
 ```
 
 Precedence:
@@ -204,7 +206,16 @@ Example config:
 theme = "system"
 render_mode = "recursive"
 sidebar = "hidden"
+
+[appearance]
+font_size_px = 17
+letter_width_in = 8.5
+letter_radius_px = 12
+sidebar_button_radius_px = 999
+theme_button_radius_px = 999
 ```
+
+Rendered pages also include a reader-layout form in the top-right control panel. Adjust the values there and copy the generated `mark config set-layout ...` command into your terminal to persist the new defaults for future renders.
 
 
 

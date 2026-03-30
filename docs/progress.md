@@ -18,6 +18,9 @@
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
+| M-016 | milestone | Reader Customization Controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| F-018 | feature | Persistent reader appearance controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| B-005 | bug | Sidebar footer hotkeys can disappear behind tall hierarchies | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | M-015 | milestone | Template-Driven Render Shell | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
 | F-017 | feature | Use `src/index.html` as the rendered page template | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
 | P-017 | task | Implement template-driven render shell from `src/index.html` | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | fixed via P-018 follow-up before merge | 2026-03-29 |

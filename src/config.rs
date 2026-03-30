@@ -102,6 +102,89 @@ impl std::fmt::Display for SidebarVisibility {
     }
 }
 
+/// Persistent appearance controls for the rendered reader shell.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct AppearanceConfig {
+    #[serde(default = "default_font_size_px")]
+    pub font_size_px: u16,
+    #[serde(default = "default_letter_width_in")]
+    pub letter_width_in: f32,
+    #[serde(default = "default_letter_radius_px")]
+    pub letter_radius_px: u16,
+    #[serde(default = "default_sidebar_button_radius_px")]
+    pub sidebar_button_radius_px: u16,
+    #[serde(default = "default_theme_button_radius_px")]
+    pub theme_button_radius_px: u16,
+}
+
+const fn default_font_size_px() -> u16 {
+    16
+}
+
+const fn default_letter_radius_px() -> u16 {
+    12
+}
+
+const fn default_sidebar_button_radius_px() -> u16 {
+    999
+}
+
+const fn default_theme_button_radius_px() -> u16 {
+    999
+}
+
+fn default_letter_width_in() -> f32 {
+    8.5
+}
+
+impl Default for AppearanceConfig {
+    fn default() -> Self {
+        Self {
+            font_size_px: default_font_size_px(),
+            letter_width_in: default_letter_width_in(),
+            letter_radius_px: default_letter_radius_px(),
+            sidebar_button_radius_px: default_sidebar_button_radius_px(),
+            theme_button_radius_px: default_theme_button_radius_px(),
+        }
+    }
+}
+
+impl AppearanceConfig {
+    pub fn validate(&self) -> Result<(), String> {
+        if !(10..=32).contains(&self.font_size_px) {
+            return Err(format!(
+                "invalid font size '{}': expected a value between 10 and 32 px",
+                self.font_size_px
+            ));
+        }
+        if !(5.0..=12.0).contains(&self.letter_width_in) {
+            return Err(format!(
+                "invalid letter width '{}': expected a value between 5.0 and 12.0 inches",
+                self.letter_width_in
+            ));
+        }
+        if self.letter_radius_px > 64 {
+            return Err(format!(
+                "invalid letter radius '{}': expected a value between 0 and 64 px",
+                self.letter_radius_px
+            ));
+        }
+        if self.sidebar_button_radius_px > 999 {
+            return Err(format!(
+                "invalid sidebar button radius '{}': expected a value between 0 and 999 px",
+                self.sidebar_button_radius_px
+            ));
+        }
+        if self.theme_button_radius_px > 999 {
+            return Err(format!(
+                "invalid theme button radius '{}': expected a value between 0 and 999 px",
+                self.theme_button_radius_px
+            ));
+        }
+        Ok(())
+    }
+}
+
 /// Persistent application configuration stored in `.mark/config.toml`.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct AppConfig {
@@ -111,9 +194,15 @@ pub struct AppConfig {
     pub render_mode: RenderMode,
     #[serde(default)]
     pub sidebar: SidebarVisibility,
+    #[serde(default)]
+    pub appearance: AppearanceConfig,
 }
 
 impl AppConfig {
+    pub fn validate(&self) -> Result<(), MarkError> {
+        self.appearance.validate().map_err(MarkError::Config)
+    }
+
     /// Read config from `path`.  Returns a default config if the file does not
     /// exist.
     pub fn load(path: &Path) -> Result<Self, MarkError> {
@@ -122,11 +211,13 @@ impl AppConfig {
         }
         let text = std::fs::read_to_string(path)?;
         let cfg: AppConfig = toml::from_str(&text).map_err(|e| MarkError::Config(e.to_string()))?;
+        cfg.validate()?;
         Ok(cfg)
     }
 
     /// Persist config to `path`, creating parent directories as needed.
     pub fn save(&self, path: &Path) -> Result<(), MarkError> {
+        self.validate()?;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
@@ -189,11 +280,13 @@ mod tests {
     }
 
     #[test]
-    fn default_config_uses_system_recursive_hidden() {
+    fn default_config_uses_system_recursive_hidden_and_default_appearance() {
         assert_eq!(Theme::default(), Theme::System);
         assert_eq!(AppConfig::default().theme, Theme::System);
         assert_eq!(AppConfig::default().render_mode, RenderMode::Recursive);
         assert_eq!(AppConfig::default().sidebar, SidebarVisibility::Hidden);
+        assert_eq!(AppConfig::default().appearance.font_size_px, 16);
+        assert!((AppConfig::default().appearance.letter_width_in - 8.5).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -203,6 +296,7 @@ mod tests {
         assert_eq!(cfg.theme, Theme::System);
         assert_eq!(cfg.render_mode, RenderMode::Recursive);
         assert_eq!(cfg.sidebar, SidebarVisibility::Hidden);
+        assert_eq!(cfg.appearance.letter_radius_px, 12);
     }
 
     #[test]
@@ -213,12 +307,20 @@ mod tests {
             theme: Theme::Dark,
             render_mode: RenderMode::Single,
             sidebar: SidebarVisibility::Visible,
+            appearance: AppearanceConfig {
+                font_size_px: 18,
+                letter_width_in: 7.75,
+                letter_radius_px: 20,
+                sidebar_button_radius_px: 18,
+                theme_button_radius_px: 14,
+            },
         };
         cfg.save(&path).unwrap();
         let loaded = AppConfig::load(&path).unwrap();
         assert_eq!(loaded.theme, Theme::Dark);
         assert_eq!(loaded.render_mode, RenderMode::Single);
         assert_eq!(loaded.sidebar, SidebarVisibility::Visible);
+        assert_eq!(loaded.appearance, cfg.appearance);
     }
 
     #[test]
@@ -229,15 +331,28 @@ mod tests {
             theme: Theme::System,
             render_mode: RenderMode::Recursive,
             sidebar: SidebarVisibility::Hidden,
+            appearance: AppearanceConfig::default(),
         };
         cfg.save(&path).unwrap();
         assert!(path.exists());
     }
 
     #[test]
+    fn invalid_appearance_is_rejected() {
+        let cfg = AppConfig {
+            theme: Theme::System,
+            render_mode: RenderMode::Recursive,
+            sidebar: SidebarVisibility::Hidden,
+            appearance: AppearanceConfig {
+                font_size_px: 9,
+                ..AppearanceConfig::default()
+            },
+        };
+        assert!(cfg.validate().is_err());
+    }
+
+    #[test]
     fn theme_precedence_override_wins() {
-        // Simulate: CLI override (Some) > config > default.
-        // When override is present, it should win.
         let config_theme = Theme::Dark;
         let cli_override: Option<Theme> = Some(Theme::Light);
         let resolved = match cli_override {
@@ -249,7 +364,6 @@ mod tests {
 
     #[test]
     fn theme_precedence_config_wins_over_default() {
-        // When no override, config should win.
         let config_theme = Theme::Dark;
         let cli_override: Option<Theme> = None;
         let resolved = match cli_override {

@@ -13,9 +13,11 @@ Developers and writers need a zero-friction way to preview Markdown documentatio
 - Markdown → HTML rendering (via `pulldown-cmark`)
 - Embedded CSS with light / dark theme support
 - Persistent theme config (`~/.mark/config.toml`)
+- Persistent reader appearance config (`mark config set-layout`) for font size, letter width, and shell radii
 - Per-invocation `--theme` override
 - Recursive resolution and rendering of locally linked Markdown files, with HTML link rewriting so browser navigation works
 - Template-backed rendered HTML shell sourced from `src/index.html`, with generated content injected into preserved page/sidebar component structure
+- In-page reader controls that generate `mark config` commands for saving appearance preferences
 - Code block copy and "copy clean" (strip comments) toolbar buttons
 - Shell completions (bash, zsh, fish, PowerShell)
 - Install / uninstall scripts (Linux, macOS, Windows)

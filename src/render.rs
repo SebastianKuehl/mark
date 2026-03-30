@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use pulldown_cmark::{html, Event, Options, Parser, Tag};
 
-use crate::config::Theme;
+use crate::config::{AppearanceConfig, Theme};
 use crate::copy_clean::{is_supported_language, strip_full_line_comments};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,6 +19,7 @@ pub struct RenderChrome<'a> {
     pub all_files: &'a [(String, PathBuf, bool)],
     pub run_dir: &'a Path,
     pub sidebar_visible: bool,
+    pub appearance: AppearanceConfig,
 }
 
 /// Render Markdown source to a complete standalone HTML5 document.
@@ -55,6 +56,7 @@ pub fn render_markdown(markdown: &str, title: &str, theme: Theme) -> String {
             all_files: &[],
             run_dir: Path::new(""),
             sidebar_visible: false,
+            appearance: AppearanceConfig::default(),
         },
     )
 }
@@ -63,7 +65,7 @@ const PAGE_TEMPLATE: &str = include_str!("index.html");
 const TEMPLATE_TITLE: &str = "<title>Mark HTML Template</title>";
 const CONTENT_PLACEHOLDER: &str =
     r#"<div class="markdown-prose"><p>&lt;put rendered html here&gt;</p></div>"#;
-const LEFT_CONTROL_START: &str = r#"<div class="absolute left-4 top-4 z-40 md:left-6 md:top-6">"#;
+const LEFT_CONTROL_START: &str = r#"<div class="fixed left-4 top-4 z-40 md:left-6 md:top-6">"#;
 const RIGHT_CONTROL_START: &str = r#"<div class="fixed right-4 top-4 z-40 md:right-6 md:top-6">"#;
 const ASIDE_START: &str = r#"<aside class="editor-scrollbar"#;
 const MAIN_START: &str =
@@ -130,17 +132,39 @@ fn render_sidebar_controls(sidebar_visible: bool) -> String {
     let expanded = if sidebar_visible { "true" } else { "false" };
     format!(
         r#"<input type="checkbox" id="mark-sidebar-toggle" class="mark-sidebar-toggle"{checked}>
-<div class="absolute left-4 top-4 z-40 md:left-6 md:top-6"><div class="rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-sidebar-button" aria-controls="mark-sidebar" aria-expanded="{expanded}" aria-label="Toggle sidebar (e)" title="Toggle sidebar (e)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left h-3.5 w-3.5" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button></div></div>"#,
+<div class="absolute left-4 top-4 z-40 md:left-6 md:top-6"><div id="mark-sidebar-control-shell" class="mark-sidebar-button-shell rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-sidebar-button" aria-controls="mark-sidebar" aria-expanded="{expanded}" aria-label="Toggle sidebar (e)" title="Toggle sidebar (e)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left h-3.5 w-3.5" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button></div></div>"#,
     )
 }
 
 fn render_theme_option(theme: &str, label: &str, icon: &str) -> String {
     format!(
-        r#"<button type="button" class="mark-theme-option" data-theme-option="{theme}" role="menuitemradio"><span class="mark-theme-option-icon" aria-hidden="true">{icon}</span><span class="mark-theme-option-label">{label}</span></button>"#
+        r#"<button type="button" class="mark-theme-option" data-theme-option="{theme}"><span class="mark-theme-option-icon" aria-hidden="true">{icon}</span><span class="mark-theme-option-label">{label}</span></button>"#
     )
 }
 
-fn render_theme_controls(theme_attr: &str) -> String {
+fn format_decimal(value: f32) -> String {
+    let mut rendered = format!("{value:.2}");
+    while rendered.contains('.') && rendered.ends_with('0') {
+        rendered.pop();
+    }
+    if rendered.ends_with('.') {
+        rendered.pop();
+    }
+    rendered
+}
+
+fn render_layout_command(appearance: AppearanceConfig) -> String {
+    format!(
+        "mark config set-layout --font-size {} --letter-width {} --letter-radius {} --sidebar-button-radius {} --theme-button-radius {}",
+        appearance.font_size_px,
+        format_decimal(appearance.letter_width_in),
+        appearance.letter_radius_px,
+        appearance.sidebar_button_radius_px,
+        appearance.theme_button_radius_px,
+    )
+}
+
+fn render_theme_controls(theme_attr: &str, appearance: AppearanceConfig) -> String {
     let theme_menu = [
         render_theme_option(
             "system",
@@ -159,9 +183,15 @@ fn render_theme_controls(theme_attr: &str) -> String {
         ),
     ]
     .join("");
+    let layout_command = escape_html(&render_layout_command(appearance));
 
     format!(
-        r#"<div class="fixed right-4 top-4 z-40 md:right-6 md:top-6"><div class="mark-theme-control relative rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-theme-toggle" aria-label="Theme: {theme_attr}. Change theme" title="Theme: {theme_attr}" aria-haspopup="menu" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon h-3.5 w-3.5" aria-hidden="true"><path d="M12 2v2"></path><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"></path><path d="M16 12a4 4 0 0 0-4-4"></path><path d="m19 5-1.256 1.256"></path><path d="M20 12h2"></path></svg></button><div id="mark-theme-menu" class="mark-theme-menu" role="menu" aria-label="Theme switcher" hidden>{theme_menu}</div></div></div>"#,
+        r#"<div class="fixed right-4 top-4 z-40 md:right-6 md:top-6"><div class="mark-theme-control relative rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur mark-theme-button-shell"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-theme-toggle" aria-label="Theme: {theme_attr}. Change theme or layout" title="Theme: {theme_attr}. Change theme or layout" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon h-3.5 w-3.5" aria-hidden="true"><path d="M12 2v2"></path><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"></path><path d="M16 12a4 4 0 0 0-4-4"></path><path d="m19 5-1.256 1.256"></path><path d="M20 12h2"></path></svg></button><div id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (in)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><div class="mark-layout-command-wrap"><div class="mark-layout-command-header"><span>Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></div><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></form></div></div></div>"#,
+        font_size = appearance.font_size_px,
+        letter_width = format_decimal(appearance.letter_width_in),
+        letter_radius = appearance.letter_radius_px,
+        sidebar_button_radius = appearance.sidebar_button_radius_px,
+        theme_button_radius = appearance.theme_button_radius_px,
     )
 }
 
@@ -181,7 +211,7 @@ fn render_sidebar_shell(
     nav.push_str("</div>");
 
     format!(
-        r#"<aside id="mark-sidebar" class="mark-sidebar editor-scrollbar fixed inset-y-0 left-0 z-30 w-[22rem] overflow-y-auto border-r border-[var(--border)] bg-[var(--card)] p-4 pt-20 shadow-lg transition-transform duration-200 md:p-6 md:pt-24{hidden_class}"><div class="flex min-h-full flex-col"><section class="flex-1"><h2 class="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">Hierarchy</h2><nav aria-label="Rendered file tree" class="mt-4 text-sm">{nav}</nav></section><footer class="sticky bottom-0 mt-auto border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_94%,transparent)] pt-4 text-xs text-[var(--muted-foreground)] backdrop-blur">Hotkeys: <span class="font-medium text-[var(--foreground)]">E</span> toggles the sidebar,<!-- --> <span class="font-medium text-[var(--foreground)]">T</span> toggles the theme.</footer></div></aside>"#,
+        r#"<aside id="mark-sidebar" class="mark-sidebar fixed inset-y-0 left-0 z-30 w-[22rem] overflow-hidden border-r border-[var(--border)] bg-[var(--card)] p-4 pt-20 shadow-lg transition-transform duration-200 md:p-6 md:pt-24{hidden_class}"><div class="relative flex h-full min-h-0 flex-col"><section class="mark-sidebar-scroll editor-scrollbar flex-1 overflow-y-auto"><h2 class="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">Hierarchy</h2><nav aria-label="Rendered file tree" class="mt-4 text-sm">{nav}</nav></section><footer class="mark-sidebar-footer text-xs text-[var(--muted-foreground)]">Hotkeys: <span>E</span> toggles the sidebar,<br><span>T</span> toggles the theme.</footer></div></aside>"#,
     )
 }
 
@@ -204,30 +234,60 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         _ => format!(r#"<html lang="en" data-theme="{theme_attr}">"#),
     };
 
-    let extra_css = r#"<style>
-.mark-sidebar-toggle{display:none}
-.mark-breadcrumb{border-bottom:1px solid var(--border);padding-bottom:1rem}
-.mark-breadcrumb a{text-decoration:none}
-.mark-theme-menu{position:absolute;right:0;top:calc(100% + .75rem);display:grid;gap:.25rem;min-width:10rem;padding:.4rem;border:1px solid var(--border);border-radius:.75rem;background:var(--card);box-shadow:0 12px 30px #0000001a}
-.mark-theme-menu[hidden]{display:none}
-.mark-theme-option{display:flex;align-items:center;gap:.65rem;width:100%;padding:.55rem .7rem;border-radius:.5rem;background:transparent;color:var(--foreground);cursor:pointer;text-align:left}
-.mark-theme-option:hover,.mark-theme-option[aria-pressed="true"]{background:var(--muted)}
-.mark-theme-option-icon,.mark-theme-option-label{pointer-events:none}
-.mark-theme-option-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--muted-foreground)}
-.mark-sidebar-link,.mark-sidebar-current,.mark-sidebar-summary{display:flex;min-height:2.5rem;align-items:center}
-.mark-sidebar-group>summary::-webkit-details-marker{display:none}
-.mark-sidebar-group>summary::before{content:"▾";display:inline-block;margin-right:.5rem;color:var(--muted-foreground);transition:transform .15s ease}
-.mark-sidebar-group:not([open])>summary::before{transform:rotate(-90deg)}
-.mark-sidebar-summary{cursor:pointer;list-style:none}
-.mark-sidebar-current{background:var(--muted)}
-.mark-code-block{position:relative;margin:1em 0}
-.mark-code-toolbar{display:flex;justify-content:flex-end;gap:.4em;padding:.45rem .6rem;background:var(--muted);border:1px solid var(--border);border-bottom:none;border-radius:.5rem .5rem 0 0}
-.mark-code-block pre{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}
-.mark-btn{font-size:.78em;padding:.2em .6em;border:1px solid var(--border);border-radius:.4rem;background:var(--background);color:var(--foreground);cursor:pointer;transition:background .15s}
-.mark-btn:hover{background:var(--card)}
-.mark-btn.mark-copied{color:#2a7a2a;border-color:#2a7a2a}
-.mark-btn.mark-failed{color:#b00;border-color:#b00}
-</style>"#;
+    let extra_css = format!(
+        r#"<style>
+:root{{--mark-font-size:{font_size}px;--mark-letter-width:{letter_width}in;--mark-letter-radius:{letter_radius}px;--mark-sidebar-button-radius:{sidebar_button_radius}px;--mark-theme-button-radius:{theme_button_radius}px;--mark-sidebar-footer-height:4.85rem}}
+.mark-sidebar-toggle{{display:none}}
+.mark-breadcrumb{{border-bottom:1px solid var(--border);padding-bottom:1rem}}
+.mark-breadcrumb a{{text-decoration:none}}
+.mark-page-width-shell{{max-width:calc(var(--mark-letter-width) + 4rem)!important}}
+.paper-sheet{{max-width:var(--mark-letter-width)!important;border-radius:var(--mark-letter-radius)!important;font-size:var(--mark-font-size)}}
+#mark-sidebar-control-shell,#mark-sidebar-button{{border-radius:var(--mark-sidebar-button-radius)!important}}
+.mark-theme-button-shell,#mark-theme-toggle{{border-radius:var(--mark-theme-button-radius)!important}}
+.mark-theme-menu{{position:absolute;right:0;top:calc(100% + .75rem);display:grid;gap:1rem;min-width:min(26rem,calc(100vw - 2rem));padding:1rem;border:1px solid var(--border);border-radius:1rem;background:color-mix(in srgb,var(--card) 96%,transparent);box-shadow:0 12px 30px #0000001a;backdrop-filter:blur(18px)}}
+.mark-theme-menu[hidden]{{display:none}}
+.mark-theme-menu-section{{display:grid;gap:.65rem}}
+.mark-theme-menu-heading{{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}}
+.mark-theme-option-list{{display:grid;gap:.25rem}}
+.mark-theme-option{{display:flex;align-items:center;gap:.65rem;width:100%;padding:.55rem .7rem;border-radius:.75rem;background:transparent;color:var(--foreground);cursor:pointer;text-align:left}}
+.mark-theme-option:hover,.mark-theme-option[aria-pressed="true"]{{background:var(--muted)}}
+.mark-theme-option-icon,.mark-theme-option-label{{pointer-events:none}}
+.mark-theme-option-icon{{display:inline-flex;align-items:center;justify-content:center;color:var(--muted-foreground)}}
+.mark-layout-form{{display:grid;gap:.75rem;padding-top:.2rem}}
+.mark-layout-help{{margin:0;color:var(--muted-foreground);font-size:.85rem;line-height:1.45}}
+.mark-layout-help code{{font-size:.82em}}
+.mark-layout-field{{display:grid;gap:.35rem}}
+.mark-layout-field span{{font-size:.82rem;color:var(--foreground)}}
+.mark-layout-field input{{width:100%;border:1px solid var(--border);border-radius:.7rem;background:var(--background);color:var(--foreground);padding:.6rem .75rem;font:inherit}}
+.mark-layout-field input:focus{{outline:2px solid var(--ring);outline-offset:2px}}
+.mark-layout-command-wrap{{display:grid;gap:.5rem;border:1px solid var(--border);border-radius:.85rem;background:var(--muted);padding:.75rem}}
+.mark-layout-command-header{{display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:.8rem;font-weight:600;color:var(--foreground)}}
+.mark-layout-copy{{border:1px solid var(--border);border-radius:.65rem;background:var(--background);color:var(--foreground);padding:.35rem .65rem;font:inherit;cursor:pointer}}
+.mark-layout-copy:hover{{background:var(--card)}}
+.mark-layout-command{{display:block;white-space:pre-wrap;word-break:break-word;font-size:.78rem;line-height:1.5}}
+.mark-sidebar-link,.mark-sidebar-current,.mark-sidebar-summary{{display:flex;min-height:2.5rem;align-items:center}}
+.mark-sidebar-group>summary::-webkit-details-marker{{display:none}}
+.mark-sidebar-group>summary::before{{content:"▾";display:inline-block;margin-right:.5rem;color:var(--muted-foreground);transition:transform .15s ease}}
+.mark-sidebar-group:not([open])>summary::before{{transform:rotate(-90deg)}}
+.mark-sidebar-summary{{cursor:pointer;list-style:none}}
+.mark-sidebar-current{{background:var(--muted)}}
+.mark-sidebar-scroll{{padding-bottom:calc(var(--mark-sidebar-footer-height) + 1rem)}}
+.mark-sidebar-footer{{position:absolute;left:0;right:0;bottom:0;z-index:10;border-top:1px solid var(--border);background:color-mix(in srgb,var(--card) 97%,transparent);padding:1rem 1.5rem 1.15rem;backdrop-filter:blur(14px);box-shadow:0 -10px 24px #00000014;line-height:1.45}}
+.mark-sidebar-footer span{{font-weight:600;color:var(--foreground)}}
+.mark-code-block{{position:relative;margin:1em 0}}
+.mark-code-toolbar{{display:flex;justify-content:flex-end;gap:.4em;padding:.45rem .6rem;background:var(--muted);border:1px solid var(--border);border-bottom:none;border-radius:.5rem .5rem 0 0}}
+.mark-code-block pre{{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}}
+.mark-btn{{font-size:.78em;padding:.2em .6em;border:1px solid var(--border);border-radius:.4rem;background:var(--background);color:var(--foreground);cursor:pointer;transition:background .15s}}
+.mark-btn:hover{{background:var(--card)}}
+.mark-btn.mark-copied{{color:#2a7a2a;border-color:#2a7a2a}}
+.mark-btn.mark-failed{{color:#b00;border-color:#b00}}
+</style>"#,
+        font_size = chrome.appearance.font_size_px,
+        letter_width = format_decimal(chrome.appearance.letter_width_in),
+        letter_radius = chrome.appearance.letter_radius_px,
+        sidebar_button_radius = chrome.appearance.sidebar_button_radius_px,
+        theme_button_radius = chrome.appearance.theme_button_radius_px,
+    );
 
     let early_theme_script = r#"<script>(function(){var root=document.documentElement;var theme=root.getAttribute('data-theme')||'system';var dark=theme==='dark'||(theme==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);root.classList.toggle('dark',dark);})();</script>"#;
 
@@ -297,8 +357,8 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 
     var toggle = document.getElementById('mark-theme-toggle');
     if (toggle) {
-      toggle.setAttribute('aria-label', 'Theme: ' + theme + '. Change theme');
-      toggle.setAttribute('title', 'Theme: ' + theme);
+      toggle.setAttribute('aria-label', 'Theme: ' + theme + '. Change theme or layout');
+      toggle.setAttribute('title', 'Theme: ' + theme + '. Change theme or layout');
     }
   }
 
@@ -354,6 +414,32 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     }
     var type = (input.getAttribute('type') || 'text').toLowerCase();
     return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file'].includes(type);
+  }
+
+  function commandValue(input, fallback) {
+    if (!input) {
+      return fallback;
+    }
+    var numeric = Number(input.value);
+    if (!Number.isFinite(numeric)) {
+      return fallback;
+    }
+    return String(numeric);
+  }
+
+  function updateLayoutCommand() {
+    var command = document.getElementById('mark-layout-command');
+    if (!command) {
+      return;
+    }
+
+    var fontSize = commandValue(document.getElementById('mark-font-size-input'), '16');
+    var letterWidth = commandValue(document.getElementById('mark-letter-width-input'), '8.5');
+    var letterRadius = commandValue(document.getElementById('mark-letter-radius-input'), '12');
+    var sidebarRadius = commandValue(document.getElementById('mark-sidebar-button-radius-input'), '999');
+    var themeRadius = commandValue(document.getElementById('mark-theme-button-radius-input'), '999');
+
+    command.textContent = 'mark config set-layout --font-size ' + fontSize + ' --letter-width ' + letterWidth + ' --letter-radius ' + letterRadius + ' --sidebar-button-radius ' + sidebarRadius + ' --theme-button-radius ' + themeRadius;
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -414,6 +500,25 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
           return;
         }
         closeThemeMenu();
+      });
+    }
+
+    var layoutForm = document.getElementById('mark-layout-form');
+    if (layoutForm) {
+      layoutForm.querySelectorAll('input').forEach(function(input) {
+        input.addEventListener('input', updateLayoutCommand);
+        input.addEventListener('change', updateLayoutCommand);
+      });
+      updateLayoutCommand();
+    }
+
+    var copyLayoutCommand = document.getElementById('mark-copy-layout-command');
+    if (copyLayoutCommand) {
+      copyLayoutCommand.addEventListener('click', function() {
+        var command = document.getElementById('mark-layout-command');
+        if (command) {
+          copyText(command.textContent, copyLayoutCommand, '\u2713 Copied command');
+        }
       });
     }
 
@@ -479,6 +584,11 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         1,
     );
     document = document.replacen(CONTENT_PLACEHOLDER, &content_html, 1);
+    document = document.replacen(
+        r#"<div class="w-full max-w-[calc(8.5in+4rem)]">"#,
+        r#"<div class="mark-page-width-shell w-full max-w-[calc(8.5in+4rem)]">"#,
+        1,
+    );
     document = replace_range(
         &document,
         LEFT_CONTROL_START,
@@ -489,7 +599,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         &document,
         RIGHT_CONTROL_START,
         ASIDE_START,
-        &render_theme_controls(theme_attr),
+        &render_theme_controls(theme_attr, chrome.appearance),
     );
     document = replace_range(&document, ASIDE_START, MAIN_START, &sidebar_shell_html);
     document = inject_before(
@@ -940,8 +1050,8 @@ pub fn extract_local_asset_links(markdown: &str, source_dir: &Path) -> Vec<(Stri
 /// standalone (single-file) renders.
 ///
 /// External URLs and links whose base is not present in `link_map` are left
-/// unchanged.  When `link_map` is empty the output is identical to
-/// [`render_markdown`] (modulo any nav chrome).
+/// unchanged. When there are no links to rewrite, the function still preserves
+/// the requested chrome so single-file renders can keep using the same shell.
 ///
 /// The rewriting is performed by transforming pulldown-cmark link events
 /// before passing them to the HTML serialiser, so it operates on the parsed
@@ -953,10 +1063,6 @@ pub fn render_markdown_rewriting_links(
     link_map: &HashMap<String, PathBuf>,
     chrome: RenderChrome<'_>,
 ) -> String {
-    if link_map.is_empty() && chrome.breadcrumb.is_empty() && chrome.all_files.is_empty() {
-        return render_markdown(markdown, title, theme);
-    }
-
     let mut opts = Options::empty();
     opts.insert(Options::ENABLE_TABLES);
     opts.insert(Options::ENABLE_FOOTNOTES);
@@ -1053,7 +1159,7 @@ pub fn render_markdown_rewriting_links(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::Theme;
+    use crate::config::{AppearanceConfig, Theme};
 
     fn chrome<'a>(
         breadcrumb: &'a [(String, PathBuf)],
@@ -1066,6 +1172,7 @@ mod tests {
             all_files,
             run_dir,
             sidebar_visible,
+            appearance: AppearanceConfig::default(),
         }
     }
 

@@ -9,7 +9,7 @@
 //! source_mtime_secs = 1711648523
 //! ```
 
-use crate::config::{RenderMode, SidebarVisibility, Theme};
+use crate::config::{AppearanceConfig, RenderMode, SidebarVisibility, Theme};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -32,6 +32,9 @@ pub struct CacheEntry {
     /// Sidebar visibility default used when producing the cached render.
     #[serde(default)]
     pub sidebar: Option<SidebarVisibility>,
+    /// Appearance settings used when producing the cached render.
+    #[serde(default)]
+    pub appearance: Option<AppearanceConfig>,
 }
 
 /// In-memory render cache backed by a TOML file on disk.
@@ -110,10 +113,12 @@ impl RenderCache {
         theme: Theme,
         render_mode: RenderMode,
         sidebar: SidebarVisibility,
+        appearance: AppearanceConfig,
     ) -> bool {
         entry.theme == Some(theme)
             && entry.render_mode == Some(render_mode)
             && entry.sidebar == Some(sidebar)
+            && entry.appearance == Some(appearance)
     }
 
     /// Remove entries whose `rendered_html` run directory no longer exists on disk.
@@ -164,6 +169,7 @@ mod tests {
             theme: Some(Theme::System),
             render_mode: Some(RenderMode::Recursive),
             sidebar: Some(SidebarVisibility::Hidden),
+            appearance: Some(AppearanceConfig::default()),
         };
         cache.set(source, entry.clone());
         cache.save();
@@ -192,6 +198,7 @@ mod tests {
             theme: Some(Theme::System),
             render_mode: Some(RenderMode::Recursive),
             sidebar: Some(SidebarVisibility::Hidden),
+            appearance: Some(AppearanceConfig::default()),
         };
         cache.set(source, entry.clone());
         assert_eq!(cache.get(source), Some(&entry));
@@ -211,6 +218,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         let newer = CacheEntry {
@@ -219,6 +227,7 @@ mod tests {
             theme: Some(Theme::Dark),
             render_mode: Some(RenderMode::Single),
             sidebar: Some(SidebarVisibility::Visible),
+            appearance: Some(AppearanceConfig::default()),
         };
         cache.set(source, newer.clone());
         assert_eq!(cache.get(source), Some(&newer));
@@ -240,6 +249,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         let entry = cache.get(source).expect("entry");
@@ -259,6 +269,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         let entry = cache.get(source).expect("entry");
@@ -284,6 +295,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         cache.remove_missing_entries();
@@ -306,6 +318,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         assert!(
@@ -332,6 +345,7 @@ mod tests {
                 theme: None,
                 render_mode: None,
                 sidebar: None,
+                appearance: None,
             },
         );
 
@@ -360,6 +374,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         cache.set(
@@ -370,6 +385,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
 
@@ -393,6 +409,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         cache.save();
@@ -414,6 +431,7 @@ mod tests {
                 theme: Some(Theme::System),
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
+                appearance: Some(AppearanceConfig::default()),
             },
         );
         cache.save();
@@ -435,12 +453,14 @@ mod tests {
             theme: None,
             render_mode: None,
             sidebar: None,
+            appearance: None,
         };
         assert!(!RenderCache::matches_options(
             &entry,
             Theme::System,
             RenderMode::Recursive,
-            SidebarVisibility::Hidden
+            SidebarVisibility::Hidden,
+            AppearanceConfig::default(),
         ));
     }
 
@@ -452,18 +472,21 @@ mod tests {
             theme: Some(Theme::Dark),
             render_mode: Some(RenderMode::Single),
             sidebar: Some(SidebarVisibility::Visible),
+            appearance: Some(AppearanceConfig::default()),
         };
         assert!(RenderCache::matches_options(
             &entry,
             Theme::Dark,
             RenderMode::Single,
-            SidebarVisibility::Visible
+            SidebarVisibility::Visible,
+            AppearanceConfig::default(),
         ));
         assert!(!RenderCache::matches_options(
             &entry,
             Theme::System,
             RenderMode::Single,
-            SidebarVisibility::Visible
+            SidebarVisibility::Visible,
+            AppearanceConfig::default(),
         ));
     }
 }
