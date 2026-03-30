@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `—` (backlog cleared through v0.9.1).
+Current active milestone: `—` (reader shell polish released in v0.9.2).
 
 ---
 
@@ -32,6 +32,7 @@ Current active milestone: `—` (backlog cleared through v0.9.1).
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.9.2](releases.md#v092--patch) | patch | Black-text PDF export, `Primary`+`Shift`+`E`, config hotkey help, sidebar footer removed, crate version synced |
 | [v0.9.1](releases.md#v091--patch) | patch | Render cache now invalidates on linked Markdown file changes and safely reuses unchanged recursive renders |
 | [v0.9.0](releases.md#v090--minor) | minor | PDF export button, final letter top alignment fix, flat terminal-command accordion with visible Copy button |
 | [v0.8.0](releases.md#v080--minor) | minor | Recursive render scope restriction — BFS follows only links within entry file's directory subtree |
@@ -138,7 +139,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 |------|--------------|
 | Active agents | none |
 | Open worktrees | none |
-| Latest tag | `v0.9.1` |
-| Recently merged work | B-002 (v0.9.1) · M-020 · F-022 · B-008 · B-009 (v0.9.0) |
+| Latest tag | `v0.9.2` |
+| Recently merged work | reader shell polish (v0.9.2) · B-002 (v0.9.1) · M-020 · F-022 · B-008 · B-009 (v0.9.0) |
 | Next planned work | backlog empty |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

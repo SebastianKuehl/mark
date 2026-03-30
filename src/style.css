@@ -236,6 +236,19 @@ body {
 
 @media print {
   html,
+  html.dark,
+  html[data-theme="system"] {
+    --background: #fff !important;
+    --card: #fff !important;
+    --foreground: #000 !important;
+    --muted: #f5f5f5 !important;
+    --muted-foreground: #000 !important;
+    --border: #d0d0d0 !important;
+    --link: #000 !important;
+    color-scheme: light !important;
+  }
+
+  html,
   body,
   .editor-shell,
   .mark-content-wrapper,
@@ -269,5 +282,30 @@ body {
     box-shadow: none;
     padding: 0;
     background: #fff !important;
+  }
+
+  body,
+  .markdown-prose,
+  .markdown-prose h1,
+  .markdown-prose h2,
+  .markdown-prose h3,
+  .markdown-prose h4,
+  .markdown-prose h5,
+  .markdown-prose h6,
+  .markdown-prose p,
+  .markdown-prose li,
+  .markdown-prose dt,
+  .markdown-prose dd,
+  .markdown-prose th,
+  .markdown-prose td,
+  .markdown-prose blockquote,
+  .markdown-prose code,
+  .markdown-prose pre {
+    color: #000 !important;
+  }
+
+  .markdown-prose a {
+    color: #000 !important;
+    text-decoration: underline;
   }
 }

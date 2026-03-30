@@ -1,5 +1,14 @@
 # Releases
 
+## v0.9.2 — patch
+
+- **Date:** 2026-03-30
+- **Type:** patch
+- **Merged items:** reader export + hotkey polish
+- **Summary:** PDF export now prints with normal black document text for cleaner output even when the page is rendered in dark mode. Added an OS-agnostic `Primary`+`Shift`+`E` export shortcut, exposed the hotkeys inside the config menu, and removed the sidebar footer. Synced the crate version in `Cargo.toml` and `Cargo.lock` to the shipped tag.
+
+---
+
 ## v0.9.1 — patch
 
 - **Date:** 2026-03-30
