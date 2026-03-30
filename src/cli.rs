@@ -16,12 +16,12 @@ use std::path::PathBuf;
     override_usage = "mark [OPTIONS] [FILE]\n       mark [OPTIONS] <COMMAND>",
 )]
 pub struct Cli {
-    /// Markdown file to render. When omitted, discover Markdown files in the current directory.
-    #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+    /// Markdown file or directory to render. When omitted, discover Markdown files in the current directory.
+    #[arg(value_name = "FILE", value_hint = clap::ValueHint::AnyPath)]
     pub file: Option<PathBuf>,
 
     /// Render without opening the browser
-    #[arg(long)]
+    #[arg(long, short = 'n')]
     pub no_open: bool,
 
     /// Render only the requested file.
@@ -33,11 +33,11 @@ pub struct Cli {
     pub recursive: bool,
 
     /// Override the render theme for this invocation (system, light, or dark)
-    #[arg(long, value_name = "THEME")]
+    #[arg(long, short = 't', value_name = "THEME")]
     pub theme: Option<Theme>,
 
     /// Print version
-    #[arg(long, short = 'V', action = clap::ArgAction::SetTrue)]
+    #[arg(long, short = 'v', action = clap::ArgAction::SetTrue)]
     pub version: bool,
 
     #[command(subcommand)]
@@ -77,7 +77,7 @@ pub enum Commands {
         #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
         source: PathBuf,
         /// Destination PDF path.
-        #[arg(value_name = "OUTPUT", value_hint = clap::ValueHint::FilePath)]
+        #[arg(value_name = "OUTPUT", value_hint = clap::ValueHint::AnyPath)]
         output: PathBuf,
     },
 }
@@ -177,6 +177,13 @@ mod tests {
     }
 
     #[test]
+    fn directory_parses_as_render_target() {
+        let cli = Cli::try_parse_from(["mark", "docs"]).unwrap();
+        assert_eq!(cli.file, Some(PathBuf::from("docs")));
+        assert!(cli.command.is_none());
+    }
+
+    #[test]
     fn no_file_parses_as_current_directory_render() {
         let cli = Cli::try_parse_from(["mark"]).unwrap();
         assert!(cli.file.is_none());
@@ -193,6 +200,16 @@ mod tests {
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn short_flags_parse() {
+        let cli = Cli::try_parse_from(["mark", "-n", "-t", "dark", "notes.md"]).unwrap();
+        assert!(cli.no_open);
+        assert_eq!(cli.theme, Some(Theme::Dark));
+
+        let cli = Cli::try_parse_from(["mark", "-v"]).unwrap();
+        assert!(cli.version);
     }
 
     #[test]

@@ -16,14 +16,7 @@
 
 ## Active Items
 
-| ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
-|----|------|-------|--------|-------|----------|--------|----------|---------|
-| M-025 | milestone | CLI ergonomics and reader-shell regressions | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | — | 2026-03-30 |
-| F-028 | feature | CLI shorthand flags and directory entry handling | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
-| F-029 | feature | PDF path ergonomics and completions | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
-| B-014 | bug | Zen mode page does not fully become the letter surface | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
-| B-015 | bug | Config pane stacks beneath shell buttons | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
-| P-028 | task | M-025 CLI ergonomics and reader-shell regressions prompt | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | — | 2026-03-30 |
+_No active items._
 
 ---
 
@@ -39,6 +32,12 @@ _No ready items._
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Release | Updated |
 |----|------|-------|--------|-------|----------|--------|---------|---------|
+| M-025 | milestone | CLI ergonomics and reader-shell regressions | `released` | Product Owner Agent | `main checkout` | `main` | `v0.13.0` | 2026-03-30 |
+| F-028 | feature | CLI shorthand flags and directory entry handling | `released` | Product Owner Agent | `main checkout` | `main` | `v0.13.0` | 2026-03-30 |
+| F-029 | feature | PDF path ergonomics and completions | `released` | Product Owner Agent | `main checkout` | `main` | `v0.13.0` | 2026-03-30 |
+| B-014 | bug | Zen mode page does not fully become the letter surface | `released` | Product Owner Agent | `main checkout` | `main` | `v0.13.0` | 2026-03-30 |
+| B-015 | bug | Config pane stacks beneath shell buttons | `released` | Product Owner Agent | `main checkout` | `main` | `v0.13.0` | 2026-03-30 |
+| P-028 | task | M-025 CLI ergonomics and reader-shell regressions prompt | `released` | Product Owner Agent | `main checkout` | `main` | `v0.13.0` | 2026-03-30 |
 | M-024 | milestone | Wipe command and cleanup surface redesign | `released` | Product Owner Agent | `main checkout` | `main` | `v0.12.0` | 2026-03-30 |
 | F-027 | feature | Unified `wipe` cleanup command | `released` | Product Owner Agent | `main checkout` | `main` | `v0.12.0` | 2026-03-30 |
 | P-027 | task | M-024 wipe command redesign prompt | `released` | Product Owner Agent | `main checkout` | `main` | `v0.12.0` | 2026-03-30 |
@@ -69,5 +68,5 @@ _No ready items._
 ## Notes
 
 - The M-021 and M-022 implementation commits were already present on `main` when this ledger was reconciled.
-- Verification for the reconciled `v0.12.0` release state passed with `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`.
+- Verification for the reconciled `v0.13.0` release state passed with `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`.
 - Full historical release history remains in `docs/releases.md`.

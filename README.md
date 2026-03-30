@@ -12,7 +12,7 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 
 - Renders Markdown to a complete, self-contained HTML5 document with embedded CSS
 - **Supports explicit render modes** — use `--single` to render only the requested file or `--recursive` to render linked local Markdown files too
-- **No-argument CLI fallback** — run `mark` inside a docs directory and it will discover Markdown files in the current directory, render them, and open the first discovered page
+- **Directory-aware CLI entry** — run `mark` inside a docs directory, use `mark`, or pass a docs folder like `mark docs/` and it will discover Markdown files in that directory, render them, and open the first discovered page
 - **Linked non-Markdown files** (`.txt`, `.png`, `.pdf`, etc.) are copied into the same render run with their relative paths preserved and their links rewritten — everything opens correctly
 - **Breadcrumb navigation** on every page below the entry-point, showing the path from root to the current file
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
@@ -28,11 +28,11 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` in per-run directories — never in your project directory
 - Auto-cleans rendered run directories older than 30 days on every run
-- `--no-open` mode for CI or scripting
+- `--no-open` / `-n` mode for CI or scripting
 - `wipe` subcommand for deleting all app data, only config, only renders, or only renders older than 30 days
 - Persistent theme support (`system` / `light` / `dark`) via `mark config set-theme`
 - Persistent render-mode and sidebar defaults via `mark config`
-- Per-invocation theme override via `--theme`
+- Per-invocation theme override via `--theme` / `-t`
 - Works on Linux, macOS, and Windows
 - No network dependencies — all styling is embedded
 
@@ -76,6 +76,7 @@ After installation, restart your shell or run the printed `source` command:
 ```sh
 source ~/.bashrc   # or ~/.zshrc, or restart your terminal
 mark --version
+mark -v
 ```
 
 ### Windows
@@ -115,10 +116,19 @@ directory, renders them together, and opens the first discovered Markdown file
 as the entry page. If no Markdown files are present, the command exits with a
 clear error.
 
+### Render a directory's Markdown files
+
+```sh
+mark docs
+mark docs/
+```
+
+Passing a directory behaves the same as invoking `mark` from inside that directory: top-level Markdown files are discovered, rendered together, and the first discovered Markdown file becomes the entry page.
+
 ### Render without opening the browser
 
 ```sh
-mark --no-open README.md
+mark -n README.md
 ```
 
 Useful in CI, scripts, or headless environments.
@@ -151,9 +161,10 @@ Deletes rendered run directories older than 30 days from `~/.mark/rendered/` and
 
 ```sh
 mark pdf README.md out/README.pdf
+mark pdf README.md .
 ```
 
-`mark pdf` uses a supported headless browser CLI when one is available on `PATH` (`chromium`, `chromium-browser`, `google-chrome`, or `wkhtmltopdf`). If none is available, `mark` leaves the rendered HTML in place, prints its path, and exits with a helpful error so you can finish PDF export manually.
+`mark pdf` uses a supported headless browser CLI when one is available on `PATH` (`chromium`, `chromium-browser`, `google-chrome`, or `wkhtmltopdf`). If none is available, `mark` leaves the rendered HTML in place, prints its path, and exits with a helpful error so you can finish PDF export manually. Passing `.` as the output path writes `<source-stem>.pdf` in the current directory.
 
 ### Help and version
 
@@ -181,9 +192,9 @@ This writes the chosen theme to `~/.mark/config.toml` and is used for all future
 ### Override the theme for a single run
 
 ```sh
-mark --theme system README.md
-mark --theme dark README.md
-mark --theme light README.md
+mark -t system README.md
+mark -t dark README.md
+mark -t light README.md
 ```
 
 The `--theme` flag overrides the persisted config for that invocation only.
@@ -277,7 +288,7 @@ On every normal render run, `mark` automatically deletes per-invocation render d
 - Only direct children of `~/.mark/rendered/` that belong to old render runs are deleted
 - Legacy top-level `.html` files from older versions are also cleaned up when they age out
 - Cleanup is best-effort: if one file cannot be deleted, a warning is printed and the run continues
-- Run `mark --cleanup` explicitly for a cleanup-only run with a printed summary
+- Run `mark wipe --old-renders` explicitly for a cleanup-only run with a printed summary
 
 ---
 

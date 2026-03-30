@@ -279,4 +279,77 @@ mod view_controls {
             "{stderr}"
         );
     }
+
+    #[test]
+    fn directory_argument_mode_renders_markdown_in_that_directory() {
+        let sandbox = tempfile::tempdir().expect("tempdir");
+        let home = sandbox.path().join("home");
+        let docs = sandbox.path().join("docs");
+        fs::create_dir_all(&home).expect("home");
+        fs::create_dir_all(&docs).expect("docs");
+
+        fs::write(docs.join("b.md"), "# B\n").expect("write b");
+        fs::write(docs.join("a.markdown"), "# A\n").expect("write a");
+
+        let output = run_mark(
+            &home,
+            sandbox.path(),
+            &["--no-open", docs.to_str().expect("path")],
+        );
+        assert!(
+            output.status.success(),
+            "stdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let rendered = rendered_path(&String::from_utf8_lossy(&output.stdout));
+        assert_eq!(
+            rendered.file_name().and_then(|name| name.to_str()),
+            Some("a.html")
+        );
+        assert!(rendered.parent().expect("run dir").join("b.html").exists());
+    }
+
+    #[test]
+    fn directory_argument_mode_errors_when_directory_has_no_markdown_files() {
+        let sandbox = tempfile::tempdir().expect("tempdir");
+        let home = sandbox.path().join("home");
+        let docs = sandbox.path().join("docs");
+        fs::create_dir_all(&home).expect("home");
+        fs::create_dir_all(&docs).expect("docs");
+        fs::write(docs.join("notes.txt"), "not markdown\n").expect("write txt");
+
+        let output = run_mark(
+            &home,
+            sandbox.path(),
+            &["--no-open", docs.to_str().expect("path")],
+        );
+        assert!(!output.status.success(), "{output:?}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("No Markdown files found in directory"),
+            "{stderr}"
+        );
+    }
+
+    #[test]
+    fn pdf_command_uses_source_stem_when_output_is_dot() {
+        let sandbox = tempfile::tempdir().expect("tempdir");
+        let home = sandbox.path().join("home");
+        let docs = sandbox.path().join("docs");
+        fs::create_dir_all(&home).expect("home");
+        fs::create_dir_all(&docs).expect("docs");
+        let overview = docs.join("OVERVIEW.md");
+        fs::write(&overview, "# Overview\n").expect("overview");
+
+        let output = run_mark(
+            &home,
+            &docs,
+            &["pdf", overview.to_str().expect("path"), "."],
+        );
+        assert!(!output.status.success(), "{output:?}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains("OVERVIEW.pdf.html"), "{stderr}");
+    }
 }

@@ -3,7 +3,8 @@ use clap_complete::{generate, Shell};
 
 use crate::cli::Cli;
 
-const MARK_BASH_OPTS: &str = "-s -r -V -h --no-open --single --recursive --theme --version --help";
+const MARK_BASH_OPTS: &str =
+    "-n -r -s -t -v -h --no-open --single --recursive --theme --version --help";
 const BASH_REGISTRATION_MARKER: &str = "\nif [[ \"${BASH_VERSINFO[0]}\"";
 const BASH_COMPGEN_LINE: &str = "            COMPREPLY=( $(compgen -W \"${opts}\" -- \"${cur}\") )";
 const BASH_TOP_LEVEL_CASE_MARKER: &str = "        mark)\n";
@@ -18,7 +19,7 @@ _mark_has_top_level_file() {
             continue
         fi
         case "${word}" in
-            --theme)
+            --theme|-t)
                 expecting_value=1
                 ;;
             -*)

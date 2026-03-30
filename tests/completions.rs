@@ -115,6 +115,24 @@ printf '%s\n' "${COMPREPLY[@]}""#,
     }
 
     #[test]
+    fn bash_completion_keeps_short_flags_available() {
+        let script = generate_completions(Shell::Bash);
+        let completions = run_bash_completion(&script, &["mark", ""]);
+        assert!(
+            completions.iter().any(|item| item == "-n"),
+            "{completions:?}"
+        );
+        assert!(
+            completions.iter().any(|item| item == "-t"),
+            "{completions:?}"
+        );
+        assert!(
+            completions.iter().any(|item| item == "-v"),
+            "{completions:?}"
+        );
+    }
+
+    #[test]
     fn zsh_completions_non_empty() {
         let script = generate_completions(Shell::Zsh);
         assert!(
@@ -153,10 +171,10 @@ printf '%s\n' "${COMPREPLY[@]}""#,
         );
     }
 
-    /// Verify the file argument carries a FilePath value hint so completion
-    /// scripts know to complete it as a path rather than an arbitrary string.
+    /// Verify the root positional argument carries an AnyPath value hint so it
+    /// can complete both Markdown files and directories.
     #[test]
-    fn file_arg_has_filepath_hint() {
+    fn file_arg_has_anypath_hint() {
         let cmd = Cli::command();
         let file_arg = cmd
             .get_arguments()
@@ -164,9 +182,23 @@ printf '%s\n' "${COMPREPLY[@]}""#,
             .expect("Cli must have a 'file' argument");
         assert_eq!(
             file_arg.get_value_hint(),
-            clap::ValueHint::FilePath,
-            "'file' argument must use ValueHint::FilePath for shell completions"
+            clap::ValueHint::AnyPath,
+            "'file' argument must use ValueHint::AnyPath for shell completions"
         );
+    }
+
+    #[test]
+    fn pdf_args_have_path_hints() {
+        let mut cmd = Cli::command();
+        let pdf = cmd
+            .find_subcommand_mut("pdf")
+            .expect("pdf subcommand should exist");
+        let mut args = pdf.get_arguments();
+        let source = args.next().expect("source arg");
+        let output = args.next().expect("output arg");
+
+        assert_eq!(source.get_value_hint(), clap::ValueHint::FilePath);
+        assert_eq!(output.get_value_hint(), clap::ValueHint::AnyPath);
     }
 
     #[test]

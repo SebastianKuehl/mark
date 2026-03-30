@@ -197,7 +197,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-theme-toggle-button,.mark-export-pdf-button{{border-radius:var(--mark-theme-button-radius)}}
 .mark-sidebar-button:hover,.mark-shell-button:hover,.mark-layout-copy:hover{{transform:translateY(-1px);background:var(--control-hover);color:var(--foreground)}}
 .mark-theme-button-shell{{position:relative}}
-.mark-theme-menu{{position:fixed;top:0;right:0;z-index:40;width:min(28rem,calc(100vw - 1rem));height:100vh;border-left:1px solid var(--border);background:color-mix(in srgb,var(--card) 98%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.18);backdrop-filter:blur(18px);transform:translateX(100%);opacity:0;transition:transform .22s ease,opacity .15s ease;pointer-events:none}}
+.mark-theme-menu{{position:fixed;top:0;right:0;z-index:60;width:min(28rem,calc(100vw - 1rem));height:100vh;border-left:1px solid var(--border);background:color-mix(in srgb,var(--card) 98%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.18);backdrop-filter:blur(18px);transform:translateX(100%);opacity:0;transition:transform .22s ease,opacity .15s ease;pointer-events:none}}
 .mark-theme-menu.mark-theme-menu--open{{transform:translateX(0);opacity:1;pointer-events:auto}}
 .mark-theme-menu-inner{{display:grid;gap:1rem;height:100%;overflow-y:auto;padding:6rem 1.25rem 1.5rem}}
 .mark-theme-menu-section{{display:grid;gap:.65rem}}
@@ -262,7 +262,8 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-sidebar-search{{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:.7rem;background:var(--background);color:var(--foreground);font:inherit;font-size:.85rem;margin-bottom:.75rem;box-sizing:border-box}}
 .mark-sidebar-search:focus{{outline:2px solid var(--ring);outline-offset:2px}}
 html.mark-zen-mode .mark-left-control,html.mark-zen-mode .mark-right-control,html.mark-zen-mode #mark-sidebar,html.mark-zen-mode .mark-theme-menu{{display:none!important}}
-html.mark-zen-mode .paper-sheet{{border:none;background:transparent;box-shadow:none;border-radius:0}}
+html.mark-zen-mode .editor-shell,html.mark-zen-mode .mark-content-wrapper,html.mark-zen-mode .mark-main-shell,html.mark-zen-mode .mark-page-width-shell{{background:var(--mark-zen-bg,var(--card))}}
+html.mark-zen-mode .paper-sheet{{border:none;background:var(--mark-zen-bg,var(--card));box-shadow:none;border-radius:0}}
 html.mark-zen-mode,html.mark-zen-mode body{{background:var(--mark-zen-bg,var(--card))}}
 @media (max-width: 768px){{.mark-left-control{{left:1rem}}.mark-right-control{{right:1rem;gap:.5rem}}.mark-content-wrapper{{padding-top:1rem}}.paper-sheet{{padding:1.5rem}}}}
 </style>"#,
@@ -417,7 +418,7 @@ html.mark-zen-mode,html.mark-zen-mode body{{background:var(--mark-zen-bg,var(--c
     var page = document.querySelector('.paper-sheet');
     var resolved = '';
     if (page && window.getComputedStyle) {
-      resolved = window.getComputedStyle(page).backgroundColor || '';
+      resolved = window.getComputedStyle(page).getPropertyValue('background-color') || window.getComputedStyle(page).backgroundColor || '';
     }
     if (!resolved || resolved === 'transparent' || resolved === 'rgba(0, 0, 0, 0)') {
       resolved = (window.getComputedStyle ? window.getComputedStyle(root).getPropertyValue('--card') : '') || '';
@@ -2130,7 +2131,7 @@ mod tests {
         let html = render_markdown("# Test", "test", Theme::System);
         assert!(html.contains("<aside id=\"mark-theme-menu\""), "{html}");
         assert!(
-            html.contains(".mark-theme-menu{position:fixed;top:0;right:0;"),
+            html.contains(".mark-theme-menu{position:fixed;top:0;right:0;z-index:60;"),
             "{html}"
         );
         assert!(html.contains("class=\"mark-theme-menu-inner\""), "{html}");
@@ -2206,13 +2207,19 @@ mod tests {
             ),
             "zen mode background must use the synced page variable:\n{html}"
         );
+        assert!(
+            html.contains(
+                "html.mark-zen-mode .paper-sheet{border:none;background:var(--mark-zen-bg,var(--card));box-shadow:none;border-radius:0}"
+            ),
+            "zen mode paper must adopt the same background so the page becomes the letter:\n{html}"
+        );
     }
 
     #[test]
     fn zen_mode_toggle_reads_current_page_background_and_clears_it() {
         let html = render_markdown("# Test", "test", Theme::System);
         assert!(
-            html.contains("window.getComputedStyle(page).backgroundColor"),
+            html.contains("window.getComputedStyle(page).getPropertyValue('background-color')"),
             "zen mode must read the current paper background before toggling:\n{html}"
         );
         assert!(

@@ -31,8 +31,7 @@ High
 
 ## Status
 
-in_progress
+released
 
 ## Target Release
-
-TBD
+v0.13.0

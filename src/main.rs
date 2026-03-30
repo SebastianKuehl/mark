@@ -56,6 +56,65 @@ fn discover_markdown_files(dir: &Path) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
+fn resolve_render_target(
+    file_arg: Option<&Path>,
+) -> Result<(PathBuf, Option<Vec<PathBuf>>, &'static str, PathBuf)> {
+    match file_arg {
+        None => {
+            let cwd = std::env::current_dir()
+                .map_err(|e| anyhow::anyhow!("Failed to determine current directory: {e}"))?;
+            let files = discover_markdown_files(&cwd)?;
+            if files.is_empty() {
+                anyhow::bail!(
+                    "No Markdown files found in current directory: {}",
+                    cwd.display()
+                );
+            }
+            Ok((
+                files[0].clone(),
+                Some(files),
+                "current directory",
+                cwd.canonicalize().map_err(|e| {
+                    anyhow::anyhow!("Failed to canonicalize {}: {e}", cwd.display())
+                })?,
+            ))
+        }
+        Some(path) if path.is_dir() => {
+            let dir = path.canonicalize().map_err(|e| {
+                anyhow::anyhow!("Failed to canonicalize directory {}: {e}", path.display())
+            })?;
+            let files = discover_markdown_files(&dir)?;
+            if files.is_empty() {
+                anyhow::bail!("No Markdown files found in directory: {}", path.display());
+            }
+            Ok((files[0].clone(), Some(files), "directory", dir))
+        }
+        Some(path) => Ok((path.to_path_buf(), None, "file", PathBuf::new())),
+    }
+}
+
+fn resolve_pdf_output_path(source: &Path, output: &Path) -> Result<PathBuf> {
+    if output == Path::new(".") {
+        let cwd = std::env::current_dir()
+            .map_err(|e| anyhow::anyhow!("Failed to determine current directory: {e}"))?;
+        let stem = source
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("document");
+        return Ok(cwd.join(format!("{stem}.pdf")));
+    }
+
+    if output.is_dir() {
+        let stem = source
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("document");
+        return Ok(output.join(format!("{stem}.pdf")));
+    }
+
+    Ok(output.to_path_buf())
+}
+
 fn stable_path_hash(path: &Path) -> u32 {
     path.as_os_str()
         .as_encoded_bytes()
@@ -188,6 +247,8 @@ fn handle_pdf(source: &std::path::Path, output: &std::path::Path) -> Result<()> 
         anyhow::bail!("Source file not found: {}", source.display());
     }
 
+    let output = resolve_pdf_output_path(source, output)?;
+
     let markdown = std::fs::read_to_string(source)
         .map_err(|e| anyhow::anyhow!("Failed to read {}: {e}", source.display()))?;
 
@@ -226,7 +287,7 @@ fn handle_pdf(source: &std::path::Path, output: &std::path::Path) -> Result<()> 
         Some(&"wkhtmltopdf") => {
             let status = std::process::Command::new("wkhtmltopdf")
                 .arg(&tmp_html)
-                .arg(output)
+                .arg(&output)
                 .status()
                 .map_err(|e| anyhow::anyhow!("Failed to launch wkhtmltopdf: {e}"))?;
             let _ = std::fs::remove_file(&tmp_html);
@@ -365,20 +426,8 @@ fn main() -> Result<()> {
         return handle_wipe(paths, wipe);
     }
 
-    let discovered_files = if args.file.is_none() {
-        let cwd = std::env::current_dir()
-            .map_err(|e| anyhow::anyhow!("Failed to determine current directory: {e}"))?;
-        let files = discover_markdown_files(&cwd)?;
-        if files.is_empty() {
-            anyhow::bail!(
-                "No Markdown files found in current directory: {}",
-                cwd.display()
-            );
-        }
-        Some(files)
-    } else {
-        None
-    };
+    let (file, discovered_files, target_kind, _target_dir) =
+        resolve_render_target(args.file.as_deref())?;
 
     let paths = storage::AppPaths::resolve()?;
 
@@ -389,17 +438,7 @@ fn main() -> Result<()> {
     let theme: Theme = args.theme.unwrap_or(cfg.theme);
     let appearance = cfg.appearance;
 
-    let file = args
-        .file
-        .clone()
-        .or_else(|| {
-            discovered_files
-                .as_ref()
-                .and_then(|files| files.first().cloned())
-        })
-        .expect("file is required when not using a subcommand");
-
-    if args.file.is_some() && !file.exists() {
+    if args.file.is_some() && target_kind == "file" && !file.exists() {
         anyhow::bail!("Input file not found: {}", file.display());
     }
 
@@ -951,5 +990,40 @@ mod tests {
             .collect();
 
         assert_eq!(discovered_names, vec!["a.markdown", "b.md"]);
+    }
+
+    #[test]
+    fn resolve_render_target_discovers_directory_markdown() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("b.md"), "# B").expect("write b");
+        std::fs::write(dir.path().join("a.md"), "# A").expect("write a");
+
+        let (entry, discovered, kind, _) =
+            resolve_render_target(Some(dir.path())).expect("resolve target");
+
+        assert_eq!(kind, "directory");
+        assert_eq!(
+            entry.file_name().and_then(|name| name.to_str()),
+            Some("a.md")
+        );
+        assert_eq!(discovered.expect("discovered").len(), 2);
+    }
+
+    #[test]
+    fn resolve_pdf_output_path_turns_dot_into_pdf_name() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let previous = std::env::current_dir().expect("cwd");
+        std::env::set_current_dir(dir.path()).expect("set cwd");
+
+        let resolved =
+            resolve_pdf_output_path(Path::new("docs/OVERVIEW.md"), Path::new(".")).expect("pdf");
+
+        let expected = dir
+            .path()
+            .canonicalize()
+            .expect("canonical tempdir")
+            .join("OVERVIEW.pdf");
+        std::env::set_current_dir(previous).expect("restore cwd");
+        assert_eq!(resolved, expected);
     }
 }

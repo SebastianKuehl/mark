@@ -1,5 +1,14 @@
 # Releases
 
+## v0.13.0 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-025, F-028, F-029, B-014, B-015
+- **Summary:** Added shorthand CLI flags (`-n`, `-t`, and lowercase `-v`), taught the root positional argument to accept a directory so `mark docs` behaves like running `mark` inside that folder, and improved `mark pdf` ergonomics so `mark pdf <FILE> .` resolves to `<stem>.pdf` in the current directory. This release also finishes the reader-shell regression fixes by making zen mode visually collapse the page into the letter surface and ensuring the config pane layers above the shell buttons. The crate version is synced to `v0.13.0` in `Cargo.toml` and `Cargo.lock`.
+
+---
+
 ## v0.12.0 — minor
 
 - **Date:** 2026-03-30
