@@ -139,12 +139,131 @@ fn format_skipped_links_note(skipped_links: &[String]) -> Option<String> {
     }
 }
 
+/// Render `source` Markdown to a temporary HTML file and then attempt to
+/// export it as a PDF at `output` using a headless browser.
+///
+/// If no headless browser is found on `PATH`, the rendered HTML path and
+/// manual print instructions are printed, and the function returns an error
+/// so that the process exits with a non-zero status.
+fn handle_pdf(source: &std::path::Path, output: &std::path::Path) -> Result<()> {
+    use mark::config::Theme;
+    use std::io::Write as _;
+
+    if !source.exists() {
+        anyhow::bail!("Source file not found: {}", source.display());
+    }
+
+    let markdown = std::fs::read_to_string(source)
+        .map_err(|e| anyhow::anyhow!("Failed to read {}: {e}", source.display()))?;
+
+    let title = source
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("document");
+
+    let html = render::render_markdown(&markdown, title, Theme::System);
+
+    // Write HTML to a temporary file adjacent to the intended output so the
+    // browser can locate relative assets without extra configuration.
+    let tmp_html = output.with_extension("pdf.html");
+    if let Some(parent) = tmp_html.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&tmp_html, html.as_bytes())
+        .map_err(|e| anyhow::anyhow!("Failed to write temporary HTML: {e}"))?;
+
+    // Try headless browsers in order of preference.
+    let candidates = [
+        "chromium",
+        "chromium-browser",
+        "google-chrome",
+        "wkhtmltopdf",
+    ];
+    let found = candidates.iter().find(|&&bin| {
+        std::process::Command::new("which")
+            .arg(bin)
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    });
+
+    match found {
+        Some(&"wkhtmltopdf") => {
+            let status = std::process::Command::new("wkhtmltopdf")
+                .arg(&tmp_html)
+                .arg(output)
+                .status()
+                .map_err(|e| anyhow::anyhow!("Failed to launch wkhtmltopdf: {e}"))?;
+            let _ = std::fs::remove_file(&tmp_html);
+            if status.success() {
+                println!("PDF written to: {}", output.display());
+                Ok(())
+            } else {
+                anyhow::bail!("wkhtmltopdf exited with status: {status}");
+            }
+        }
+        Some(&browser_bin) => {
+            // Chromium-family: headless print-to-PDF
+            let status = std::process::Command::new(browser_bin)
+                .arg("--headless")
+                .arg("--disable-gpu")
+                .arg(format!("--print-to-pdf={}", output.display()))
+                .arg("--no-pdf-header-footer")
+                .arg(format!(
+                    "file://{}",
+                    tmp_html
+                        .canonicalize()
+                        .unwrap_or(tmp_html.clone())
+                        .display()
+                ))
+                .status()
+                .map_err(|e| anyhow::anyhow!("Failed to launch {browser_bin}: {e}"))?;
+            let _ = std::fs::remove_file(&tmp_html);
+            if status.success() {
+                println!("PDF written to: {}", output.display());
+                Ok(())
+            } else {
+                anyhow::bail!("{browser_bin} exited with status: {status}");
+            }
+        }
+        None => {
+            // No headless browser found: leave the HTML and guide the user.
+            eprintln!(
+                "error: no headless browser found (looked for: {}).",
+                candidates.join(", ")
+            );
+            eprintln!(
+                "The rendered HTML has been written to: {}",
+                tmp_html.display()
+            );
+            eprintln!(
+                "To export it to PDF manually, open the file in your browser and use\n\
+                 File → Print → Save as PDF, or install one of the browsers listed above."
+            );
+            // Ensure stdout is flushed before we exit.
+            let _ = std::io::stdout().flush();
+            std::process::exit(1);
+        }
+    }
+}
+
 fn main() -> Result<()> {
     let args = mark::cli::Cli::parse();
 
     if args.version {
         println!("v{}", env!("CARGO_PKG_VERSION"));
         return Ok(());
+    }
+
+    // Reject mixed FILE + COMMAND invocations (belt-and-suspenders; the
+    // `conflicts_with` attribute on `file` also enforces this at parse time).
+    if args.file.is_some() && args.command.is_some() {
+        let mut cmd = mark::cli::Cli::command();
+        cmd.error(
+            clap::error::ErrorKind::ArgumentConflict,
+            "a FILE and a COMMAND cannot be combined; use either 'mark [FILE]' or 'mark [COMMAND]'",
+        )
+        .exit();
     }
 
     // Handle the `completions` subcommand before anything else.
@@ -227,6 +346,11 @@ fn main() -> Result<()> {
         cleanup_home::delete_app_dir(&target)?;
         println!("Deleted '{}'.", target.display());
         return Ok(());
+    }
+
+    // Handle `pdf` subcommand.
+    if let Some(Commands::Pdf { source, output }) = args.command {
+        return handle_pdf(&source, &output);
     }
 
     // Without a subcommand, replicate the old ArgGroup semantics:

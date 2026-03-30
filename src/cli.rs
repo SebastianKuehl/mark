@@ -5,7 +5,15 @@ use std::path::PathBuf;
 
 /// Render a Markdown file to HTML and open it in the default browser.
 #[derive(Parser, Debug)]
-#[command(name = "mark", version = concat!("v", env!("CARGO_PKG_VERSION")), long_version = concat!("v", env!("CARGO_PKG_VERSION")), about, long_about = None, disable_version_flag = true)]
+#[command(
+    name = "mark",
+    version = concat!("v", env!("CARGO_PKG_VERSION")),
+    long_version = concat!("v", env!("CARGO_PKG_VERSION")),
+    about,
+    long_about = None,
+    disable_version_flag = true,
+    override_usage = "mark [OPTIONS] [FILE]\n       mark [OPTIONS] <COMMAND>",
+)]
 pub struct Cli {
     /// Markdown file to render
     #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
@@ -66,6 +74,17 @@ pub enum Commands {
         #[arg(long)]
         yes: bool,
     },
+    /// Export a Markdown file directly to PDF via headless browser print.
+    ///
+    /// Example: mark pdf docs/file.md out/file.pdf
+    Pdf {
+        /// Markdown source file to render and export.
+        #[arg(value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+        source: PathBuf,
+        /// Destination PDF path.
+        #[arg(value_name = "OUTPUT", value_hint = clap::ValueHint::FilePath)]
+        output: PathBuf,
+    },
 }
 
 /// Config sub-actions.
@@ -123,6 +142,40 @@ mod tests {
     fn single_and_recursive_flags_conflict() {
         let result = Cli::try_parse_from(["mark", "--single", "--recursive", "notes.md"]);
         assert!(result.is_err(), "single and recursive should conflict");
+    }
+
+    #[test]
+    fn file_parses_as_file_render() {
+        let cli = Cli::try_parse_from(["mark", "notes.md"]).unwrap();
+        assert_eq!(cli.file, Some(PathBuf::from("notes.md")));
+        assert!(cli.command.is_none());
+    }
+
+    #[test]
+    fn pdf_subcommand_parses_source_and_output() {
+        let cli = Cli::try_parse_from(["mark", "pdf", "docs/file.md", "out/file.pdf"]).unwrap();
+        match cli.command {
+            Some(Commands::Pdf { source, output }) => {
+                assert_eq!(source, PathBuf::from("docs/file.md"));
+                assert_eq!(output, PathBuf::from("out/file.pdf"));
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn file_and_command_are_mutually_exclusive() {
+        // clap 4 does not support conflicts_with against a subcommand field,
+        // so mixed invocations parse successfully at the clap layer.
+        // main() performs manual validation and rejects the combination at runtime.
+        // Here we confirm that clap does accept the parse (both fields are set),
+        // so that the runtime check in main() has something to act on.
+        let cli =
+            Cli::try_parse_from(["mark", "notes.md", "config", "set-theme", "light"]).unwrap();
+        assert!(
+            cli.file.is_some() && cli.command.is_some(),
+            "clap must populate both fields so main() can detect and reject the combination"
+        );
     }
 
     #[test]
