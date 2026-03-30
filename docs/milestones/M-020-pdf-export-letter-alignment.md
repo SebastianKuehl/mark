@@ -13,6 +13,7 @@ vertical start position.
 
 ## Included Features and Bugs
 - B-008 — Letter top edge misaligned with header buttons
+- B-009 — Terminal command accordion card styling + Copy button placement
 - F-022 — PDF export button with file picker
 
 ## Dependencies
@@ -24,7 +25,8 @@ vertical start position.
 - A PDF export button (download icon) appears left of the ⚙ button.
 - Clicking it opens a file picker (where supported) then triggers
   `window.print()` with a print stylesheet that hides chrome.
-- All existing functionality unaffected.
+- Terminal command accordion is flat (no border/background/shadow), integrated into the config pane surface.
+- Copy button is always visible in the accordion `<summary>` row, right-aligned.
 - `cargo fmt`, `cargo clippy`, `cargo test` pass with zero warnings.
 
 ## Priority

@@ -75,3 +75,4 @@
 | M-020 | milestone | PDF Export and Letter Alignment Polish | `ready` | — | — | — | — | — | 2026-03-30 |
 | F-022 | feature | PDF export button with file picker | `ready` | — | — | — | — | M-020 | 2026-03-30 |
 | B-008 | bug | Letter top edge misaligned with header buttons | `ready` | — | — | — | — | M-020 | 2026-03-30 |
+| B-009 | bug | Terminal command accordion has wrong styling and Copy button placement | `ready` | — | — | — | — | M-020 | 2026-03-30 |

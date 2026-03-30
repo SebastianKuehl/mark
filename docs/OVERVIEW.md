@@ -99,6 +99,7 @@ Current active milestone: `—` (M-019 released as v0.8.0; backlog empty).
 | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) | Stray unlabeled checkbox appears in the reader shell | Medium | ✅ released | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) |
 | [B-007](bugs/B-007-c-hotkey-not-toggling.md) | `c` hotkey only opens config pane, does not toggle it | Medium | ✅ released | [B-007](bugs/B-007-c-hotkey-not-toggling.md) |
 | [B-008](bugs/B-008-letter-top-misaligned.md) | Letter top edge misaligned with header buttons | Medium | 📝 ready | [B-008](bugs/B-008-letter-top-misaligned.md) |
+| [B-009](bugs/B-009-terminal-accordion-visual-issues.md) | Terminal command accordion card styling + Copy button placement | Medium | 📝 ready | [B-009](bugs/B-009-terminal-accordion-visual-issues.md) |
 
 ---
 
