@@ -194,7 +194,8 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-right-control{{right:1.5rem;display:flex;align-items:flex-start;gap:.75rem}}
 .mark-shell-button,.mark-sidebar-button{{display:flex;align-items:center;justify-content:center;width:3.25rem;height:3.25rem;border:1px solid var(--border);background:var(--control-bg);color:var(--muted-foreground);box-shadow:0 8px 24px rgba(0,0,0,.12);cursor:pointer;transition:transform .15s ease,background .15s ease,color .15s ease}}
 .mark-sidebar-button{{border-radius:var(--mark-sidebar-button-radius)}}
-.mark-theme-toggle-button,.mark-export-pdf-button{{border-radius:var(--mark-theme-button-radius)}}
+.mark-theme-toggle-button{{position:absolute;top:0;right:0;z-index:70;border-radius:var(--mark-theme-button-radius)}}
+.mark-export-pdf-button{{position:absolute;top:0;right:0;z-index:70;border-radius:var(--mark-theme-button-radius);transform:translateX(-100%);margin-right:8px;}}
 .mark-sidebar-button:hover,.mark-shell-button:hover,.mark-layout-copy:hover{{transform:translateY(-1px);background:var(--control-hover);color:var(--foreground)}}
 .mark-theme-button-shell{{position:relative}}
 .mark-theme-menu{{position:fixed;top:0;right:0;z-index:60;width:min(28rem,calc(100vw - 1rem));height:100vh;border-left:1px solid var(--border);background:color-mix(in srgb,var(--card) 98%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.18);backdrop-filter:blur(18px);transform:translateX(100%);opacity:0;transition:transform .22s ease,opacity .15s ease;pointer-events:none}}
