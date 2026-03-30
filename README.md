@@ -17,9 +17,9 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
 - **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
 - **Self-contained application shell** — rendered pages now use the embedded Rust-built shell and stylesheet shipped with `mark`, with no dependency on a checked-in `index.html` template
-- **Reader appearance controls** — tune font size, letter width, letter corner radius, and the sidebar/theme button radii from the rendered page, then copy a generated `mark config set-layout ...` command
+- **Reader config menu** — press `c` or click the ⚙ button to open the config panel; tune font size, letter width (rem), letter corner radius, and button radii, then copy the generated `mark config set-layout ...` command; changes preview live on the current page
+- **In-page theme switcher** — press `t` to toggle between `light` and `dark`; the config menu also contains the theme controls
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
-- **In-page theme switcher** — switch between `system`, `light`, and `dark` without re-rendering
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` in per-run directories — never in your project directory
 - Auto-cleans rendered run directories older than 30 days on every run
@@ -180,7 +180,7 @@ Example contents:
 theme = "system"
 ```
 
-Rendered pages also include an in-page theme switcher in the top-right corner so you can change the active theme ad hoc without re-running `mark`.
+Rendered pages also include an in-page config menu (top-right ⚙ button, or press `c`) that contains the theme controls. Press `t` to toggle directly between light and dark without opening the menu.
 
 ## Render mode and sidebar defaults
 
@@ -215,7 +215,7 @@ sidebar_button_radius_px = 999
 theme_button_radius_px = 999
 ```
 
-Rendered pages also include a reader-layout form in the top-right control panel. Adjust the values there and copy the generated `mark config set-layout ...` command into your terminal to persist the new defaults for future renders.
+Rendered pages include a reader-layout form inside the config menu (⚙ / `c`). Adjust the values there — changes preview live on the current page — and copy the generated `mark config set-layout ...` command into your terminal to persist the new defaults for future renders.
 
 
 

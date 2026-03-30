@@ -24,6 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
+Current active milestone: `—` (M-017 released as v0.7.0).
 
 ---
 
@@ -31,6 +32,7 @@ Current active execution item: `—`.
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.7.0](releases.md#v070--minor) | minor | Reader controls polish — config menu (⚙/c), t light/dark toggle, live layout preview, rem units, subtle bg glow, stray checkbox removed |
 | [v0.6.0](releases.md#v060--minor) | minor | Render shell milestone landed (initially via `src/index.html`, now superseded by the self-contained shell in `src/render.rs`) |
 | [v0.5.1](releases.md#v051--patch) | patch | Bash completions stop suggesting root subcommands after the positional `FILE` argument |
 | [v0.5.0](releases.md#v050--minor) | minor | Single vs recursive render modes, hidden-by-default sidebar controls, in-page theme switcher |
@@ -53,7 +55,8 @@ Current active execution item: `—`.
 | M-013 | Folder Hierarchy Preservation | ✅ released | [M-013](milestones/M-013-folder-hierarchy.md) |
 | M-014 | View Controls and Render Modes | ✅ released | [M-014](milestones/M-014-view-controls-and-render-modes.md) |
 | M-015 | Historical Template-Shell Migration | ✅ released | [M-015](milestones/M-015-template-render-shell.md) |
-| M-016 | Reader Customization Controls | 🟡 merged | [M-016](milestones/M-016-reader-customization-controls.md) |
+| M-016 | Reader Customization Controls | ✅ released | [M-016](milestones/M-016-reader-customization-controls.md) |
+| M-017 | Reader Controls Polish | ✅ released | [M-017](milestones/M-017-reader-controls-polish.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
 ---
@@ -70,7 +73,8 @@ Current active execution item: `—`.
 | [F-015](features/F-015-render-mode-defaults.md) | Render mode flags and persistent defaults | ✅ released | [F-015](features/F-015-render-mode-defaults.md) |
 | [F-016](features/F-016-sidebar-theme-controls.md) | Sidebar and theme controls | ✅ released | [F-016](features/F-016-sidebar-theme-controls.md) |
 | [F-017](features/F-017-template-shell.md) | Historical `src/index.html` template-shell migration | ✅ released | [F-017](features/F-017-template-shell.md) |
-| [F-018](features/F-018-reader-appearance-controls.md) | Persistent reader appearance controls | 🟡 merged | [F-018](features/F-018-reader-appearance-controls.md) |
+| [F-018](features/F-018-reader-appearance-controls.md) | Persistent reader appearance controls | ✅ released | [F-018](features/F-018-reader-appearance-controls.md) |
+| [F-019](features/F-019-config-menu-live-preview.md) | Config menu hotkeys and live reader-layout preview polish | ✅ released | [F-019](features/F-019-config-menu-live-preview.md) |
 
 ---
 
@@ -82,7 +86,8 @@ Current active execution item: `—`.
 | [B-002](bugs/B-002-cache-linked-file-staleness.md) | Render cache misses linked-file changes | Medium | 📝 planned | [B-002](bugs/B-002-cache-linked-file-staleness.md) |
 | [B-003](bugs/B-003-cache-theme-mismatch.md) | Theme change not reflected on cache hit | Low | 📝 planned | [B-003](bugs/B-003-cache-theme-mismatch.md) |
 | [B-004](bugs/B-004-completion-subcommands-after-file.md) | Completion suggests subcommands after FILE | Medium | ✅ released | [B-004](bugs/B-004-completion-subcommands-after-file.md) |
-| [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) | Sidebar footer hotkeys can disappear behind tall hierarchies | Medium | 🟡 merged | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) |
+| [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) | Sidebar footer hotkeys can disappear behind tall hierarchies | Medium | ✅ released | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) |
+| [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) | Stray unlabeled checkbox appears in the reader shell | Medium | ✅ released | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) |
 
 ---
 
@@ -107,6 +112,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-016](prompts/P-016-B-004-completion-after-file.md) | B-004 | Fix completion suggestions after positional FILE |
 | [P-017](prompts/P-017-F-017-template-shell.md) | F-017 | Implement template-driven render shell from `src/index.html` |
 | [P-018](prompts/P-018-F-017-theme-icon-followup.md) | F-017 | Restore theme-switcher icon + label parity in the F-017 worktree |
+| [P-019](prompts/P-019-M-017-reader-controls-polish.md) | M-017 (F-019 + B-006) | Reader controls polish — config icon, c/t hotkeys, live preview, rem units, bg glow, stray checkbox |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -117,7 +123,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 |------|--------------|
 | Active agents | none |
 | Open worktrees | none |
-| Latest tag | `v0.6.0` |
-| Recently merged work | M-016 · F-018 · B-005 |
+| Latest tag | `v0.7.0` |
+| Recently merged work | M-017 · F-019 · B-006 (v0.7.0) |
 | Next planned work | B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

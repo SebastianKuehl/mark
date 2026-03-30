@@ -21,6 +21,10 @@
 | M-016 | milestone | Reader Customization Controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | F-018 | feature | Persistent reader appearance controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | B-005 | bug | Sidebar footer hotkeys can disappear behind tall hierarchies | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| M-017 | milestone | Reader Controls Polish | `released` | anvil | `.worktrees/M-017-reader-polish` | `feat/M-017-reader-polish` | — | 2026-03-30 |
+| F-019 | feature | Config menu hotkeys and live reader-layout preview polish | `released` | anvil | `.worktrees/M-017-reader-polish` | `feat/M-017-reader-polish` | — | 2026-03-30 |
+| B-006 | bug | Stray unlabeled checkbox appears in the reader shell | `released` | anvil | `.worktrees/M-017-reader-polish` | `feat/M-017-reader-polish` | — | 2026-03-30 |
+| P-019 | task | M-017 reader controls polish prompt | `released` | anvil | `.worktrees/M-017-reader-polish` | `feat/M-017-reader-polish` | — | 2026-03-30 |
 | M-015 | milestone | Historical Template-Shell Migration | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | later superseded by the self-contained shell | 2026-03-29 |
 | F-017 | feature | Historical `src/index.html` template-shell migration | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | later superseded by the self-contained shell | 2026-03-29 |
 | P-017 | task | Implement historical template-driven render shell from `src/index.html` | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | fixed via P-018 follow-up before merge; later superseded | 2026-03-29 |

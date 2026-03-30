@@ -1,5 +1,14 @@
 # Releases
 
+## v0.7.0 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-017, F-019, B-006
+- **Summary:** Reader controls polish. The top-right reader button is now a settings/gear icon (⚙) that opens a combined config menu for both theme and reader-layout controls. `t` hotkey now toggles only between light and dark. New `c` hotkey opens the config menu. Reader-layout changes apply live to the current document via CSS custom properties. Letter-width label updated to rem. Page background radial glow reduced from 0.55 → 0.08 opacity. Stray unlabeled checkbox removed from page chrome.
+
+---
+
 ## v0.6.0 — minor
 
 - **Date:** 2026-03-29
