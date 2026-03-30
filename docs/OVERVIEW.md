@@ -57,6 +57,8 @@ Current active milestone: `—` (M-017 released as v0.7.0).
 | M-015 | Historical Template-Shell Migration | ✅ released | [M-015](milestones/M-015-template-render-shell.md) |
 | M-016 | Reader Customization Controls | ✅ released | [M-016](milestones/M-016-reader-customization-controls.md) |
 | M-017 | Reader Controls Polish | ✅ released | [M-017](milestones/M-017-reader-controls-polish.md) |
+| M-018 | Reader Shell UX Refinements | 📝 ready | [M-018](milestones/M-018-reader-shell-ux-refinements.md) |
+| M-019 | Recursive Render Scope Restriction | 📝 ready | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
 ---
@@ -75,6 +77,8 @@ Current active milestone: `—` (M-017 released as v0.7.0).
 | [F-017](features/F-017-template-shell.md) | Historical `src/index.html` template-shell migration | ✅ released | [F-017](features/F-017-template-shell.md) |
 | [F-018](features/F-018-reader-appearance-controls.md) | Persistent reader appearance controls | ✅ released | [F-018](features/F-018-reader-appearance-controls.md) |
 | [F-019](features/F-019-config-menu-live-preview.md) | Config menu hotkeys and live reader-layout preview polish | ✅ released | [F-019](features/F-019-config-menu-live-preview.md) |
+| [F-020](features/F-020-reader-shell-ux-refinements.md) | Reader shell UX refinements (letter alignment, accordion, save button) | 📝 ready | [F-020](features/F-020-reader-shell-ux-refinements.md) |
+| [F-021](features/F-021-restrict-recursive-render-scope.md) | Restrict recursive rendering to entry file's directory subtree | 📝 ready | [F-021](features/F-021-restrict-recursive-render-scope.md) |
 
 ---
 
@@ -88,6 +92,7 @@ Current active milestone: `—` (M-017 released as v0.7.0).
 | [B-004](bugs/B-004-completion-subcommands-after-file.md) | Completion suggests subcommands after FILE | Medium | ✅ released | [B-004](bugs/B-004-completion-subcommands-after-file.md) |
 | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) | Sidebar footer hotkeys can disappear behind tall hierarchies | Medium | ✅ released | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) |
 | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) | Stray unlabeled checkbox appears in the reader shell | Medium | ✅ released | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) |
+| [B-007](bugs/B-007-c-hotkey-not-toggling.md) | `c` hotkey only opens config pane, does not toggle it | Medium | 📝 ready | [B-007](bugs/B-007-c-hotkey-not-toggling.md) |
 
 ---
 
@@ -125,5 +130,5 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | Open worktrees | none |
 | Latest tag | `v0.7.0` |
 | Recently merged work | M-017 · F-019 · B-006 (v0.7.0) |
-| Next planned work | B-002 (cache linked-file staleness) · B-003 (cache theme mismatch) |
+| Next planned work | M-018 (B-007 + F-020) · M-019 (F-021) · B-002 · B-003 |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

@@ -19,6 +19,7 @@ Developers and writers need a zero-friction way to preview Markdown documentatio
 - Self-contained rendered HTML shell assembled in `src/render.rs` with embedded `src/style.css`, preserving sidebar/page chrome without a separate `src/index.html` template
 - In-page reader controls surfaced from a dedicated config menu, with theme/layout hotkeys and copyable `mark config` commands for saving appearance preferences
 - Live application of in-page reader-layout adjustments to the currently viewed document preview before the settings are persisted
+- Recursive link following restricted to the entry file's parent directory subtree; out-of-scope links and assets are skipped, not rendered or copied
 - Reader width controls expressed in `rem` units instead of inches
 - Code block copy and "copy clean" (strip comments) toolbar buttons
 - Shell completions (bash, zsh, fish, PowerShell)
