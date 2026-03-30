@@ -1,5 +1,14 @@
 # Releases
 
+## v0.13.1 — patch
+
+- **Date:** 2026-03-30
+- **Type:** patch
+- **Merged items:** rollback of sidebar chrome follow-up
+- **Summary:** Released the current `main` state after reverting the unshipped `fix: polish sidebar control chrome` follow-up while keeping the earlier right-shell button alignment fix. This tag captures the rollback commit as the latest shipped state. The crate version is synced to `v0.13.1` in `Cargo.toml` and `Cargo.lock`.
+
+---
+
 ## v0.13.0 — minor
 
 - **Date:** 2026-03-30
