@@ -82,11 +82,9 @@ fn render_breadcrumb_html(title: &str, breadcrumb: &[(String, PathBuf)]) -> Stri
 }
 
 fn render_sidebar_controls(sidebar_visible: bool) -> String {
-    let checked = if sidebar_visible { " checked" } else { "" };
     let expanded = if sidebar_visible { "true" } else { "false" };
     format!(
-        r#"<input type="checkbox" id="mark-sidebar-toggle" class="mark-sidebar-toggle"{checked}>
-<div class="mark-left-control"><button type="button" id="mark-sidebar-button" class="mark-sidebar-button" aria-controls="mark-sidebar" aria-expanded="{expanded}" aria-label="Toggle sidebar (e)" title="Toggle sidebar (e)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left h-3.5 w-3.5" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button></div>"#,
+        r#"<div class="mark-left-control"><button type="button" id="mark-sidebar-button" class="mark-sidebar-button" aria-controls="mark-sidebar" aria-expanded="{expanded}" aria-label="Toggle sidebar (e)" title="Toggle sidebar (e)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left h-3.5 w-3.5" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button></div>"#,
     )
 }
 
@@ -118,7 +116,7 @@ fn render_layout_command(appearance: AppearanceConfig) -> String {
     )
 }
 
-fn render_theme_controls(theme_attr: &str, appearance: AppearanceConfig) -> String {
+fn render_theme_controls(appearance: AppearanceConfig) -> String {
     let theme_menu = [
         render_theme_option(
             "system",
@@ -140,7 +138,7 @@ fn render_theme_controls(theme_attr: &str, appearance: AppearanceConfig) -> Stri
     let layout_command = escape_html(&render_layout_command(appearance));
 
     format!(
-        r#"<div class="mark-right-control"><div class="mark-theme-control mark-theme-button-shell"><button type="button" id="mark-theme-toggle" class="mark-theme-toggle-button" aria-label="Theme: {theme_attr}. Change theme or layout" title="Theme: {theme_attr}. Change theme or layout" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon h-3.5 w-3.5" aria-hidden="true"><path d="M12 2v2"></path><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"></path><path d="M16 12a4 4 0 0 0-4-4"></path><path d="m19 5-1.256 1.256"></path><path d="M20 12h2"></path></svg></button><div id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (in)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><div class="mark-layout-command-wrap"><div class="mark-layout-command-header"><span>Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></div><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></form></div></div></div>"#,
+        r#"<div class="mark-right-control"><div class="mark-theme-control mark-theme-button-shell"><button type="button" id="mark-theme-toggle" class="mark-theme-toggle-button" aria-label="Open config menu" title="Open config menu (c)" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings h-3.5 w-3.5" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><div id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (rem)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><div class="mark-layout-command-wrap"><div class="mark-layout-command-header"><span>Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></div><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></form></div></div></div>"#,
         font_size = appearance.font_size_px,
         letter_width = format_decimal(appearance.letter_width_in),
         letter_radius = appearance.letter_radius_px,
@@ -164,7 +162,7 @@ fn render_sidebar_shell(
     render_sidebar_nodes(&tree, &mut nav);
 
     format!(
-        r#"<aside id="mark-sidebar" class="mark-sidebar{hidden_class}"><div class="mark-sidebar-inner"><section class="mark-sidebar-scroll"><h2 class="mark-sidebar-title">Hierarchy</h2><nav class="mark-sidebar-tree" aria-label="Rendered file tree">{nav}</nav></section><footer class="mark-sidebar-footer text-xs text-[var(--muted-foreground)]">Hotkeys: <span>E</span> toggles the sidebar,<br><span>T</span> toggles the theme.</footer></div></aside>"#,
+        r#"<aside id="mark-sidebar" class="mark-sidebar{hidden_class}"><div class="mark-sidebar-inner"><section class="mark-sidebar-scroll"><h2 class="mark-sidebar-title">Hierarchy</h2><nav class="mark-sidebar-tree" aria-label="Rendered file tree">{nav}</nav></section><footer class="mark-sidebar-footer text-xs text-[var(--muted-foreground)]">Hotkeys: <span>E</span> sidebar, <span>T</span> theme, <span>C</span> config.</footer></div></aside>"#,
     )
 }
 
@@ -259,7 +257,6 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     let early_theme_script = r#"<script>(function(){var root=document.documentElement;var theme=root.getAttribute('data-theme')||'system';var dark=theme==='dark'||(theme==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);root.classList.toggle('dark',dark);})();</script>"#;
 
     let enhancement_js = r#"<script>(function() {
-  var THEMES = ['system', 'light', 'dark'];
 
   function flash(btn, msg, cls) {
     var original = btn.innerHTML;
@@ -321,12 +318,6 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
       var active = button.dataset.themeOption === theme;
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-
-    var toggle = document.getElementById('mark-theme-toggle');
-    if (toggle) {
-      toggle.setAttribute('aria-label', 'Theme: ' + theme + '. Change theme or layout');
-      toggle.setAttribute('title', 'Theme: ' + theme + '. Change theme or layout');
-    }
   }
 
   function setTheme(theme) {
@@ -336,26 +327,30 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     updateThemeButtons(theme);
   }
 
-  function cycleTheme() {
+  function toggleTheme() {
     var currentTheme = document.documentElement.getAttribute('data-theme') || 'system';
-    var currentIndex = THEMES.indexOf(currentTheme);
-    var nextTheme = THEMES[(currentIndex + 1 + THEMES.length) % THEMES.length];
+    var nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
     closeThemeMenu();
+  }
+
+  function openConfigMenu() {
+    var themeToggle = document.getElementById('mark-theme-toggle');
+    var themeMenu = document.getElementById('mark-theme-menu');
+    if (themeToggle && themeMenu) {
+      themeMenu.hidden = false;
+      themeToggle.setAttribute('aria-expanded', 'true');
+    }
   }
 
   function updateSidebarState() {
     var sidebar = document.getElementById('mark-sidebar');
     var toggle = document.getElementById('mark-sidebar-button');
-    var checkbox = document.getElementById('mark-sidebar-toggle');
     if (!sidebar || !toggle) {
       return;
     }
     var visible = !sidebar.classList.contains('-translate-x-full');
     toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
-    if (checkbox) {
-      checkbox.checked = visible;
-    }
   }
 
   function toggleSidebar() {
@@ -409,6 +404,30 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     var themeRadius = commandValue(document.getElementById('mark-theme-button-radius-input'), '999');
 
     command.textContent = 'mark config set-layout --font-size ' + fontSize + ' --letter-width ' + letterWidth + ' --letter-radius ' + letterRadius + ' --sidebar-button-radius ' + sidebarRadius + ' --theme-button-radius ' + themeRadius;
+  }
+
+  function updateLiveLayout() {
+    var root = document.documentElement;
+    var fontSizeEl = document.getElementById('mark-font-size-input');
+    if (fontSizeEl && fontSizeEl.value) {
+      root.style.setProperty('--mark-font-size', fontSizeEl.value + 'px');
+    }
+    var letterWidthEl = document.getElementById('mark-letter-width-input');
+    if (letterWidthEl && letterWidthEl.value) {
+      root.style.setProperty('--mark-letter-width', letterWidthEl.value + 'in');
+    }
+    var letterRadiusEl = document.getElementById('mark-letter-radius-input');
+    if (letterRadiusEl && letterRadiusEl.value) {
+      root.style.setProperty('--mark-letter-radius', letterRadiusEl.value + 'px');
+    }
+    var sidebarRadiusEl = document.getElementById('mark-sidebar-button-radius-input');
+    if (sidebarRadiusEl && sidebarRadiusEl.value) {
+      root.style.setProperty('--mark-sidebar-button-radius', sidebarRadiusEl.value + 'px');
+    }
+    var themeRadiusEl = document.getElementById('mark-theme-button-radius-input');
+    if (themeRadiusEl && themeRadiusEl.value) {
+      root.style.setProperty('--mark-theme-button-radius', themeRadiusEl.value + 'px');
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -473,8 +492,8 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     var layoutForm = document.getElementById('mark-layout-form');
     if (layoutForm) {
       layoutForm.querySelectorAll('input').forEach(function(input) {
-        input.addEventListener('input', updateLayoutCommand);
-        input.addEventListener('change', updateLayoutCommand);
+        input.addEventListener('input', function() { updateLayoutCommand(); updateLiveLayout(); });
+        input.addEventListener('change', function() { updateLayoutCommand(); updateLiveLayout(); });
       });
       updateLayoutCommand();
     }
@@ -516,7 +535,12 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         return;
       }
       if (key === 't') {
-        cycleTheme();
+        toggleTheme();
+        event.preventDefault();
+        return;
+      }
+      if (key === 'c') {
+        openConfigMenu();
         event.preventDefault();
         return;
       }
@@ -565,7 +589,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         extra_css = extra_css,
         early_theme_script = early_theme_script,
         sidebar_controls_html = sidebar_controls_html,
-        theme_controls = render_theme_controls(theme_attr, chrome.appearance),
+        theme_controls = render_theme_controls(chrome.appearance),
         content_html = content_html,
         sidebar_shell_html = sidebar_shell_html,
         enhancement_js = enhancement_js,
@@ -1642,8 +1666,8 @@ mod tests {
             "sidebar must be present when all_files is non-empty:\n{html}"
         );
         assert!(
-            html.contains("mark-sidebar-toggle"),
-            "sidebar toggle must be present:\n{html}"
+            html.contains("id=\"mark-sidebar-button\""),
+            "sidebar toggle button must be present:\n{html}"
         );
         assert!(
             html.contains("mark-sidebar-current"),
@@ -1679,8 +1703,12 @@ mod tests {
             chrome(&[], &all_files, dir.path(), false),
         );
         assert!(
-            html.contains("id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\">"),
-            "sidebar checkbox should start unchecked when hidden by default:\n{html}"
+            html.contains("aria-expanded=\"false\""),
+            "sidebar button should report collapsed state when hidden by default:\n{html}"
+        );
+        assert!(
+            !html.contains("id=\"mark-sidebar-toggle\""),
+            "stray sidebar-toggle checkbox must not be present:\n{html}"
         );
     }
 
@@ -1698,8 +1726,12 @@ mod tests {
             chrome(&[], &all_files, dir.path(), true),
         );
         assert!(
-            html.contains("id=\"mark-sidebar-toggle\" class=\"mark-sidebar-toggle\" checked>"),
-            "sidebar checkbox should reflect a visible default:\n{html}"
+            html.contains("aria-expanded=\"true\""),
+            "sidebar button should report expanded state when sidebar starts visible:\n{html}"
+        );
+        assert!(
+            !html.contains("id=\"mark-sidebar-toggle\""),
+            "stray sidebar-toggle checkbox must not be present:\n{html}"
         );
     }
 
