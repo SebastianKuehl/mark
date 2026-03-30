@@ -138,7 +138,7 @@ fn render_theme_controls(appearance: AppearanceConfig) -> String {
     let layout_command = escape_html(&render_layout_command(appearance));
 
     format!(
-        r#"<div class="mark-right-control"><button type="button" id="mark-export-pdf" class="mark-shell-button mark-export-pdf-button" aria-label="Export document as PDF" title="Export document as PDF (Primary+Shift+E)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download h-3.5 w-3.5" aria-hidden="true"><path d="M12 15V3"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg></button><div class="mark-theme-control mark-theme-button-shell"><button type="button" id="mark-theme-toggle" class="mark-shell-button mark-theme-toggle-button" aria-label="Open config menu" title="Open config menu (c)" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings h-3.5 w-3.5" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><aside id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><div class="mark-theme-menu-inner"><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Hotkeys</div><ul class="mark-hotkey-list"><li><kbd>E</kbd><span>Toggle sidebar</span></li><li><kbd>T</kbd><span>Toggle light/dark theme</span></li><li><kbd>C</kbd><span>Toggle config</span></li><li><kbd>Primary</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>E</kbd><span>Export PDF</span></li></ul><p class="mark-layout-help">Primary means Command on macOS and Control on other platforms.</p></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (rem)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><details class="mark-layout-command-accordion"><summary class="mark-layout-command-summary"><span class="mark-layout-command-summary-label">Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></summary><div class="mark-layout-command-wrap"><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></details><button type="button" id="mark-save-layout" class="mark-save-layout-btn" disabled>Save</button></form></div></aside></div></div>"#,
+        r#"<div class="mark-right-control"><button type="button" id="mark-export-pdf" class="mark-shell-button mark-export-pdf-button" aria-label="Export document as PDF" title="Export document as PDF (Primary+Shift+E)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download h-3.5 w-3.5" aria-hidden="true"><path d="M12 15V3"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg></button><div class="mark-theme-control mark-theme-button-shell"><button type="button" id="mark-theme-toggle" class="mark-shell-button mark-theme-toggle-button" aria-label="Open config menu" title="Open config menu (c)" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings h-3.5 w-3.5" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><aside id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls"><div class="mark-theme-menu-inner"><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Hotkeys</div><ul class="mark-hotkey-list"><li><kbd>E</kbd><span>Toggle hierarchy</span></li><li><kbd>T</kbd><span>Toggle light/dark theme</span></li><li><kbd>C</kbd><span>Toggle config</span></li><li><kbd>Z</kbd><span>Zen mode</span></li><li><kbd>Shift</kbd><span>+</span><kbd>Primary</kbd><span>+</span><kbd>E</kbd><span>Export PDF</span></li></ul><p class="mark-layout-help">Primary means Command on macOS and Control on other platforms.</p></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (rem)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><button type="button" id="mark-save-layout" class="mark-save-layout-btn" style="margin-top:1rem" disabled>Save</button><details class="mark-layout-command-accordion"><summary class="mark-layout-command-summary"><span class="mark-layout-command-summary-label">Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></summary><div class="mark-layout-command-wrap"><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></details></form></div></aside></div></div>"#,
         font_size = appearance.font_size_px,
         letter_width = format_decimal(appearance.letter_width_in),
         letter_radius = appearance.letter_radius_px,
@@ -162,7 +162,7 @@ fn render_sidebar_shell(
     render_sidebar_nodes(&tree, &mut nav);
 
     format!(
-        r#"<aside id="mark-sidebar" class="mark-sidebar{hidden_class}"><div class="mark-sidebar-inner"><section class="mark-sidebar-scroll"><h2 class="mark-sidebar-title">Hierarchy</h2><nav class="mark-sidebar-tree" aria-label="Rendered file tree">{nav}</nav></section></div></aside>"#,
+        r#"<aside id="mark-sidebar" class="mark-sidebar{hidden_class}"><div class="mark-sidebar-inner"><section class="mark-sidebar-scroll"><h2 class="mark-sidebar-title">Hierarchy</h2><input type="search" id="mark-sidebar-search" class="mark-sidebar-search" placeholder="Search…" aria-label="Search hierarchy"><nav class="mark-sidebar-tree" aria-label="Rendered file tree">{nav}</nav></section></div></aside>"#,
     )
 }
 
@@ -197,8 +197,8 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-theme-toggle-button,.mark-export-pdf-button{{border-radius:var(--mark-theme-button-radius)}}
 .mark-sidebar-button:hover,.mark-shell-button:hover,.mark-layout-copy:hover{{transform:translateY(-1px);background:var(--control-hover);color:var(--foreground)}}
 .mark-theme-button-shell{{position:relative}}
-.mark-theme-menu{{position:fixed;top:0;right:0;z-index:45;display:block;width:min(28rem,calc(100vw - 1rem));height:100vh;border-left:1px solid var(--border);background:color-mix(in srgb,var(--card) 98%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.18);backdrop-filter:blur(18px)}}
-.mark-theme-menu[hidden]{{display:none}}
+.mark-theme-menu{{position:fixed;top:0;right:0;z-index:40;width:min(28rem,calc(100vw - 1rem));height:100vh;border-left:1px solid var(--border);background:color-mix(in srgb,var(--card) 98%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.18);backdrop-filter:blur(18px);transform:translateX(100%);opacity:0;transition:transform .22s ease,opacity .15s ease;pointer-events:none}}
+.mark-theme-menu.mark-theme-menu--open{{transform:translateX(0);opacity:1;pointer-events:auto}}
 .mark-theme-menu-inner{{display:grid;gap:1rem;height:100%;overflow-y:auto;padding:6rem 1.25rem 1.5rem}}
 .mark-theme-menu-section{{display:grid;gap:.65rem}}
 .mark-theme-menu-heading{{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}}
@@ -217,7 +217,8 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-layout-field input{{width:100%;border:1px solid var(--border);border-radius:.7rem;background:var(--background);color:var(--foreground);padding:.6rem .75rem;font:inherit}}
 .mark-layout-field input:focus{{outline:2px solid var(--ring);outline-offset:2px}}
 .mark-layout-command-wrap{{display:grid;gap:.5rem;padding:.45rem 0 0}}
-.mark-layout-copy{{border:1px solid var(--border);border-radius:.65rem;background:var(--background);color:var(--foreground);padding:.35rem .65rem;font:inherit;cursor:pointer}}
+.mark-layout-copy{{border:1px solid var(--border);border-radius:.65rem;background:transparent;color:var(--muted-foreground);padding:.25rem .5rem;font:inherit;font-size:.78rem;cursor:pointer;opacity:.8}}
+.mark-layout-copy:hover{{background:var(--muted);opacity:1;color:var(--foreground)}}
 .mark-layout-command{{display:block;white-space:pre-wrap;word-break:break-word;font-size:.78rem;line-height:1.5}}
 .mark-breadcrumb{{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-bottom:1.35rem;padding-bottom:.85rem;border-bottom:1px solid var(--border);font-size:.92rem;color:var(--muted-foreground)}}
 .mark-breadcrumb-link{{color:var(--link);text-decoration:none}}
@@ -258,6 +259,11 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-save-layout-btn{{width:100%;margin-top:.5rem;padding:.55rem;border:1px solid var(--border);border-radius:.85rem;background:var(--background);color:var(--foreground);cursor:pointer;font:inherit;font-size:.85rem;transition:background .15s ease,opacity .15s ease}}
 .mark-save-layout-btn:not(:disabled):hover{{background:var(--control-hover);transform:translateY(-1px)}}
 .mark-save-layout-btn:disabled{{opacity:.35;cursor:not-allowed}}
+.mark-sidebar-search{{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:.7rem;background:var(--background);color:var(--foreground);font:inherit;font-size:.85rem;margin-bottom:.75rem;box-sizing:border-box}}
+.mark-sidebar-search:focus{{outline:2px solid var(--ring);outline-offset:2px}}
+html.mark-zen-mode .mark-left-control,html.mark-zen-mode .mark-right-control,html.mark-zen-mode #mark-sidebar,html.mark-zen-mode .mark-theme-menu{{display:none!important}}
+html.mark-zen-mode .paper-sheet{{border:none;background:transparent;box-shadow:none;border-radius:0}}
+html.mark-zen-mode,html.mark-zen-mode body{{background:var(--card)}}
 @media (max-width: 768px){{.mark-left-control{{left:1rem}}.mark-right-control{{right:1rem;gap:.5rem}}.mark-content-wrapper{{padding-top:1rem}}.paper-sheet{{padding:1.5rem}}}}
 </style>"#,
         font_size = chrome.appearance.font_size_px,
@@ -267,7 +273,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         theme_button_radius = chrome.appearance.theme_button_radius_px,
     );
 
-    let early_theme_script = r#"<script>(function(){var root=document.documentElement;var theme=root.getAttribute('data-theme')||'system';var dark=theme==='dark'||(theme==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);root.classList.toggle('dark',dark);})();</script>"#;
+    let early_theme_script = r#"<script>(function(){var root=document.documentElement;var stored=null;try{stored=sessionStorage.getItem('mark-theme');}catch(e){}var theme=stored||root.getAttribute('data-theme')||'system';if(stored){root.setAttribute('data-theme',theme);}var dark=theme==='dark'||(theme==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);root.classList.toggle('dark',dark);})();</script>"#;
 
     let enhancement_js = r#"<script>(function() {
 
@@ -319,7 +325,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     var menu = document.getElementById('mark-theme-menu');
     var toggle = document.getElementById('mark-theme-toggle');
     if (menu) {
-      menu.hidden = true;
+      menu.classList.remove('mark-theme-menu--open');
     }
     if (toggle) {
       toggle.setAttribute('aria-expanded', 'false');
@@ -338,6 +344,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     root.setAttribute('data-theme', theme);
     root.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark()));
     updateThemeButtons(theme);
+    try { sessionStorage.setItem('mark-theme', theme); } catch(e) {}
   }
 
   function toggleTheme() {
@@ -351,7 +358,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     var themeMenu = document.getElementById('mark-theme-menu');
     if (themeToggle && themeMenu) {
       var expanded = themeToggle.getAttribute('aria-expanded') === 'true';
-      themeMenu.hidden = expanded;
+      themeMenu.classList.toggle('mark-theme-menu--open', !expanded);
       themeToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
     }
   }
@@ -402,6 +409,10 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     updateSidebarState();
   }
 
+  function toggleZenMode() {
+    document.documentElement.classList.toggle('mark-zen-mode');
+  }
+
   function isEditableTarget(target) {
     if (!target) {
       return false;
@@ -429,6 +440,20 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
       return fallback;
     }
     return String(numeric);
+  }
+
+  function normalizeLayoutInput(input, defaultVal) {
+    if (input && (input.value === '' || !Number.isFinite(Number(input.value)))) {
+      input.value = defaultVal;
+    }
+  }
+
+  function normalizeLayoutInputs() {
+    normalizeLayoutInput(document.getElementById('mark-font-size-input'), '16');
+    normalizeLayoutInput(document.getElementById('mark-letter-width-input'), '8.5');
+    normalizeLayoutInput(document.getElementById('mark-letter-radius-input'), '12');
+    normalizeLayoutInput(document.getElementById('mark-sidebar-button-radius-input'), '999');
+    normalizeLayoutInput(document.getElementById('mark-theme-button-radius-input'), '999');
   }
 
   function updateLayoutCommand() {
@@ -522,7 +547,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         event.preventDefault();
         var expanded = themeToggle.getAttribute('aria-expanded') === 'true';
         themeToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        themeMenu.hidden = expanded;
+        themeMenu.classList.toggle('mark-theme-menu--open', !expanded);
       });
 
       document.querySelectorAll('[data-theme-option]').forEach(function(button) {
@@ -533,7 +558,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
       });
 
       document.addEventListener('click', function(event) {
-        if (themeMenu.hidden) {
+        if (!themeMenu.classList.contains('mark-theme-menu--open')) {
           return;
         }
         if (themeMenu.contains(event.target) || themeToggle.contains(event.target)) {
@@ -556,8 +581,8 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         initialLayoutValues[input.id] = input.value;
       });
       layoutForm.querySelectorAll('input').forEach(function(input) {
-        input.addEventListener('input', function() { updateLayoutCommand(); updateLiveLayout(); updateSaveButton(); });
-        input.addEventListener('change', function() { updateLayoutCommand(); updateLiveLayout(); updateSaveButton(); });
+        input.addEventListener('input', function() { normalizeLayoutInputs(); updateLayoutCommand(); updateLiveLayout(); updateSaveButton(); });
+        input.addEventListener('change', function() { normalizeLayoutInputs(); updateLayoutCommand(); updateLiveLayout(); updateSaveButton(); });
       });
       updateLayoutCommand();
     }
@@ -627,10 +652,41 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         event.preventDefault();
         return;
       }
+      if (key === 'z') {
+        toggleZenMode();
+        event.preventDefault();
+        return;
+      }
       if (key === 'escape') {
         closeThemeMenu();
       }
     });
+
+    var sidebarSearch = document.getElementById('mark-sidebar-search');
+    if (sidebarSearch) {
+      sidebarSearch.addEventListener('input', function() {
+        var query = sidebarSearch.value.toLowerCase().trim();
+        var sidebar = document.getElementById('mark-sidebar');
+        if (!sidebar) { return; }
+        if (!query) {
+          sidebar.querySelectorAll('.mark-sidebar-link, .mark-sidebar-current, .mark-sidebar-dir').forEach(function(el) {
+            el.style.display = '';
+          });
+          return;
+        }
+        sidebar.querySelectorAll('a.mark-sidebar-link, span.mark-sidebar-current').forEach(function(el) {
+          var match = el.textContent.toLowerCase().indexOf(query) !== -1;
+          el.style.display = match ? '' : 'none';
+        });
+        sidebar.querySelectorAll('.mark-sidebar-dir').forEach(function(dir) {
+          var anyVisible = false;
+          dir.querySelectorAll('a.mark-sidebar-link, span.mark-sidebar-current').forEach(function(el) {
+            if (el.style.display !== 'none') { anyVisible = true; }
+          });
+          dir.style.display = anyVisible ? '' : 'none';
+        });
+      });
+    }
   });
 })();</script>"#;
 
@@ -1969,7 +2025,11 @@ mod tests {
             "save button must be present in config pane:\n{html}"
         );
         assert!(
-            html.contains("id=\"mark-save-layout\" class=\"mark-save-layout-btn\" disabled"),
+            html.contains("id=\"mark-save-layout\" class=\"mark-save-layout-btn\""),
+            "save button must be present with correct class:\n{html}"
+        );
+        assert!(
+            html.contains("disabled>Save</button>"),
             "save button must be disabled by default:\n{html}"
         );
     }
@@ -2031,7 +2091,7 @@ mod tests {
     fn config_menu_lists_hotkeys() {
         let html = render_markdown("# Test", "test", Theme::System);
         assert!(html.contains(">Hotkeys</div>"), "{html}");
-        assert!(html.contains("<kbd>Primary</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>E</kbd><span>Export PDF</span>"), "{html}");
+        assert!(html.contains("<kbd>Shift</kbd><span>+</span><kbd>Primary</kbd><span>+</span><kbd>E</kbd><span>Export PDF</span>"), "{html}");
     }
 
     #[test]
@@ -2059,5 +2119,118 @@ mod tests {
             chrome(&[], &all_files, &run_dir, false),
         );
         assert!(!html.contains("mark-sidebar-footer"), "{html}");
+    }
+
+    #[test]
+    fn sidebar_has_search_input() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let run_dir = dir.path().join("overview-123-abcdef12");
+        let all_files = vec![("overview".to_string(), run_dir.join("overview.html"), true)];
+        let link_map: HashMap<String, PathBuf> = HashMap::new();
+        let html = render_markdown_rewriting_links(
+            "# Overview",
+            "overview",
+            Theme::Light,
+            &link_map,
+            chrome(&[], &all_files, &run_dir, false),
+        );
+        assert!(
+            html.contains("id=\"mark-sidebar-search\""),
+            "sidebar must have search input:\n{html}"
+        );
+        assert!(
+            html.contains("type=\"search\""),
+            "search input must be type=search:\n{html}"
+        );
+    }
+
+    #[test]
+    fn zen_mode_hotkey_wiring_present() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("toggleZenMode"),
+            "z hotkey handler must reference toggleZenMode:\n{html}"
+        );
+        assert!(
+            html.contains("key === 'z'"),
+            "z key must be handled:\n{html}"
+        );
+    }
+
+    #[test]
+    fn hotkey_list_contains_zen_mode_entry() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("<kbd>Z</kbd><span>Zen mode</span>"),
+            "Z hotkey must appear in hotkey list:\n{html}"
+        );
+    }
+
+    #[test]
+    fn export_hotkey_shows_shift_before_primary() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains(
+                "<kbd>Shift</kbd><span>+</span><kbd>Primary</kbd><span>+</span><kbd>E</kbd>"
+            ),
+            "export hotkey must show Shift before Primary:\n{html}"
+        );
+        assert!(
+            !html.contains("<kbd>Primary</kbd><span>+</span><kbd>Shift</kbd>"),
+            "old Primary+Shift order must not appear:\n{html}"
+        );
+    }
+
+    #[test]
+    fn set_theme_writes_to_session_storage() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("sessionStorage.setItem('mark-theme'"),
+            "setTheme must write to sessionStorage:\n{html}"
+        );
+    }
+
+    #[test]
+    fn page_load_reads_session_storage_for_theme() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("sessionStorage.getItem('mark-theme')"),
+            "early theme script must read from sessionStorage:\n{html}"
+        );
+    }
+
+    #[test]
+    fn save_button_appears_before_accordion_in_html() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        let save_pos = html.find("id=\"mark-save-layout\"").expect("save button");
+        let accordion_pos = html
+            .find("class=\"mark-layout-command-accordion\"")
+            .expect("accordion");
+        assert!(
+            save_pos < accordion_pos,
+            "save button must appear before accordion in HTML:\nsave at {save_pos}, accordion at {accordion_pos}"
+        );
+    }
+
+    #[test]
+    fn reader_layout_help_paragraph_is_absent() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            !html.contains("Adjust the values below"),
+            "reader-layout help paragraph must be removed:\n{html}"
+        );
+    }
+
+    #[test]
+    fn e_hotkey_label_reads_toggle_hierarchy() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("<kbd>E</kbd><span>Toggle hierarchy</span>"),
+            "E hotkey must say Toggle hierarchy:\n{html}"
+        );
+        assert!(
+            !html.contains("<kbd>E</kbd><span>Toggle sidebar</span>"),
+            "old E hotkey label must be removed:\n{html}"
+        );
     }
 }
