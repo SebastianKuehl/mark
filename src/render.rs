@@ -263,7 +263,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-sidebar-search:focus{{outline:2px solid var(--ring);outline-offset:2px}}
 html.mark-zen-mode .mark-left-control,html.mark-zen-mode .mark-right-control,html.mark-zen-mode #mark-sidebar,html.mark-zen-mode .mark-theme-menu{{display:none!important}}
 html.mark-zen-mode .paper-sheet{{border:none;background:transparent;box-shadow:none;border-radius:0}}
-html.mark-zen-mode,html.mark-zen-mode body{{background:var(--card)}}
+html.mark-zen-mode,html.mark-zen-mode body{{background:var(--mark-zen-bg,var(--card))}}
 @media (max-width: 768px){{.mark-left-control{{left:1rem}}.mark-right-control{{right:1rem;gap:.5rem}}.mark-content-wrapper{{padding-top:1rem}}.paper-sheet{{padding:1.5rem}}}}
 </style>"#,
         font_size = chrome.appearance.font_size_px,
@@ -344,6 +344,9 @@ html.mark-zen-mode,html.mark-zen-mode body{{background:var(--card)}}
     root.setAttribute('data-theme', theme);
     root.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark()));
     updateThemeButtons(theme);
+    if (root.classList.contains('mark-zen-mode')) {
+      syncZenModeBackground();
+    }
     try { sessionStorage.setItem('mark-theme', theme); } catch(e) {}
   }
 
@@ -409,8 +412,36 @@ html.mark-zen-mode,html.mark-zen-mode body{{background:var(--card)}}
     updateSidebarState();
   }
 
+  function syncZenModeBackground() {
+    var root = document.documentElement;
+    var page = document.querySelector('.paper-sheet');
+    var resolved = '';
+    if (page && window.getComputedStyle) {
+      resolved = window.getComputedStyle(page).backgroundColor || '';
+    }
+    if (!resolved || resolved === 'transparent' || resolved === 'rgba(0, 0, 0, 0)') {
+      resolved = (window.getComputedStyle ? window.getComputedStyle(root).getPropertyValue('--card') : '') || '';
+    }
+    root.style.setProperty('--mark-zen-bg', resolved.trim() || 'var(--card)');
+  }
+
+  function clearZenModeBackground() {
+    document.documentElement.style.removeProperty('--mark-zen-bg');
+  }
+
+  function applyZenMode(enabled) {
+    var root = document.documentElement;
+    if (enabled) {
+      syncZenModeBackground();
+    }
+    root.classList.toggle('mark-zen-mode', enabled);
+    if (!enabled) {
+      clearZenModeBackground();
+    }
+  }
+
   function toggleZenMode() {
-    document.documentElement.classList.toggle('mark-zen-mode');
+    applyZenMode(!document.documentElement.classList.contains('mark-zen-mode'));
   }
 
   function isEditableTarget(target) {
@@ -2163,6 +2194,43 @@ mod tests {
         assert!(
             html.contains("<kbd>Z</kbd><span>Zen mode</span>"),
             "Z hotkey must appear in hotkey list:\n{html}"
+        );
+    }
+
+    #[test]
+    fn zen_mode_background_uses_synced_page_variable() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains(
+                "html.mark-zen-mode,html.mark-zen-mode body{background:var(--mark-zen-bg,var(--card))}"
+            ),
+            "zen mode background must use the synced page variable:\n{html}"
+        );
+    }
+
+    #[test]
+    fn zen_mode_toggle_reads_current_page_background_and_clears_it() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("window.getComputedStyle(page).backgroundColor"),
+            "zen mode must read the current paper background before toggling:\n{html}"
+        );
+        assert!(
+            html.contains("root.style.setProperty('--mark-zen-bg'"),
+            "zen mode must store the synced background color on the root element:\n{html}"
+        );
+        assert!(
+            html.contains("document.documentElement.style.removeProperty('--mark-zen-bg');"),
+            "zen mode must clear the synced background when disabled:\n{html}"
+        );
+    }
+
+    #[test]
+    fn theme_changes_resync_zen_mode_background() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("if (root.classList.contains('mark-zen-mode')) {\n      syncZenModeBackground();\n    }"),
+            "theme changes must resync zen mode background:\n{html}"
         );
     }
 
