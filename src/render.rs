@@ -191,15 +191,15 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 :root{{--mark-font-size:{font_size}px;--mark-letter-width:{letter_width}in;--mark-letter-radius:{letter_radius}px;--mark-sidebar-button-radius:{sidebar_button_radius}px;--mark-theme-button-radius:{theme_button_radius}px}}
 .mark-left-control,.mark-right-control{{position:fixed;top:1.5rem;z-index:50}}
 .mark-left-control{{left:1.5rem}}
-.mark-right-control{{right:1.5rem;display:flex;align-items:flex-start;gap:.75rem}}
+.mark-right-control{{right:1.5rem;display:flex;align-items:flex-start;gap:.5rem;padding:.35rem;border:1px solid var(--border);border-radius:1.25rem;background:color-mix(in srgb,var(--control-bg) 96%,transparent);box-shadow:0 8px 24px rgba(0,0,0,.12);backdrop-filter:blur(18px)}}
 .mark-shell-button,.mark-sidebar-button{{display:flex;align-items:center;justify-content:center;width:3.25rem;height:3.25rem;border:1px solid var(--border);background:var(--control-bg);color:var(--muted-foreground);box-shadow:0 8px 24px rgba(0,0,0,.12);cursor:pointer;transition:transform .15s ease,background .15s ease,color .15s ease}}
 .mark-sidebar-button{{border-radius:var(--mark-sidebar-button-radius)}}
-.mark-theme-toggle-button{{position:absolute;top:0;right:0;z-index:70;border-radius:var(--mark-theme-button-radius)}}
-.mark-export-pdf-button{{position:absolute;top:0;right:0;z-index:70;border-radius:var(--mark-theme-button-radius);transform:translateX(-100%);margin-right:8px;}}
+.mark-theme-toggle-button,.mark-export-pdf-button{{position:relative;z-index:70;border-radius:var(--mark-theme-button-radius)}}
 .mark-sidebar-button:hover,.mark-shell-button:hover,.mark-layout-copy:hover{{transform:translateY(-1px);background:var(--control-hover);color:var(--foreground)}}
-.mark-theme-button-shell{{position:relative}}
+.mark-theme-button-shell{{position:relative;display:flex}}
 .mark-theme-menu{{position:fixed;top:0;right:0;z-index:60;width:min(28rem,calc(100vw - 1rem));height:100vh;border-left:1px solid var(--border);background:color-mix(in srgb,var(--card) 98%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.18);backdrop-filter:blur(18px);transform:translateX(100%);opacity:0;transition:transform .22s ease,opacity .15s ease;pointer-events:none}}
 .mark-theme-menu.mark-theme-menu--open{{transform:translateX(0);opacity:1;pointer-events:auto}}
+.mark-theme-menu::before,.mark-sidebar::before{{content:"";position:absolute;top:0;left:0;right:0;height:6rem;background:linear-gradient(to bottom,color-mix(in srgb,var(--card) 99%,transparent) 0%,color-mix(in srgb,var(--card) 94%,transparent) 72%,transparent 100%);pointer-events:none;z-index:1}}
 .mark-theme-menu-inner{{display:grid;gap:1rem;height:100%;overflow-y:auto;padding:6rem 1.25rem 1.5rem}}
 .mark-theme-menu-section{{display:grid;gap:.65rem}}
 .mark-theme-menu-heading{{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}}
@@ -2133,6 +2133,14 @@ mod tests {
         assert!(html.contains("<aside id=\"mark-theme-menu\""), "{html}");
         assert!(
             html.contains(".mark-theme-menu{position:fixed;top:0;right:0;z-index:60;"),
+            "{html}"
+        );
+        assert!(
+            html.contains(".mark-right-control{right:1.5rem;display:flex;align-items:flex-start;gap:.5rem;padding:.35rem;border:1px solid var(--border);border-radius:1.25rem;background:color-mix(in srgb,var(--control-bg) 96%,transparent);"),
+            "{html}"
+        );
+        assert!(
+            html.contains(".mark-theme-menu::before,.mark-sidebar::before{content:\"\";position:absolute;top:0;left:0;right:0;height:6rem;"),
             "{html}"
         );
         assert!(html.contains("class=\"mark-theme-menu-inner\""), "{html}");
