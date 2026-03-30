@@ -20,6 +20,18 @@ _No active items._
 
 ---
 
+## Ready Items
+
+| ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
+|----|------|-------|--------|-------|----------|--------|----------|---------|
+| M-023 | milestone | Default current-directory Markdown entry | `in_progress` | anvil | `.worktrees/M-023-default-cwd` | `feat/M-023-default-cwd` | — | 2026-03-30 |
+| F-026 | feature | Default current-directory Markdown render | `in_progress` | anvil | `.worktrees/M-023-default-cwd` | `feat/M-023-default-cwd` | M-023 | 2026-03-30 |
+| P-026 | task | M-023 default current-directory Markdown entry prompt | `in_progress` | anvil | `.worktrees/M-023-default-cwd` | `feat/M-023-default-cwd` | — | 2026-03-30 |
+| B-013 | bug | Zen mode background does not match the effective letter color | `in_progress` | anvil | `.worktrees/B-013-zen-bg` | `fix/B-013-zen-bg` | F-025 follow-up after `v0.10.0` | 2026-03-30 |
+| P-025 | task | B-013 zen-mode background synchronization prompt | `in_progress` | anvil | `.worktrees/B-013-zen-bg` | `fix/B-013-zen-bg` | — | 2026-03-30 |
+
+---
+
 ## Recently Released Items
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Release | Updated |

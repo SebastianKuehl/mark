@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `—` (all documented work released through `v0.10.0`).
+Current active milestone: `M-023` (ready — allow `mark` with no file to render Markdown from the current directory).
 
 ---
 
@@ -69,6 +69,7 @@ Current active milestone: `—` (all documented work released through `v0.10.0`)
 | M-020 | PDF Export and Letter Alignment Polish | ✅ released | [M-020](milestones/M-020-pdf-export-letter-alignment.md) |
 | M-021 | Sidebar Search and Config Panel Polish | ✅ released | [M-021](milestones/M-021-sidebar-and-config-polish.md) |
 | M-022 | CLI PDF Export and Command Shape Cleanup | ✅ released | [M-022](milestones/M-022-cli-pdf-and-command-shape.md) |
+| M-023 | Default Current-Directory Markdown Entry | 🟡 ready | [M-023](milestones/M-023-default-cwd-render-entrypoint.md) |
 | M-019 | Recursive Render Scope Restriction | ✅ released | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
@@ -94,6 +95,7 @@ Current active milestone: `—` (all documented work released through `v0.10.0`)
 | [F-023](features/F-023-sidebar-search-and-reader-shell-polish.md) | Sidebar search and reader-shell polish | ✅ released | [F-023](features/F-023-sidebar-search-and-reader-shell-polish.md) |
 | [F-025](features/F-025-zen-mode.md) | Zen mode | ✅ released | [F-025](features/F-025-zen-mode.md) |
 | [F-024](features/F-024-cli-pdf-export-subcommand.md) | CLI PDF export subcommand | ✅ released | [F-024](features/F-024-cli-pdf-export-subcommand.md) |
+| [F-026](features/F-026-default-cwd-render.md) | Default current-directory Markdown render | 🟡 ready | [F-026](features/F-026-default-cwd-render.md) |
 
 ---
 
@@ -113,6 +115,7 @@ Current active milestone: `—` (all documented work released through `v0.10.0`)
 | [B-010](bugs/B-010-theme-resets-on-navigation.md) | User-selected theme resets after hierarchy navigation | High | ✅ released | [B-010](bugs/B-010-theme-resets-on-navigation.md) |
 | [B-011](bugs/B-011-config-sidebar-presentation-regressions.md) | Config sidebar overlaps controls, lacks matching animation, and allows blank layout values | Medium | ✅ released | [B-011](bugs/B-011-config-sidebar-presentation-regressions.md) |
 | [B-012](bugs/B-012-root-cli-file-command-overlap.md) | Root CLI mixes optional file and command forms | High | ✅ released | [B-012](bugs/B-012-root-cli-file-command-overlap.md) |
+| [B-013](bugs/B-013-zen-mode-background-does-not-match-letter.md) | Zen mode background does not match the effective letter color | Medium | 🟡 ready | [B-013](bugs/B-013-zen-mode-background-does-not-match-letter.md) |
 
 ---
 
@@ -141,6 +144,8 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-022](prompts/P-022-M-020-pdf-export-letter-alignment.md) | M-020 (F-022 + B-008 + B-009) | PDF export + final reader shell polish |
 | [P-023](prompts/P-023-M-021-reader-shell-polish.md) | M-021 (F-023 + F-025 + B-010 + B-011) | Reader shell polish — search, zen mode, theme persistence, config sidebar fixes |
 | [P-024](prompts/P-024-M-022-cli-shape-and-pdf.md) | M-022 (F-024 + B-012) | CLI shape cleanup + `mark pdf` subcommand |
+| [P-025](prompts/P-025-B-013-zen-mode-background.md) | B-013 | Zen-mode background synchronization |
+| [P-026](prompts/P-026-M-023-default-cwd-render.md) | M-023 (F-026) | Default current-directory Markdown entry |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -149,9 +154,9 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | none |
-| Open worktrees | none |
+| Active agents | P-025 + P-026 in progress |
+| Open worktrees | `.worktrees/B-013-zen-bg`, `.worktrees/M-023-default-cwd` |
 | Latest tag | `v0.10.0` |
 | Recently merged work | M-021 + M-022 (`v0.10.0`) · v0.9.3 config polish · B-002 (`v0.9.1`) |
-| Next planned work | backlog empty |
+| Next planned work | M-023 / F-026 — allow `mark` with no file to render Markdown from the current directory |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |
