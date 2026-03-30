@@ -7,14 +7,14 @@ M-016
 Reader Customization Controls
 
 ## Objective
-Preserve the template-driven render shell while letting users tune key reading-surface dimensions and control radii from the rendered page itself. Keep sidebar footer hotkeys visible even when the hierarchy is taller than the viewport.
+Keep the rendered shell self-contained while letting users tune key reading-surface dimensions and control radii from the rendered page itself. Keep sidebar footer hotkeys visible even when the hierarchy is taller than the viewport.
 
 ## Included Features
 - F-018 — Persistent reader appearance controls
 - B-005 — Sidebar footer hotkeys can disappear behind long hierarchy trees
 
 ## Dependencies
-- v0.6.0 (M-015 / F-017 template-driven shell)
+- v0.6.0-era render shell work, now carried forward in the self-contained renderer
 - Existing theme + sidebar controls from M-014 / F-016
 
 ## Acceptance Criteria

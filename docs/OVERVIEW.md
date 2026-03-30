@@ -31,7 +31,7 @@ Current active execution item: `—`.
 
 | Version | Type | Highlights |
 |---------|------|------------|
-| [v0.6.0](releases.md#v060--minor) | minor | Rendered pages now use the bundled template shell from `src/index.html` |
+| [v0.6.0](releases.md#v060--minor) | minor | Render shell milestone landed (initially via `src/index.html`, now superseded by the self-contained shell in `src/render.rs`) |
 | [v0.5.1](releases.md#v051--patch) | patch | Bash completions stop suggesting root subcommands after the positional `FILE` argument |
 | [v0.5.0](releases.md#v050--minor) | minor | Single vs recursive render modes, hidden-by-default sidebar controls, in-page theme switcher |
 | [v0.2.0](releases.md#v020--minor) | minor | Recursive linked Markdown rendering + HTML link rewriting |
@@ -52,7 +52,7 @@ Current active execution item: `—`.
 | M-012 | Render Memory | ✅ released | [M-012](milestones/M-012-render-memory.md) |
 | M-013 | Folder Hierarchy Preservation | ✅ released | [M-013](milestones/M-013-folder-hierarchy.md) |
 | M-014 | View Controls and Render Modes | ✅ released | [M-014](milestones/M-014-view-controls-and-render-modes.md) |
-| M-015 | Template-Driven Render Shell | ✅ released | [M-015](milestones/M-015-template-render-shell.md) |
+| M-015 | Historical Template-Shell Migration | ✅ released | [M-015](milestones/M-015-template-render-shell.md) |
 | M-016 | Reader Customization Controls | 🟡 merged | [M-016](milestones/M-016-reader-customization-controls.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
@@ -69,7 +69,7 @@ Current active execution item: `—`.
 | [F-014](features/F-014-folder-hierarchy.md) | Preserve folder hierarchy in rendered output and sidebar tree | ✅ released | [F-014](features/F-014-folder-hierarchy.md) |
 | [F-015](features/F-015-render-mode-defaults.md) | Render mode flags and persistent defaults | ✅ released | [F-015](features/F-015-render-mode-defaults.md) |
 | [F-016](features/F-016-sidebar-theme-controls.md) | Sidebar and theme controls | ✅ released | [F-016](features/F-016-sidebar-theme-controls.md) |
-| [F-017](features/F-017-template-shell.md) | Use `src/index.html` as the rendered page template | ✅ released | [F-017](features/F-017-template-shell.md) |
+| [F-017](features/F-017-template-shell.md) | Historical `src/index.html` template-shell migration | ✅ released | [F-017](features/F-017-template-shell.md) |
 | [F-018](features/F-018-reader-appearance-controls.md) | Persistent reader appearance controls | 🟡 merged | [F-018](features/F-018-reader-appearance-controls.md) |
 
 ---

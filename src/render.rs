@@ -61,67 +61,21 @@ pub fn render_markdown(markdown: &str, title: &str, theme: Theme) -> String {
     )
 }
 
-const PAGE_TEMPLATE: &str = include_str!("index.html");
-const TEMPLATE_TITLE: &str = "<title>Mark HTML Template</title>";
-const CONTENT_PLACEHOLDER: &str =
-    r#"<div class="markdown-prose"><p>&lt;put rendered html here&gt;</p></div>"#;
-const LEFT_CONTROL_START: &str = r#"<div class="fixed left-4 top-4 z-40 md:left-6 md:top-6">"#;
-const RIGHT_CONTROL_START: &str = r#"<div class="fixed right-4 top-4 z-40 md:right-6 md:top-6">"#;
-const ASIDE_START: &str = r#"<aside class="editor-scrollbar"#;
-const MAIN_START: &str =
-    r#"<main class="relative flex min-h-screen items-center justify-center px-4 py-24 md:px-6">"#;
-
-fn inject_before(document: &str, marker: &str, injection: &str) -> String {
-    let Some(index) = document.find(marker) else {
-        return document.to_string();
-    };
-
-    let mut output = String::with_capacity(document.len() + injection.len());
-    output.push_str(&document[..index]);
-    output.push_str(injection);
-    output.push_str(&document[index..]);
-    output
-}
-
-fn replace_range(
-    document: &str,
-    start_marker: &str,
-    end_marker: &str,
-    replacement: &str,
-) -> String {
-    let Some(start) = document.find(start_marker) else {
-        return document.to_string();
-    };
-    let Some(end_offset) = document[start..].find(end_marker) else {
-        return document.to_string();
-    };
-    let end = start + end_offset;
-
-    let mut output =
-        String::with_capacity(document.len() + replacement.len().saturating_sub(end - start));
-    output.push_str(&document[..start]);
-    output.push_str(replacement);
-    output.push_str(&document[end..]);
-    output
-}
-
 fn render_breadcrumb_html(title: &str, breadcrumb: &[(String, PathBuf)]) -> String {
     if breadcrumb.is_empty() {
         return String::new();
     }
 
-    let mut html = String::from(
-        r#"<nav class="mark-breadcrumb mb-6 flex flex-wrap items-center gap-2 text-sm text-[var(--muted-foreground)]" aria-label="Breadcrumb">"#,
-    );
+    let mut html = String::from(r#"<nav class="mark-breadcrumb" aria-label="Breadcrumb">"#);
     for (name, path) in breadcrumb {
         let href = escape_html(&path.to_string_lossy());
         let display = escape_html(name);
         html.push_str(&format!(
-            r#"<a class="transition-colors hover:text-[var(--foreground)] hover:underline" href="{href}">{display}</a><span class="mark-breadcrumb-sep">&rsaquo;</span>"#
+            r#"<a class="mark-breadcrumb-link" href="{href}">{display}</a><span class="mark-breadcrumb-sep">&rsaquo;</span>"#
         ));
     }
     html.push_str(&format!(
-        r#"<span class="mark-breadcrumb-current font-medium text-[var(--foreground)]">{}</span></nav>"#,
+        r#"<span class="mark-breadcrumb-current">{}</span></nav>"#,
         escape_html(title)
     ));
     html
@@ -132,7 +86,7 @@ fn render_sidebar_controls(sidebar_visible: bool) -> String {
     let expanded = if sidebar_visible { "true" } else { "false" };
     format!(
         r#"<input type="checkbox" id="mark-sidebar-toggle" class="mark-sidebar-toggle"{checked}>
-<div class="absolute left-4 top-4 z-40 md:left-6 md:top-6"><div id="mark-sidebar-control-shell" class="mark-sidebar-button-shell rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-sidebar-button" aria-controls="mark-sidebar" aria-expanded="{expanded}" aria-label="Toggle sidebar (e)" title="Toggle sidebar (e)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left h-3.5 w-3.5" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button></div></div>"#,
+<div class="mark-left-control"><button type="button" id="mark-sidebar-button" class="mark-sidebar-button" aria-controls="mark-sidebar" aria-expanded="{expanded}" aria-label="Toggle sidebar (e)" title="Toggle sidebar (e)"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left h-3.5 w-3.5" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button></div>"#,
     )
 }
 
@@ -186,7 +140,7 @@ fn render_theme_controls(theme_attr: &str, appearance: AppearanceConfig) -> Stri
     let layout_command = escape_html(&render_layout_command(appearance));
 
     format!(
-        r#"<div class="fixed right-4 top-4 z-40 md:right-6 md:top-6"><div class="mark-theme-control relative rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--card)_88%,transparent)] p-1.5 shadow-sm backdrop-blur mark-theme-button-shell"><button class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] h-8 w-8 rounded-full p-0" type="button" id="mark-theme-toggle" aria-label="Theme: {theme_attr}. Change theme or layout" title="Theme: {theme_attr}. Change theme or layout" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon h-3.5 w-3.5" aria-hidden="true"><path d="M12 2v2"></path><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"></path><path d="M16 12a4 4 0 0 0-4-4"></path><path d="m19 5-1.256 1.256"></path><path d="M20 12h2"></path></svg></button><div id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (in)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><div class="mark-layout-command-wrap"><div class="mark-layout-command-header"><span>Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></div><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></form></div></div></div>"#,
+        r#"<div class="mark-right-control"><div class="mark-theme-control mark-theme-button-shell"><button type="button" id="mark-theme-toggle" class="mark-theme-toggle-button" aria-label="Theme: {theme_attr}. Change theme or layout" title="Theme: {theme_attr}. Change theme or layout" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon h-3.5 w-3.5" aria-hidden="true"><path d="M12 2v2"></path><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"></path><path d="M16 12a4 4 0 0 0-4-4"></path><path d="m19 5-1.256 1.256"></path><path d="M20 12h2"></path></svg></button><div id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (in)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><div class="mark-layout-command-wrap"><div class="mark-layout-command-header"><span>Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></div><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></form></div></div></div>"#,
         font_size = appearance.font_size_px,
         letter_width = format_decimal(appearance.letter_width_in),
         letter_radius = appearance.letter_radius_px,
@@ -206,16 +160,15 @@ fn render_sidebar_shell(
         " -translate-x-full"
     };
     let tree = build_sidebar_tree(all_files, run_dir);
-    let mut nav = String::from(r#"<div class="space-y-2">"#);
+    let mut nav = String::new();
     render_sidebar_nodes(&tree, &mut nav);
-    nav.push_str("</div>");
 
     format!(
-        r#"<aside id="mark-sidebar" class="mark-sidebar fixed inset-y-0 left-0 z-30 w-[22rem] overflow-hidden border-r border-[var(--border)] bg-[var(--card)] p-4 pt-20 shadow-lg transition-transform duration-200 md:p-6 md:pt-24{hidden_class}"><div class="relative flex h-full min-h-0 flex-col"><section class="mark-sidebar-scroll editor-scrollbar flex-1 overflow-y-auto"><h2 class="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">Hierarchy</h2><nav aria-label="Rendered file tree" class="mt-4 text-sm">{nav}</nav></section><footer class="mark-sidebar-footer text-xs text-[var(--muted-foreground)]">Hotkeys: <span>E</span> toggles the sidebar,<br><span>T</span> toggles the theme.</footer></div></aside>"#,
+        r#"<aside id="mark-sidebar" class="mark-sidebar{hidden_class}"><div class="mark-sidebar-inner"><section class="mark-sidebar-scroll"><h2 class="mark-sidebar-title">Hierarchy</h2><nav class="mark-sidebar-tree" aria-label="Rendered file tree">{nav}</nav></section><footer class="mark-sidebar-footer text-xs text-[var(--muted-foreground)]">Hotkeys: <span>E</span> toggles the sidebar,<br><span>T</span> toggles the theme.</footer></div></aside>"#,
     )
 }
 
-/// Wrap a rendered HTML body in the checked-in page template with embedded JS.
+/// Wrap a rendered HTML body in a complete HTML5 document with embedded CSS and JS.
 ///
 /// `breadcrumb` is an ordered list of `(display_name, html_path)` ancestors
 /// from the entry-point down to (but not including) the current file. Empty for
@@ -224,6 +177,7 @@ fn render_sidebar_shell(
 /// `all_files` is the full list of `(display_name, html_path, is_current)`
 /// entries for the sidebar, in BFS discovery order.
 fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChrome<'_>) -> String {
+    let base_css = include_str!("style.css");
     let theme_attr = match theme {
         Theme::System => "system",
         Theme::Dark => "dark",
@@ -237,25 +191,25 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     let extra_css = format!(
         r#"<style>
 :root{{--mark-font-size:{font_size}px;--mark-letter-width:{letter_width}in;--mark-letter-radius:{letter_radius}px;--mark-sidebar-button-radius:{sidebar_button_radius}px;--mark-theme-button-radius:{theme_button_radius}px;--mark-sidebar-footer-height:4.85rem}}
-.mark-sidebar-toggle{{display:none}}
-.mark-breadcrumb{{border-bottom:1px solid var(--border);padding-bottom:1rem}}
-.mark-breadcrumb a{{text-decoration:none}}
-.mark-page-width-shell{{max-width:calc(var(--mark-letter-width) + 4rem)!important}}
-.paper-sheet{{max-width:var(--mark-letter-width)!important;border-radius:var(--mark-letter-radius)!important;font-size:var(--mark-font-size)}}
-#mark-sidebar-control-shell,#mark-sidebar-button{{border-radius:var(--mark-sidebar-button-radius)!important}}
-.mark-theme-button-shell,#mark-theme-toggle{{border-radius:var(--mark-theme-button-radius)!important}}
-.mark-theme-menu{{position:absolute;right:0;top:calc(100% + .75rem);display:grid;gap:1rem;min-width:min(26rem,calc(100vw - 2rem));padding:1rem;border:1px solid var(--border);border-radius:1rem;background:color-mix(in srgb,var(--card) 96%,transparent);box-shadow:0 12px 30px #0000001a;backdrop-filter:blur(18px)}}
+.mark-left-control,.mark-right-control{{position:fixed;top:1.5rem;z-index:50}}
+.mark-left-control{{left:1.5rem}}
+.mark-right-control{{right:1.5rem}}
+.mark-sidebar-button,.mark-theme-toggle-button{{display:flex;align-items:center;justify-content:center;width:3.25rem;height:3.25rem;border:1px solid var(--border);background:var(--control-bg);color:var(--muted-foreground);box-shadow:0 8px 24px rgba(0,0,0,.12);cursor:pointer;transition:transform .15s ease,background .15s ease,color .15s ease}}
+.mark-sidebar-button{{border-radius:var(--mark-sidebar-button-radius)}}
+.mark-theme-toggle-button{{border-radius:var(--mark-theme-button-radius)}}
+.mark-sidebar-button:hover,.mark-theme-toggle-button:hover,.mark-layout-copy:hover{{transform:translateY(-1px);background:var(--control-hover);color:var(--foreground)}}
+.mark-theme-button-shell{{position:relative}}
+.mark-theme-menu{{position:absolute;right:0;top:calc(100% + .75rem);display:grid;gap:1rem;min-width:min(26rem,calc(100vw - 2rem));padding:1rem;border:1px solid var(--border);border-radius:1rem;background:color-mix(in srgb,var(--card) 96%,transparent);box-shadow:0 12px 30px rgba(0,0,0,.16);backdrop-filter:blur(18px)}}
 .mark-theme-menu[hidden]{{display:none}}
 .mark-theme-menu-section{{display:grid;gap:.65rem}}
 .mark-theme-menu-heading{{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}}
 .mark-theme-option-list{{display:grid;gap:.25rem}}
-.mark-theme-option{{display:flex;align-items:center;gap:.65rem;width:100%;padding:.55rem .7rem;border-radius:.75rem;background:transparent;color:var(--foreground);cursor:pointer;text-align:left}}
+.mark-theme-option{{display:flex;align-items:center;gap:.65rem;width:100%;padding:.55rem .7rem;border:none;border-radius:.75rem;background:transparent;color:var(--foreground);cursor:pointer;text-align:left}}
 .mark-theme-option:hover,.mark-theme-option[aria-pressed="true"]{{background:var(--muted)}}
 .mark-theme-option-icon,.mark-theme-option-label{{pointer-events:none}}
 .mark-theme-option-icon{{display:inline-flex;align-items:center;justify-content:center;color:var(--muted-foreground)}}
 .mark-layout-form{{display:grid;gap:.75rem;padding-top:.2rem}}
 .mark-layout-help{{margin:0;color:var(--muted-foreground);font-size:.85rem;line-height:1.45}}
-.mark-layout-help code{{font-size:.82em}}
 .mark-layout-field{{display:grid;gap:.35rem}}
 .mark-layout-field span{{font-size:.82rem;color:var(--foreground)}}
 .mark-layout-field input{{width:100%;border:1px solid var(--border);border-radius:.7rem;background:var(--background);color:var(--foreground);padding:.6rem .75rem;font:inherit}}
@@ -263,24 +217,37 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-layout-command-wrap{{display:grid;gap:.5rem;border:1px solid var(--border);border-radius:.85rem;background:var(--muted);padding:.75rem}}
 .mark-layout-command-header{{display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:.8rem;font-weight:600;color:var(--foreground)}}
 .mark-layout-copy{{border:1px solid var(--border);border-radius:.65rem;background:var(--background);color:var(--foreground);padding:.35rem .65rem;font:inherit;cursor:pointer}}
-.mark-layout-copy:hover{{background:var(--card)}}
 .mark-layout-command{{display:block;white-space:pre-wrap;word-break:break-word;font-size:.78rem;line-height:1.5}}
-.mark-sidebar-link,.mark-sidebar-current,.mark-sidebar-summary{{display:flex;min-height:2.5rem;align-items:center}}
+.mark-breadcrumb{{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-bottom:1.35rem;padding-bottom:.85rem;border-bottom:1px solid var(--border);font-size:.92rem;color:var(--muted-foreground)}}
+.mark-breadcrumb-link{{color:var(--link);text-decoration:none}}
+.mark-breadcrumb-link:hover{{text-decoration:underline}}
+.mark-breadcrumb-current{{font-weight:600;color:var(--foreground)}}
+.mark-sidebar{{position:fixed;inset:0 auto 0 0;z-index:40;width:min(22rem,calc(100vw - 2rem));background:var(--card);border-right:1px solid var(--border);box-shadow:0 18px 50px rgba(0,0,0,.16);transition:transform .22s ease}}
+.mark-sidebar.-translate-x-full{{transform:translateX(calc(-100% - 1.5rem))}}
+.mark-sidebar-inner{{position:relative;display:flex;height:100%;min-height:0;flex-direction:column;padding:6rem 1.25rem 0}}
+.mark-sidebar-scroll{{flex:1;overflow-y:auto;padding-bottom:calc(var(--mark-sidebar-footer-height) + 1rem)}}
+.mark-sidebar-title{{margin:0 0 1rem;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-foreground)}}
+.mark-sidebar-tree{{display:grid;gap:.5rem}}
+.mark-sidebar-link,.mark-sidebar-current,.mark-sidebar-summary{{display:flex;min-height:2.5rem;align-items:center;padding:.55rem .75rem;border-radius:.75rem}}
+.mark-sidebar-link{{color:var(--foreground);text-decoration:none}}
+.mark-sidebar-link:hover,.mark-sidebar-summary:hover{{background:var(--muted)}}
+.mark-sidebar-current{{background:var(--current);font-weight:600}}
+.mark-sidebar-group{{display:grid;gap:.35rem}}
 .mark-sidebar-group>summary::-webkit-details-marker{{display:none}}
+.mark-sidebar-summary{{cursor:pointer;list-style:none;color:var(--foreground);font-weight:600}}
 .mark-sidebar-group>summary::before{{content:"▾";display:inline-block;margin-right:.5rem;color:var(--muted-foreground);transition:transform .15s ease}}
 .mark-sidebar-group:not([open])>summary::before{{transform:rotate(-90deg)}}
-.mark-sidebar-summary{{cursor:pointer;list-style:none}}
-.mark-sidebar-current{{background:var(--muted)}}
-.mark-sidebar-scroll{{padding-bottom:calc(var(--mark-sidebar-footer-height) + 1rem)}}
-.mark-sidebar-footer{{position:absolute;left:0;right:0;bottom:0;z-index:10;border-top:1px solid var(--border);background:color-mix(in srgb,var(--card) 97%,transparent);padding:1rem 1.5rem 1.15rem;backdrop-filter:blur(14px);box-shadow:0 -10px 24px #00000014;line-height:1.45}}
+.mark-sidebar-group-children{{display:grid;gap:.35rem;margin-left:1rem;padding-left:.9rem;border-left:1px solid var(--border-soft)}}
+.mark-sidebar-footer{{position:absolute;left:0;right:0;bottom:0;z-index:10;border-top:1px solid var(--border);background:color-mix(in srgb,var(--card) 97%,transparent);padding:1rem 1.25rem 1.15rem;backdrop-filter:blur(14px);box-shadow:0 -10px 24px rgba(0,0,0,.10);line-height:1.45}}
 .mark-sidebar-footer span{{font-weight:600;color:var(--foreground)}}
 .mark-code-block{{position:relative;margin:1em 0}}
 .mark-code-toolbar{{display:flex;justify-content:flex-end;gap:.4em;padding:.45rem .6rem;background:var(--muted);border:1px solid var(--border);border-bottom:none;border-radius:.5rem .5rem 0 0}}
 .mark-code-block pre{{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}}
 .mark-btn{{font-size:.78em;padding:.2em .6em;border:1px solid var(--border);border-radius:.4rem;background:var(--background);color:var(--foreground);cursor:pointer;transition:background .15s}}
-.mark-btn:hover{{background:var(--card)}}
+.mark-btn:hover{{background:var(--control-hover)}}
 .mark-btn.mark-copied{{color:#2a7a2a;border-color:#2a7a2a}}
 .mark-btn.mark-failed{{color:#b00;border-color:#b00}}
+@media (max-width: 768px){{.mark-left-control{{left:1rem}}.mark-right-control{{right:1rem}}.mark-content-wrapper{{padding-top:5.5rem}}.paper-sheet{{padding:1.5rem}}}}
 </style>"#,
         font_size = chrome.appearance.font_size_px,
         letter_width = format_decimal(chrome.appearance.letter_width_in),
@@ -386,7 +353,9 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     }
     var visible = !sidebar.classList.contains('-translate-x-full');
     toggle.setAttribute('aria-expanded', visible ? 'true' : 'false');
-    checkbox && (checkbox.checked = visible);
+    if (checkbox) {
+      checkbox.checked = visible;
+    }
   }
 
   function toggleSidebar() {
@@ -446,14 +415,12 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
     document.querySelectorAll('.mark-code-block').forEach(function(block) {
       var pre = block.querySelector('pre');
       var code = pre ? pre.querySelector('code') : null;
-
       var copyBtn = block.querySelector('.mark-copy-btn');
       if (copyBtn && code) {
         copyBtn.addEventListener('click', function() {
           copyText(code.textContent, copyBtn, '\u2713 Copied');
         });
       }
-
       var cleanBtn = block.querySelector('.mark-copy-clean-btn');
       if (cleanBtn) {
         var cleanCode = block.dataset.cleanCode;
@@ -540,7 +507,6 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || isEditableTarget(event.target)) {
         return;
       }
-
       var key = (event.key || '').toLowerCase();
       if (key === 'e') {
         if (document.getElementById('mark-sidebar-button')) {
@@ -549,13 +515,11 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         }
         return;
       }
-
       if (key === 't') {
         cycleTheme();
         event.preventDefault();
         return;
       }
-
       if (key === 'escape') {
         closeThemeMenu();
       }
@@ -565,7 +529,6 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 
     let breadcrumb_html = render_breadcrumb_html(title, chrome.breadcrumb);
     let content_html = format!(r#"{breadcrumb_html}<div class="markdown-prose">{body}</div>"#);
-
     let sidebar_controls_html = if chrome.all_files.is_empty() {
         String::new()
     } else {
@@ -577,64 +540,61 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
         render_sidebar_shell(chrome.all_files, chrome.run_dir, chrome.sidebar_visible)
     };
 
-    let mut document = PAGE_TEMPLATE.replacen(r#"<html lang="en">"#, &html_root, 1);
-    document = document.replacen(
-        TEMPLATE_TITLE,
-        &format!("<title>{}</title>", escape_html(title)),
-        1,
-    );
-    document = document.replacen(CONTENT_PLACEHOLDER, &content_html, 1);
-    document = document.replacen(
-        r#"<div class="w-full max-w-[calc(8.5in+4rem)]">"#,
-        r#"<div class="mark-page-width-shell w-full max-w-[calc(8.5in+4rem)]">"#,
-        1,
-    );
-    document = replace_range(
-        &document,
-        LEFT_CONTROL_START,
-        RIGHT_CONTROL_START,
-        &sidebar_controls_html,
-    );
-    document = replace_range(
-        &document,
-        RIGHT_CONTROL_START,
-        ASIDE_START,
-        &render_theme_controls(theme_attr, chrome.appearance),
-    );
-    document = replace_range(&document, ASIDE_START, MAIN_START, &sidebar_shell_html);
-    document = inject_before(
-        &document,
-        "</head>",
-        &format!("{extra_css}{early_theme_script}"),
-    );
-    inject_before(&document, "</body>", enhancement_js)
+    format!(
+        r#"<!DOCTYPE html>
+{html_root}
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<style>
+{base_css}
+</style>
+{extra_css}
+{early_theme_script}
+</head>
+<body>
+<div class="editor-shell">{sidebar_controls_html}{theme_controls}<div class="mark-content-wrapper"><main class="mark-main-shell"><div class="mark-page-width-shell"><article class="paper-sheet">{content_html}</article></div></main></div>{sidebar_shell_html}</div>
+{enhancement_js}
+</body>
+</html>
+"#,
+        html_root = html_root,
+        title = escape_html(title),
+        base_css = base_css,
+        extra_css = extra_css,
+        early_theme_script = early_theme_script,
+        sidebar_controls_html = sidebar_controls_html,
+        theme_controls = render_theme_controls(theme_attr, chrome.appearance),
+        content_html = content_html,
+        sidebar_shell_html = sidebar_shell_html,
+        enhancement_js = enhancement_js,
+    )
 }
 
 fn render_sidebar_nodes(nodes: &[SidebarNode], out: &mut String) {
     for node in nodes {
-        out.push_str(r#"<div class="space-y-2">"#);
         if node.children.is_empty() {
             let display = escape_html(&node.name);
             if node.is_current {
                 out.push_str(&format!(
-                    r#"<span class="mark-sidebar-link mark-sidebar-current rounded-md px-3 py-2 font-medium text-[var(--foreground)]" aria-current="page">{display}</span>"#
+                    r#"<span class="mark-sidebar-link mark-sidebar-current" aria-current="page">{display}</span>"#
                 ));
             } else if let Some(path) = &node.path {
                 let href = escape_html(&path.to_string_lossy());
                 out.push_str(&format!(
-                    r#"<a class="mark-sidebar-link flex items-center rounded-md px-3 py-2 text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]" href="{href}">{display}</a>"#
+                    r#"<a class="mark-sidebar-link" href="{href}">{display}</a>"#
                 ));
             }
-            out.push_str("</div>");
             continue;
         }
 
         let display = escape_html(&format!("{}/", node.name));
         out.push_str(&format!(
-            r#"<details class="mark-sidebar-dir mark-sidebar-group" open><summary class="mark-sidebar-summary rounded-md px-3 py-2 text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]">{display}</summary><div class="ml-4 border-l border-[var(--border)] pl-3"><div class="space-y-2">"#
+            r#"<details class="mark-sidebar-dir mark-sidebar-group" open><summary class="mark-sidebar-summary">{display}</summary><div class="mark-sidebar-group-children">"#
         ));
         render_sidebar_nodes(&node.children, out);
-        out.push_str("</div></div></details></div>");
+        out.push_str("</div></details>");
     }
 }
 

@@ -16,7 +16,7 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - **Breadcrumb navigation** on every page below the entry-point, showing the path from root to the current file
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
 - **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
-- **Bundled application shell** — rendered pages now reuse the checked-in app shell and component styling shipped with `mark`
+- **Self-contained application shell** — rendered pages now use the embedded Rust-built shell and stylesheet shipped with `mark`, with no dependency on a checked-in `index.html` template
 - **Reader appearance controls** — tune font size, letter width, letter corner radius, and the sidebar/theme button radii from the rendered page, then copy a generated `mark config set-layout ...` command
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - **In-page theme switcher** — switch between `system`, `light`, and `dark` without re-rendering

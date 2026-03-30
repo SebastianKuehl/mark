@@ -1,13 +1,13 @@
-# M-015 — Template-Driven Render Shell
+# M-015 — Historical Template-Driven Render Shell
 
 ## Milestone ID
 M-015
 
 ## Title
-Template-Driven Render Shell
+Historical Template-Driven Render Shell
 
 ## Objective
-Adopt `src/index.html` as the HTML shell used for rendered Markdown pages so `mark` reuses the shipped shadcn-based layout and component structure instead of building its own page chrome in Rust. Preserve current navigation behavior while swapping placeholder content and placeholder sidebar entries for generated Markdown, files, and folders.
+Capture the historical v0.6.0 milestone that moved rendered pages onto `src/index.html`. That implementation has since been superseded by the current self-contained shell assembled in `src/render.rs` with embedded `src/style.css`.
 
 ## Included Features
 - F-017 — Use `src/index.html` as the rendered page template
@@ -15,6 +15,10 @@ Adopt `src/index.html` as the HTML shell used for rendered Markdown pages so `ma
 ## Dependencies
 - v0.5.1 (M-014 and B-004 released)
 - Existing recursive render/sidebar data from `src/render.rs`
+
+## Historical Note
+
+This milestone remains part of the release record, but the current renderer no longer depends on `src/index.html`.
 
 ## Acceptance Criteria
 - Rendered pages are built from `src/index.html` rather than a separately assembled HTML document string.

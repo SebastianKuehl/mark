@@ -1,13 +1,17 @@
-# F-017 — Use `src/index.html` as the Rendered Page Template
+# F-017 — Historical `src/index.html` Template-Shell Migration
 
 ## Feature ID
 F-017
 
 ## Title
-Replace the hand-built HTML shell with the checked-in template at `src/index.html`
+Historical migration from the Rust-built shell to the checked-in `src/index.html` template
 
 ## User Value
-Users want rendered pages to use the richer checked-in application shell and special shadcn component markup already present in `src/index.html`, instead of the current custom HTML assembled directly inside `src/render.rs`.
+This feature captured the shipped v0.6.0-era migration to a checked-in template shell. It is retained as historical documentation only; the current renderer has since moved back to a self-contained HTML shell assembled in `src/render.rs` with embedded `src/style.css`.
+
+## Historical Note
+
+This document describes the now-superseded template-shell implementation that originally shipped in `v0.6.0`. The current runtime renderer no longer depends on `src/index.html`.
 
 ## Scope Details
 
@@ -58,4 +62,4 @@ High
 M-015
 
 ## Status
-released
+released (historical)

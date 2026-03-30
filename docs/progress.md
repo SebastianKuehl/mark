@@ -21,9 +21,9 @@
 | M-016 | milestone | Reader Customization Controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | F-018 | feature | Persistent reader appearance controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | B-005 | bug | Sidebar footer hotkeys can disappear behind tall hierarchies | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
-| M-015 | milestone | Template-Driven Render Shell | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
-| F-017 | feature | Use `src/index.html` as the rendered page template | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
-| P-017 | task | Implement template-driven render shell from `src/index.html` | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | fixed via P-018 follow-up before merge | 2026-03-29 |
+| M-015 | milestone | Historical Template-Shell Migration | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | later superseded by the self-contained shell | 2026-03-29 |
+| F-017 | feature | Historical `src/index.html` template-shell migration | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | later superseded by the self-contained shell | 2026-03-29 |
+| P-017 | task | Implement historical template-driven render shell from `src/index.html` | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | fixed via P-018 follow-up before merge; later superseded | 2026-03-29 |
 | P-018 | task | Restore theme-switcher icon + label parity in F-017 worktree | `released` | anvil | `.worktrees/F-017-template-shell` | `feat/F-017-template-shell` | — | 2026-03-29 |
 | B-004 | bug | Shell completion suggests subcommands after FILE argument | `released` | anvil | `.worktrees/B-004-completion-after-file` | `fix/B-004-completion-after-file` | — | 2026-03-29 |
 | P-016 | task | Fix completion suggestions after positional FILE | `released` | anvil | `.worktrees/B-004-completion-after-file` | `fix/B-004-completion-after-file` | — | 2026-03-29 |

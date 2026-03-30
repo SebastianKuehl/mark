@@ -5,7 +5,7 @@
 - **Date:** 2026-03-29
 - **Type:** minor
 - **Merged items:** M-015, F-017 — Template-driven render shell
-- **Summary:** Rendered pages now use the bundled `src/index.html` shell as the source of truth for page layout, replacing the old hand-built wrapper while preserving sidebar behavior, theme switching, single-vs-recursive rendering, and icon + label theme options.
+- **Summary:** Rendered pages moved onto the bundled `src/index.html` shell at the time of this release, replacing the earlier hand-built wrapper while preserving sidebar behavior, theme switching, single-vs-recursive rendering, and icon + label theme options. That runtime dependency has since been removed in favor of today's self-contained shell in `src/render.rs`.
 
 ---
 
