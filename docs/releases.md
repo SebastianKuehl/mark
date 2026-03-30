@@ -1,5 +1,14 @@
 # Releases
 
+## v0.11.0 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-023, F-026, B-013
+- **Summary:** `mark` can now be invoked without an explicit file argument: it discovers Markdown files in the current directory, renders them together, and opens the first discovered file as the entry page, while producing a clear error if no Markdown files are present. This release also fixes zen mode so its background stays synchronized with the effective letter surface. The crate version is synced to `v0.11.0` in `Cargo.toml` and `Cargo.lock`.
+
+---
+
 ## v0.10.0 — minor
 
 - **Date:** 2026-03-30

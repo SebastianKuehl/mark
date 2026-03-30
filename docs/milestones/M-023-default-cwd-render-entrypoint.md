@@ -33,7 +33,7 @@ directory, render them, and open the first discovered file as the entry page.
 High
 
 ## Status
-ready
+released
 
 ## Target Release
-TBD
+v0.11.0

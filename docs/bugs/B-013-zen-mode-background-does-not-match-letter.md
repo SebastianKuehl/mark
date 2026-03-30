@@ -46,4 +46,4 @@ current background instead of fully adopting the letter color.
 4. Regression tests cover the zen-mode background behavior where practical.
 
 ## Status
-ready
+released

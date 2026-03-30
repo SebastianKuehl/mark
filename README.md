@@ -12,6 +12,7 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 
 - Renders Markdown to a complete, self-contained HTML5 document with embedded CSS
 - **Supports explicit render modes** — use `--single` to render only the requested file or `--recursive` to render linked local Markdown files too
+- **No-argument CLI fallback** — run `mark` inside a docs directory and it will discover Markdown files in the current directory, render them, and open the first discovered page
 - **Linked non-Markdown files** (`.txt`, `.png`, `.pdf`, etc.) are copied into the same render run with their relative paths preserved and their links rewritten — everything opens correctly
 - **Breadcrumb navigation** on every page below the entry-point, showing the path from root to the current file
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
@@ -102,6 +103,17 @@ Restart PowerShell after installation for the PATH change to take effect.
 ```sh
 mark README.md
 ```
+
+### Render the current directory's Markdown files
+
+```sh
+mark
+```
+
+When no `FILE` is provided, `mark` discovers Markdown files in the current
+directory, renders them together, and opens the first discovered Markdown file
+as the entry page. If no Markdown files are present, the command exits with a
+clear error.
 
 ### Render without opening the browser
 

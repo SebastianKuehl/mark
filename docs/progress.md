@@ -24,11 +24,7 @@ _No active items._
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
-| M-023 | milestone | Default current-directory Markdown entry | `in_progress` | anvil | `.worktrees/M-023-default-cwd` | `feat/M-023-default-cwd` | — | 2026-03-30 |
-| F-026 | feature | Default current-directory Markdown render | `in_progress` | anvil | `.worktrees/M-023-default-cwd` | `feat/M-023-default-cwd` | M-023 | 2026-03-30 |
-| P-026 | task | M-023 default current-directory Markdown entry prompt | `in_progress` | anvil | `.worktrees/M-023-default-cwd` | `feat/M-023-default-cwd` | — | 2026-03-30 |
-| B-013 | bug | Zen mode background does not match the effective letter color | `in_progress` | anvil | `.worktrees/B-013-zen-bg` | `fix/B-013-zen-bg` | F-025 follow-up after `v0.10.0` | 2026-03-30 |
-| P-025 | task | B-013 zen-mode background synchronization prompt | `in_progress` | anvil | `.worktrees/B-013-zen-bg` | `fix/B-013-zen-bg` | — | 2026-03-30 |
+_No ready items._
 
 ---
 
@@ -36,6 +32,11 @@ _No active items._
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Release | Updated |
 |----|------|-------|--------|-------|----------|--------|---------|---------|
+| M-023 | milestone | Default current-directory Markdown entry | `released` | Product Owner Agent | `main checkout` | `main` | `v0.11.0` | 2026-03-30 |
+| F-026 | feature | Default current-directory Markdown render | `released` | Product Owner Agent | `main checkout` | `main` | `v0.11.0` | 2026-03-30 |
+| B-013 | bug | Zen mode background does not match the effective letter color | `released` | Product Owner Agent | `main checkout` | `main` | `v0.11.0` | 2026-03-30 |
+| P-026 | task | M-023 default current-directory Markdown entry prompt | `released` | Product Owner Agent | `main checkout` | `main` | `v0.11.0` | 2026-03-30 |
+| P-025 | task | B-013 zen-mode background synchronization prompt | `released` | Product Owner Agent | `main checkout` | `main` | `v0.11.0` | 2026-03-30 |
 | M-022 | milestone | CLI PDF export and command shape cleanup | `released` | Product Owner Agent | `main checkout` | `main` | `v0.10.0` | 2026-03-30 |
 | F-024 | feature | CLI PDF export subcommand | `released` | Product Owner Agent | `main checkout` | `main` | `v0.10.0` | 2026-03-30 |
 | B-012 | bug | Root CLI mixes optional file and command forms | `released` | Product Owner Agent | `main checkout` | `main` | `v0.10.0` | 2026-03-30 |
@@ -58,5 +59,5 @@ _No active items._
 ## Notes
 
 - The M-021 and M-022 implementation commits were already present on `main` when this ledger was reconciled.
-- Verification for the reconciled `v0.10.0` release state passed with `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`.
+- Verification for the reconciled `v0.11.0` release state passed with `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo test`.
 - Full historical release history remains in `docs/releases.md`.
