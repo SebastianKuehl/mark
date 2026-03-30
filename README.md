@@ -18,8 +18,11 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
 - **Self-contained application shell** — rendered pages now use the embedded Rust-built shell and stylesheet shipped with `mark`, with no dependency on a checked-in `index.html` template
 - **Reader config sidebar** — press `c` to toggle the right-side config panel open/closed, or click the ⚙ button; the panel includes theme controls, a hotkey reference, and reader-layout controls; the "Terminal command" accordion is integrated into the pane with an always-visible Copy button in its header; the "Save" button (enabled only when values differ from defaults) copies the command to the clipboard; changes preview live on the current page
-- **In-page theme switcher** — press `t` to toggle between `light` and `dark`; if the config sidebar is open it stays open while the theme changes
+- **Sidebar search** — recursive renders include a search field at the top of the hierarchy sidebar so you can quickly filter visible files and folders
+- **In-page theme switcher** — press `t` to toggle between `light` and `dark`; the active choice is preserved across hierarchy navigation inside the rendered reader
+- **Zen mode** — press `z` to hide reader chrome and switch to a distraction-free reading surface
 - **PDF export button** — a download button beside ⚙ opens browser PDF export with a save-path picker where supported and a print fallback elsewhere; press `Primary`+`Shift`+`E` (Command on macOS, Control elsewhere) as a keyboard shortcut; print styling hides reader chrome and forces normal black document text for cleaner PDFs
+- **CLI PDF export** — `mark pdf <FILE> <OUTPUT>` renders and exports directly to PDF when a supported headless browser CLI is available (`chromium`, `chromium-browser`, `google-chrome`, or `wkhtmltopdf`)
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` in per-run directories — never in your project directory
@@ -131,6 +134,14 @@ mark --cleanup
 ```
 
 Deletes rendered run directories older than 30 days from `~/.mark/rendered/` and prints a summary.
+
+### Export directly to PDF
+
+```sh
+mark pdf README.md out/README.pdf
+```
+
+`mark pdf` uses a supported headless browser CLI when one is available on `PATH` (`chromium`, `chromium-browser`, `google-chrome`, or `wkhtmltopdf`). If none is available, `mark` leaves the rendered HTML in place, prints its path, and exits with a helpful error so you can finish PDF export manually.
 
 ### Help and version
 

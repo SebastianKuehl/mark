@@ -33,7 +33,6 @@ Developers and writers need a zero-friction way to preview Markdown documentatio
 
 - Web server or live-reload mode
 - Remote / URL Markdown fetching
-- PDF or other non-HTML output formats
 - Authentication or multi-user support
 - Plugin or extension system
 - GUI application

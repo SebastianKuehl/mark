@@ -1,5 +1,14 @@
 # Releases
 
+## v0.10.0 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-021, F-023, F-025, B-010, B-011, M-022, F-024, B-012
+- **Summary:** Shipped two user-facing milestones together. The reader shell now supports left-sidebar search, a `z` zen mode, persistent in-browser theme choice across hierarchy navigation, and a smoother right config sidebar with safer default normalization for blank layout inputs. The CLI now exposes `mark pdf <FILE> <OUTPUT>`, uses clean either-or root usage (`mark [OPTIONS] [FILE]` or `mark [OPTIONS] <COMMAND>`), and keeps shell completion aligned with that command shape. The crate version is synced to `v0.10.0` in `Cargo.toml` and `Cargo.lock`.
+
+---
+
 ## v0.9.3 — patch
 
 - **Date:** 2026-03-30

@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `—` (config sidebar polish released in v0.9.3).
+Current active milestone: `—` (all documented work released through `v0.10.0`).
 
 ---
 
@@ -32,6 +32,7 @@ Current active milestone: `—` (config sidebar polish released in v0.9.3).
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.10.0](releases.md#v0100--minor) | minor | Sidebar search, zen mode, theme persistence across navigation, `mark pdf`, and clean root CLI usage |
 | [v0.9.3](releases.md#v093--patch) | patch | Config pane is now a right sidebar and `t` no longer closes it while toggling theme |
 | [v0.9.2](releases.md#v092--patch) | patch | Black-text PDF export, `Primary`+`Shift`+`E`, config hotkey help, sidebar footer removed, crate version synced |
 | [v0.9.1](releases.md#v091--patch) | patch | Render cache now invalidates on linked Markdown file changes and safely reuses unchanged recursive renders |
@@ -66,6 +67,8 @@ Current active milestone: `—` (config sidebar polish released in v0.9.3).
 | M-017 | Reader Controls Polish | ✅ released | [M-017](milestones/M-017-reader-controls-polish.md) |
 | M-018 | Reader Shell UX Refinements | ✅ released | [M-018](milestones/M-018-reader-shell-ux-refinements.md) |
 | M-020 | PDF Export and Letter Alignment Polish | ✅ released | [M-020](milestones/M-020-pdf-export-letter-alignment.md) |
+| M-021 | Sidebar Search and Config Panel Polish | ✅ released | [M-021](milestones/M-021-sidebar-and-config-polish.md) |
+| M-022 | CLI PDF Export and Command Shape Cleanup | ✅ released | [M-022](milestones/M-022-cli-pdf-and-command-shape.md) |
 | M-019 | Recursive Render Scope Restriction | ✅ released | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
@@ -88,6 +91,9 @@ Current active milestone: `—` (config sidebar polish released in v0.9.3).
 | [F-020](features/F-020-reader-shell-ux-refinements.md) | Reader shell UX refinements (letter alignment, accordion, save button) | ✅ released | [F-020](features/F-020-reader-shell-ux-refinements.md) |
 | [F-021](features/F-021-restrict-recursive-render-scope.md) | Restrict recursive rendering to entry file's directory subtree | ✅ released | [F-021](features/F-021-restrict-recursive-render-scope.md) |
 | [F-022](features/F-022-pdf-export-button.md) | PDF export button with file picker | ✅ released | [F-022](features/F-022-pdf-export-button.md) |
+| [F-023](features/F-023-sidebar-search-and-reader-shell-polish.md) | Sidebar search and reader-shell polish | ✅ released | [F-023](features/F-023-sidebar-search-and-reader-shell-polish.md) |
+| [F-025](features/F-025-zen-mode.md) | Zen mode | ✅ released | [F-025](features/F-025-zen-mode.md) |
+| [F-024](features/F-024-cli-pdf-export-subcommand.md) | CLI PDF export subcommand | ✅ released | [F-024](features/F-024-cli-pdf-export-subcommand.md) |
 
 ---
 
@@ -104,6 +110,9 @@ Current active milestone: `—` (config sidebar polish released in v0.9.3).
 | [B-007](bugs/B-007-c-hotkey-not-toggling.md) | `c` hotkey only opens config pane, does not toggle it | Medium | ✅ released | [B-007](bugs/B-007-c-hotkey-not-toggling.md) |
 | [B-008](bugs/B-008-letter-top-misaligned.md) | Letter top edge misaligned with header buttons | Medium | ✅ released | [B-008](bugs/B-008-letter-top-misaligned.md) |
 | [B-009](bugs/B-009-terminal-accordion-visual-issues.md) | Terminal command accordion card styling + Copy button placement | Medium | ✅ released | [B-009](bugs/B-009-terminal-accordion-visual-issues.md) |
+| [B-010](bugs/B-010-theme-resets-on-navigation.md) | User-selected theme resets after hierarchy navigation | High | ✅ released | [B-010](bugs/B-010-theme-resets-on-navigation.md) |
+| [B-011](bugs/B-011-config-sidebar-presentation-regressions.md) | Config sidebar overlaps controls, lacks matching animation, and allows blank layout values | Medium | ✅ released | [B-011](bugs/B-011-config-sidebar-presentation-regressions.md) |
+| [B-012](bugs/B-012-root-cli-file-command-overlap.md) | Root CLI mixes optional file and command forms | High | ✅ released | [B-012](bugs/B-012-root-cli-file-command-overlap.md) |
 
 ---
 
@@ -130,6 +139,8 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-018](prompts/P-018-F-017-theme-icon-followup.md) | F-017 | Restore theme-switcher icon + label parity in the F-017 worktree |
 | [P-019](prompts/P-019-M-017-reader-controls-polish.md) | M-017 (F-019 + B-006) | Reader controls polish — config icon, c/t hotkeys, live preview, rem units, bg glow, stray checkbox |
 | [P-022](prompts/P-022-M-020-pdf-export-letter-alignment.md) | M-020 (F-022 + B-008 + B-009) | PDF export + final reader shell polish |
+| [P-023](prompts/P-023-M-021-reader-shell-polish.md) | M-021 (F-023 + F-025 + B-010 + B-011) | Reader shell polish — search, zen mode, theme persistence, config sidebar fixes |
+| [P-024](prompts/P-024-M-022-cli-shape-and-pdf.md) | M-022 (F-024 + B-012) | CLI shape cleanup + `mark pdf` subcommand |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -140,7 +151,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 |------|--------------|
 | Active agents | none |
 | Open worktrees | none |
-| Latest tag | `v0.9.2` |
-| Recently merged work | reader shell polish (v0.9.2) · B-002 (v0.9.1) · M-020 · F-022 · B-008 · B-009 (v0.9.0) |
+| Latest tag | `v0.10.0` |
+| Recently merged work | M-021 + M-022 (`v0.10.0`) · v0.9.3 config polish · B-002 (`v0.9.1`) |
 | Next planned work | backlog empty |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |
