@@ -78,7 +78,7 @@ body {
 
 .mark-content-wrapper {
   min-height: 100vh;
-  padding: 5rem 1.25rem 2rem;
+  padding: 1.5rem 1.25rem 2rem;
 }
 
 .mark-main-shell {
@@ -226,10 +226,48 @@ body {
 
 @media (max-width: 768px) {
   .mark-content-wrapper {
-    padding: 5.5rem 0.85rem 1.5rem;
+    padding: 1rem 0.85rem 1.5rem;
   }
 
   .paper-sheet {
     padding: 1.5rem 1.15rem;
+  }
+}
+
+@media print {
+  html,
+  body,
+  .editor-shell,
+  .mark-content-wrapper,
+  .mark-main-shell,
+  .mark-page-width-shell {
+    background: #fff !important;
+  }
+
+  .mark-left-control,
+  .mark-right-control,
+  .mark-sidebar,
+  .mark-theme-menu {
+    display: none !important;
+  }
+
+  .mark-content-wrapper {
+    min-height: auto;
+    padding: 0 !important;
+  }
+
+  .mark-page-width-shell {
+    width: 100% !important;
+  }
+
+  .paper-sheet {
+    width: 100% !important;
+    min-height: auto;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    background: #fff !important;
   }
 }

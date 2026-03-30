@@ -17,8 +17,9 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - **Hidden-by-default collapsible sidebar tree** on recursive renders, mirroring the source folder hierarchy with files listed before folders
 - **Keyboard sidebar toggle** — press `e` in the rendered page or use the toggle button tooltip
 - **Self-contained application shell** — rendered pages now use the embedded Rust-built shell and stylesheet shipped with `mark`, with no dependency on a checked-in `index.html` template
-- **Reader config menu** — press `c` to toggle the config panel open/closed, or click the ⚙ button; tune font size, letter width (rem), letter corner radius, and button radii; the "Terminal command" accordion shows the generated `mark config set-layout ...` command; the "Save" button (enabled only when values differ from defaults) copies the command to the clipboard; changes preview live on the current page
+- **Reader config menu** — press `c` to toggle the config panel open/closed, or click the ⚙ button; tune font size, letter width (rem), letter corner radius, and button radii; the "Terminal command" accordion is integrated into the pane with an always-visible Copy button in its header; the "Save" button (enabled only when values differ from defaults) copies the command to the clipboard; changes preview live on the current page
 - **In-page theme switcher** — press `t` to toggle between `light` and `dark`; the config menu also contains the theme controls
+- **PDF export button** — a download button beside ⚙ opens browser PDF export with a save-path picker where supported and a print fallback elsewhere; print styling hides reader chrome so the document exports cleanly
 - **Render cache** — re-running `mark` on an unchanged file prompts before re-rendering; answer N to open the existing result instantly
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` in per-run directories — never in your project directory
@@ -215,7 +216,7 @@ sidebar_button_radius_px = 999
 theme_button_radius_px = 999
 ```
 
-Rendered pages include a reader-layout form inside the config menu (⚙ / `c`). Adjust the values there — changes preview live on the current page — and copy the generated `mark config set-layout ...` command into your terminal to persist the new defaults for future renders.
+Rendered pages include a reader-layout form inside the config menu (⚙ / `c`). Adjust the values there — changes preview live on the current page — and copy the generated `mark config set-layout ...` command into your terminal to persist the new defaults for future renders. Use the adjacent download button to export the current document as a PDF.
 
 
 

@@ -33,7 +33,7 @@ vertical start position.
 Medium
 
 ## Status
-ready
+released
 
 ## Target Release
-TBD
+v0.9.0

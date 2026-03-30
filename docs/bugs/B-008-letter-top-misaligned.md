@@ -43,4 +43,4 @@ the button row is used as top padding), pushing the letter down unnecessarily.
 3. `cargo fmt`, `cargo clippy`, `cargo test` pass with zero warnings.
 
 ## Status
-ready
+released

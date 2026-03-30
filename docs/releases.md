@@ -1,5 +1,14 @@
 # Releases
 
+## v0.9.0 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-020, F-022, B-008, B-009
+- **Summary:** Reader shell export and polish. Added a PDF export button beside the config control, with browser save-path picking where supported and clean print styling that hides reader chrome. Fixed the remaining letter top-alignment issue so the document starts level with the header controls. Flattened the terminal-command accordion into the config pane and moved the Copy button into the accordion header so it stays visible while collapsed.
+
+---
+
 ## v0.8.0 — minor
 
 - **Date:** 2026-03-30

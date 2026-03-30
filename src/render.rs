@@ -138,7 +138,7 @@ fn render_theme_controls(appearance: AppearanceConfig) -> String {
     let layout_command = escape_html(&render_layout_command(appearance));
 
     format!(
-        r#"<div class="mark-right-control"><div class="mark-theme-control mark-theme-button-shell"><button type="button" id="mark-theme-toggle" class="mark-theme-toggle-button" aria-label="Open config menu" title="Open config menu (c)" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings h-3.5 w-3.5" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><div id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (rem)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><details class="mark-layout-command-accordion"><summary class="mark-layout-command-summary">Terminal command</summary><div class="mark-layout-command-wrap"><div class="mark-layout-command-header"><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></div><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></details><button type="button" id="mark-save-layout" class="mark-save-layout-btn" disabled>Save</button></form></div></div></div>"#,
+        r#"<div class="mark-right-control"><button type="button" id="mark-export-pdf" class="mark-shell-button mark-export-pdf-button" aria-label="Export document as PDF" title="Export document as PDF"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download h-3.5 w-3.5" aria-hidden="true"><path d="M12 15V3"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg></button><div class="mark-theme-control mark-theme-button-shell"><button type="button" id="mark-theme-toggle" class="mark-shell-button mark-theme-toggle-button" aria-label="Open config menu" title="Open config menu (c)" aria-haspopup="dialog" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings h-3.5 w-3.5" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><div id="mark-theme-menu" class="mark-theme-menu" aria-label="Theme and reader layout controls" hidden><section class="mark-theme-menu-section"><div class="mark-theme-menu-heading">Theme</div><div class="mark-theme-option-list">{theme_menu}</div></section><form id="mark-layout-form" class="mark-layout-form" autocomplete="off"><div class="mark-theme-menu-heading">Reader layout</div><p class="mark-layout-help">Adjust the values below, then run the generated command in your terminal to persist them to <code>~/.mark/config.toml</code>.</p><label class="mark-layout-field"><span>Font size (px)</span><input id="mark-font-size-input" type="number" min="10" max="32" step="1" value="{font_size}"></label><label class="mark-layout-field"><span>Letter width (rem)</span><input id="mark-letter-width-input" type="number" min="5" max="12" step="0.05" value="{letter_width}"></label><label class="mark-layout-field"><span>Letter corner radius (px)</span><input id="mark-letter-radius-input" type="number" min="0" max="64" step="1" value="{letter_radius}"></label><label class="mark-layout-field"><span>Sidebar button radius (px)</span><input id="mark-sidebar-button-radius-input" type="number" min="0" max="999" step="1" value="{sidebar_button_radius}"></label><label class="mark-layout-field"><span>Theme button radius (px)</span><input id="mark-theme-button-radius-input" type="number" min="0" max="999" step="1" value="{theme_button_radius}"></label><details class="mark-layout-command-accordion"><summary class="mark-layout-command-summary"><span class="mark-layout-command-summary-label">Terminal command</span><button type="button" id="mark-copy-layout-command" class="mark-layout-copy">Copy</button></summary><div class="mark-layout-command-wrap"><code id="mark-layout-command" class="mark-layout-command">{layout_command}</code></div></details><button type="button" id="mark-save-layout" class="mark-save-layout-btn" disabled>Save</button></form></div></div></div>"#,
         font_size = appearance.font_size_px,
         letter_width = format_decimal(appearance.letter_width_in),
         letter_radius = appearance.letter_radius_px,
@@ -191,11 +191,11 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 :root{{--mark-font-size:{font_size}px;--mark-letter-width:{letter_width}in;--mark-letter-radius:{letter_radius}px;--mark-sidebar-button-radius:{sidebar_button_radius}px;--mark-theme-button-radius:{theme_button_radius}px;--mark-sidebar-footer-height:4.85rem}}
 .mark-left-control,.mark-right-control{{position:fixed;top:1.5rem;z-index:50}}
 .mark-left-control{{left:1.5rem}}
-.mark-right-control{{right:1.5rem}}
-.mark-sidebar-button,.mark-theme-toggle-button{{display:flex;align-items:center;justify-content:center;width:3.25rem;height:3.25rem;border:1px solid var(--border);background:var(--control-bg);color:var(--muted-foreground);box-shadow:0 8px 24px rgba(0,0,0,.12);cursor:pointer;transition:transform .15s ease,background .15s ease,color .15s ease}}
+.mark-right-control{{right:1.5rem;display:flex;align-items:flex-start;gap:.75rem}}
+.mark-shell-button,.mark-sidebar-button{{display:flex;align-items:center;justify-content:center;width:3.25rem;height:3.25rem;border:1px solid var(--border);background:var(--control-bg);color:var(--muted-foreground);box-shadow:0 8px 24px rgba(0,0,0,.12);cursor:pointer;transition:transform .15s ease,background .15s ease,color .15s ease}}
 .mark-sidebar-button{{border-radius:var(--mark-sidebar-button-radius)}}
-.mark-theme-toggle-button{{border-radius:var(--mark-theme-button-radius)}}
-.mark-sidebar-button:hover,.mark-theme-toggle-button:hover,.mark-layout-copy:hover{{transform:translateY(-1px);background:var(--control-hover);color:var(--foreground)}}
+.mark-theme-toggle-button,.mark-export-pdf-button{{border-radius:var(--mark-theme-button-radius)}}
+.mark-sidebar-button:hover,.mark-shell-button:hover,.mark-layout-copy:hover{{transform:translateY(-1px);background:var(--control-hover);color:var(--foreground)}}
 .mark-theme-button-shell{{position:relative}}
 .mark-theme-menu{{position:absolute;right:0;top:calc(100% + .75rem);display:grid;gap:1rem;min-width:min(26rem,calc(100vw - 2rem));padding:1rem;border:1px solid var(--border);border-radius:1rem;background:color-mix(in srgb,var(--card) 96%,transparent);box-shadow:0 12px 30px rgba(0,0,0,.16);backdrop-filter:blur(18px)}}
 .mark-theme-menu[hidden]{{display:none}}
@@ -212,8 +212,7 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-layout-field span{{font-size:.82rem;color:var(--foreground)}}
 .mark-layout-field input{{width:100%;border:1px solid var(--border);border-radius:.7rem;background:var(--background);color:var(--foreground);padding:.6rem .75rem;font:inherit}}
 .mark-layout-field input:focus{{outline:2px solid var(--ring);outline-offset:2px}}
-.mark-layout-command-wrap{{display:grid;gap:.5rem;border:1px solid var(--border);border-radius:.85rem;background:var(--muted);padding:.75rem}}
-.mark-layout-command-header{{display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:.8rem;font-weight:600;color:var(--foreground)}}
+.mark-layout-command-wrap{{display:grid;gap:.5rem;padding:.45rem 0 0}}
 .mark-layout-copy{{border:1px solid var(--border);border-radius:.65rem;background:var(--background);color:var(--foreground);padding:.35rem .65rem;font:inherit;cursor:pointer}}
 .mark-layout-command{{display:block;white-space:pre-wrap;word-break:break-word;font-size:.78rem;line-height:1.5}}
 .mark-breadcrumb{{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-bottom:1.35rem;padding-bottom:.85rem;border-bottom:1px solid var(--border);font-size:.92rem;color:var(--muted-foreground)}}
@@ -245,18 +244,19 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
 .mark-btn:hover{{background:var(--control-hover)}}
 .mark-btn.mark-copied{{color:#2a7a2a;border-color:#2a7a2a}}
 .mark-btn.mark-failed{{color:#b00;border-color:#b00}}
-.mark-layout-command-accordion{{border:1px solid var(--border);border-radius:.85rem;background:var(--muted);padding:.5rem .75rem}}
-.mark-layout-command-accordion summary{{list-style:none;cursor:pointer;font-size:.8rem;font-weight:600;color:var(--muted-foreground);padding:.25rem 0;user-select:none}}
+.mark-layout-command-accordion{{border:none;background:transparent;padding:0}}
+.mark-layout-command-accordion summary{{display:flex;align-items:center;gap:.75rem;list-style:none;cursor:pointer;font-size:.8rem;font-weight:600;color:var(--muted-foreground);padding:.25rem 0;user-select:none}}
+.mark-layout-command-summary-label{{display:inline-flex;align-items:center;gap:.4rem;min-width:0}}
 .mark-layout-command-accordion summary::-webkit-details-marker{{display:none}}
 .mark-layout-command-accordion[open] summary{{color:var(--foreground)}}
-.mark-layout-command-accordion summary::before{{content:"▸";display:inline-block;margin-right:.4rem;font-size:.7rem;transition:transform .15s ease}}
+.mark-layout-command-accordion summary::before{{content:"▸";display:inline-block;font-size:.7rem;transition:transform .15s ease}}
 .mark-layout-command-accordion[open] summary::before{{transform:rotate(90deg)}}
 .mark-layout-command-accordion .mark-layout-command-wrap{{border:none;background:transparent;padding:.5rem 0 0}}
-.mark-layout-command-accordion .mark-layout-command-header{{justify-content:flex-end}}
+.mark-layout-command-accordion .mark-layout-copy{{margin-left:auto}}
 .mark-save-layout-btn{{width:100%;margin-top:.5rem;padding:.55rem;border:1px solid var(--border);border-radius:.85rem;background:var(--background);color:var(--foreground);cursor:pointer;font:inherit;font-size:.85rem;transition:background .15s ease,opacity .15s ease}}
 .mark-save-layout-btn:not(:disabled):hover{{background:var(--control-hover);transform:translateY(-1px)}}
 .mark-save-layout-btn:disabled{{opacity:.35;cursor:not-allowed}}
-@media (max-width: 768px){{.mark-left-control{{left:1rem}}.mark-right-control{{right:1rem}}.mark-content-wrapper{{padding-top:5.5rem}}.paper-sheet{{padding:1.5rem}}}}
+@media (max-width: 768px){{.mark-left-control{{left:1rem}}.mark-right-control{{right:1rem;gap:.5rem}}.mark-content-wrapper{{padding-top:1rem}}.paper-sheet{{padding:1.5rem}}}}
 </style>"#,
         font_size = chrome.appearance.font_size_px,
         letter_width = format_decimal(chrome.appearance.letter_width_in),
@@ -353,6 +353,33 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
       themeMenu.hidden = expanded;
       themeToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
     }
+  }
+
+  async function exportPdf() {
+    var originalTitle = document.title;
+    if (window.showSaveFilePicker) {
+      try {
+        var handle = await window.showSaveFilePicker({
+          suggestedName: originalTitle.replace(/\.[^.]+$/, '') + '.pdf',
+          types: [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }]
+        });
+        if (handle && handle.name) {
+          document.title = handle.name.replace(/\.pdf$/i, '');
+        }
+      } catch (error) {
+        if (error && error.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    var restoreTitle = function() {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+    window.addEventListener('afterprint', restoreTitle);
+    window.print();
+    setTimeout(restoreTitle, 1000);
   }
 
   function updateSidebarState() {
@@ -512,6 +539,13 @@ fn build_html_document(title: &str, body: &str, theme: Theme, chrome: RenderChro
           return;
         }
         closeThemeMenu();
+      });
+    }
+
+    var exportPdfBtn = document.getElementById('mark-export-pdf');
+    if (exportPdfBtn) {
+      exportPdfBtn.addEventListener('click', function() {
+        exportPdf();
       });
     }
 
@@ -1944,6 +1978,34 @@ mod tests {
         assert!(
             !html.contains("<details class=\"mark-layout-command-accordion\" open"),
             "accordion must be collapsed by default (no open attribute):\n{html}"
+        );
+    }
+
+    #[test]
+    fn config_pane_keeps_copy_button_in_accordion_summary() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains(
+                "<summary class=\"mark-layout-command-summary\"><span class=\"mark-layout-command-summary-label\">Terminal command</span><button type=\"button\" id=\"mark-copy-layout-command\" class=\"mark-layout-copy\">Copy</button></summary>"
+            ),
+            "copy button must remain visible in accordion summary:\n{html}"
+        );
+    }
+
+    #[test]
+    fn rendered_shell_includes_pdf_export_button_and_hook() {
+        let html = render_markdown("# Test", "test", Theme::System);
+        assert!(
+            html.contains("id=\"mark-export-pdf\""),
+            "pdf export button must be rendered:\n{html}"
+        );
+        assert!(
+            html.contains("window.showSaveFilePicker"),
+            "pdf export flow must use file picker when available:\n{html}"
+        );
+        assert!(
+            html.contains("window.print()"),
+            "pdf export flow must trigger browser print:\n{html}"
         );
     }
 }

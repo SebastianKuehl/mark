@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `—` (M-019 released as v0.8.0; backlog empty).
+Current active milestone: `—` (M-020 released as v0.9.0).
 
 ---
 
@@ -32,6 +32,7 @@ Current active milestone: `—` (M-019 released as v0.8.0; backlog empty).
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.9.0](releases.md#v090--minor) | minor | PDF export button, final letter top alignment fix, flat terminal-command accordion with visible Copy button |
 | [v0.8.0](releases.md#v080--minor) | minor | Recursive render scope restriction — BFS follows only links within entry file's directory subtree |
 | [v0.7.1](releases.md#v071--patch) | patch | Reader shell UX — c hotkey toggles, letter alignment, accordion terminal command, save button |
 | [v0.7.0](releases.md#v070--minor) | minor | Reader controls polish — config menu (⚙/c), t light/dark toggle, live layout preview, rem units, subtle bg glow, stray checkbox removed |
@@ -61,7 +62,7 @@ Current active milestone: `—` (M-019 released as v0.8.0; backlog empty).
 | M-016 | Reader Customization Controls | ✅ released | [M-016](milestones/M-016-reader-customization-controls.md) |
 | M-017 | Reader Controls Polish | ✅ released | [M-017](milestones/M-017-reader-controls-polish.md) |
 | M-018 | Reader Shell UX Refinements | ✅ released | [M-018](milestones/M-018-reader-shell-ux-refinements.md) |
-| M-020 | PDF Export and Letter Alignment Polish | 📝 ready | [M-020](milestones/M-020-pdf-export-letter-alignment.md) |
+| M-020 | PDF Export and Letter Alignment Polish | ✅ released | [M-020](milestones/M-020-pdf-export-letter-alignment.md) |
 | M-019 | Recursive Render Scope Restriction | ✅ released | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
@@ -83,7 +84,7 @@ Current active milestone: `—` (M-019 released as v0.8.0; backlog empty).
 | [F-019](features/F-019-config-menu-live-preview.md) | Config menu hotkeys and live reader-layout preview polish | ✅ released | [F-019](features/F-019-config-menu-live-preview.md) |
 | [F-020](features/F-020-reader-shell-ux-refinements.md) | Reader shell UX refinements (letter alignment, accordion, save button) | ✅ released | [F-020](features/F-020-reader-shell-ux-refinements.md) |
 | [F-021](features/F-021-restrict-recursive-render-scope.md) | Restrict recursive rendering to entry file's directory subtree | ✅ released | [F-021](features/F-021-restrict-recursive-render-scope.md) |
-| [F-022](features/F-022-pdf-export-button.md) | PDF export button with file picker | 📝 ready | [F-022](features/F-022-pdf-export-button.md) |
+| [F-022](features/F-022-pdf-export-button.md) | PDF export button with file picker | ✅ released | [F-022](features/F-022-pdf-export-button.md) |
 
 ---
 
@@ -98,8 +99,8 @@ Current active milestone: `—` (M-019 released as v0.8.0; backlog empty).
 | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) | Sidebar footer hotkeys can disappear behind tall hierarchies | Medium | ✅ released | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) |
 | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) | Stray unlabeled checkbox appears in the reader shell | Medium | ✅ released | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) |
 | [B-007](bugs/B-007-c-hotkey-not-toggling.md) | `c` hotkey only opens config pane, does not toggle it | Medium | ✅ released | [B-007](bugs/B-007-c-hotkey-not-toggling.md) |
-| [B-008](bugs/B-008-letter-top-misaligned.md) | Letter top edge misaligned with header buttons | Medium | 📝 ready | [B-008](bugs/B-008-letter-top-misaligned.md) |
-| [B-009](bugs/B-009-terminal-accordion-visual-issues.md) | Terminal command accordion card styling + Copy button placement | Medium | 📝 ready | [B-009](bugs/B-009-terminal-accordion-visual-issues.md) |
+| [B-008](bugs/B-008-letter-top-misaligned.md) | Letter top edge misaligned with header buttons | Medium | ✅ released | [B-008](bugs/B-008-letter-top-misaligned.md) |
+| [B-009](bugs/B-009-terminal-accordion-visual-issues.md) | Terminal command accordion card styling + Copy button placement | Medium | ✅ released | [B-009](bugs/B-009-terminal-accordion-visual-issues.md) |
 
 ---
 
@@ -125,6 +126,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-017](prompts/P-017-F-017-template-shell.md) | F-017 | Implement template-driven render shell from `src/index.html` |
 | [P-018](prompts/P-018-F-017-theme-icon-followup.md) | F-017 | Restore theme-switcher icon + label parity in the F-017 worktree |
 | [P-019](prompts/P-019-M-017-reader-controls-polish.md) | M-017 (F-019 + B-006) | Reader controls polish — config icon, c/t hotkeys, live preview, rem units, bg glow, stray checkbox |
+| [P-022](prompts/P-022-M-020-pdf-export-letter-alignment.md) | M-020 (F-022 + B-008 + B-009) | PDF export + final reader shell polish |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -135,7 +137,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 |------|--------------|
 | Active agents | none |
 | Open worktrees | none |
-| Latest tag | `v0.8.0` |
-| Recently merged work | M-019 · F-021 (v0.8.0) · M-018 · B-007 · F-020 (v0.7.1) |
-| Next planned work | M-020 (B-008 + F-022) |
+| Latest tag | `v0.9.0` |
+| Recently merged work | M-020 · F-022 · B-008 · B-009 (v0.9.0) · M-019 · F-021 (v0.8.0) |
+| Next planned work | B-002 · B-003 (backlog otherwise empty) |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

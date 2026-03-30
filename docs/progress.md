@@ -72,8 +72,8 @@
 | M7 | milestone | Code block copy actions | `released` | v0.1.0 |
 | M8 | milestone | Persistent theme configuration | `released` | v0.1.0 |
 | M9 | milestone | Home folder cleanup command | `released` | v0.1.2 |
-| M-020 | milestone | PDF Export and Letter Alignment Polish | `in_progress` | anvil | `.worktrees/M-020-pdf-export` | `chore/M-020-pdf-export` | — | 2026-03-30 |
-| F-022 | feature | PDF export button with file picker | `in_progress` | anvil | `.worktrees/M-020-pdf-export` | `chore/M-020-pdf-export` | M-020 | 2026-03-30 |
-| B-008 | bug | Letter top edge misaligned with header buttons | `in_progress` | anvil | `.worktrees/M-020-pdf-export` | `chore/M-020-pdf-export` | M-020 | 2026-03-30 |
-| B-009 | bug | Terminal command accordion has wrong styling and Copy button placement | `in_progress` | anvil | `.worktrees/M-020-pdf-export` | `chore/M-020-pdf-export` | M-020 | 2026-03-30 |
-| P-022 | task | M-020 PDF export + reader shell polish prompt | `in_progress` | anvil | `.worktrees/M-020-pdf-export` | `chore/M-020-pdf-export` | — | 2026-03-30 |
+| M-020 | milestone | PDF Export and Letter Alignment Polish | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| F-022 | feature | PDF export button with file picker | `released` | Product Owner Agent | `main checkout` | `main` | M-020 | 2026-03-30 |
+| B-008 | bug | Letter top edge misaligned with header buttons | `released` | Product Owner Agent | `main checkout` | `main` | M-020 | 2026-03-30 |
+| B-009 | bug | Terminal command accordion has wrong styling and Copy button placement | `released` | Product Owner Agent | `main checkout` | `main` | M-020 | 2026-03-30 |
+| P-022 | task | M-020 PDF export + reader shell polish prompt | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |

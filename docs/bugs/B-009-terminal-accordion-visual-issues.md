@@ -54,4 +54,4 @@ the collapsed content instead of being always visible in the header.
 5. `cargo fmt`, `cargo clippy`, `cargo test` pass with zero warnings.
 
 ## Status
-ready
+released
