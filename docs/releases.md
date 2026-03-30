@@ -9,6 +9,15 @@
 
 ---
 
+## v0.6.1 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-016, F-018, B-005
+- **Summary:** Reader customization controls. Added `mark config set-layout` command for persisting font size, letter width, letter corner radius, and button radii. Rendered pages expose an in-page reader-layout form with a generated `mark config set-layout ...` command. Cache reuse is now settings-aware. Sidebar footer hotkeys are pinned and remain visible regardless of tree height. Removed residual `src/index.html` template dependency — shell is now fully self-contained in `src/render.rs`.
+
+---
+
 ## v0.6.0 — minor
 
 - **Date:** 2026-03-29

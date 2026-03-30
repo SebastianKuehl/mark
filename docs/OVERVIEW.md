@@ -33,6 +33,7 @@ Current active milestone: `—` (M-017 released as v0.7.0).
 | Version | Type | Highlights |
 |---------|------|------------|
 | [v0.7.0](releases.md#v070--minor) | minor | Reader controls polish — config menu (⚙/c), t light/dark toggle, live layout preview, rem units, subtle bg glow, stray checkbox removed |
+| [v0.6.1](releases.md#v061--minor) | minor | Reader customization controls — `mark config set-layout`, in-page layout form, settings-aware cache, sidebar footer pinned, template dep removed |
 | [v0.6.0](releases.md#v060--minor) | minor | Render shell milestone landed (initially via `src/index.html`, now superseded by the self-contained shell in `src/render.rs`) |
 | [v0.5.1](releases.md#v051--patch) | patch | Bash completions stop suggesting root subcommands after the positional `FILE` argument |
 | [v0.5.0](releases.md#v050--minor) | minor | Single vs recursive render modes, hidden-by-default sidebar controls, in-page theme switcher |

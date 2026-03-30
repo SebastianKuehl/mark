@@ -30,7 +30,7 @@ Keep the rendered shell self-contained while letting users tune key reading-surf
 High
 
 ## Status
-merged
+released
 
 ## Target Release
-TBD
+v0.6.1

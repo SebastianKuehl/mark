@@ -18,9 +18,9 @@
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
-| M-016 | milestone | Reader Customization Controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
-| F-018 | feature | Persistent reader appearance controls | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
-| B-005 | bug | Sidebar footer hotkeys can disappear behind tall hierarchies | `merged` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| M-016 | milestone | Reader Customization Controls | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| F-018 | feature | Persistent reader appearance controls | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| B-005 | bug | Sidebar footer hotkeys can disappear behind tall hierarchies | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
 | M-018 | milestone | Reader Shell UX Refinements | `ready` | — | — | — | planning only; waiting for execution authorization | 2026-03-30 |
 | F-020 | feature | Reader shell UX refinements (letter alignment, accordion, save button) | `ready` | — | — | — | M-018; paired with B-007 | 2026-03-30 |
 | B-007 | bug | `c` hotkey only opens config pane, does not toggle it | `ready` | — | — | — | M-018; paired with F-020 | 2026-03-30 |

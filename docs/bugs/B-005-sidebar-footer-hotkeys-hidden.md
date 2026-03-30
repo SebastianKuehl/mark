@@ -35,4 +35,4 @@ The footer is part of the scrollable layout and can be obscured by long hierarch
 4. Existing sidebar visibility and keyboard-toggle behavior remain intact.
 
 ## Status
-merged
+released
