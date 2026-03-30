@@ -19,15 +19,17 @@ Low — functionally incorrect output but requires an uncommon usage pattern (ex
 If the requested theme differs from the theme used in the cached render, the cache should be treated as stale and re-render automatically.
 
 ## Actual Behavior
-Theme is not stored in `CacheEntry`. Any theme-change invocation can produce a cache hit on a wrong-theme file.
+Historical. This bug was fixed when render-cache option matching became
+settings-aware: `CacheEntry` now stores `theme`, and cache reuse rejects
+theme-mismatched renders.
 
 ## Reproduction Steps
 1. `mark file.md` (light theme, default)
 2. `mark --theme dark file.md` → observe prompt and default-N serves wrong theme
 
 ## Affected Area
-- `src/cache.rs` — `CacheEntry` schema (no theme field)
-- `src/main.rs` — cache key check (theme not compared)
+- `src/cache.rs` — `CacheEntry` theme field and option matching
+- `src/main.rs` — cache option comparison before opening cached output
 
 ## Acceptance Criteria for Fix
 1. `CacheEntry` stores the `theme` used at render time (as a string: `"light"` / `"dark"`).
@@ -35,4 +37,4 @@ Theme is not stored in `CacheEntry`. Any theme-change invocation can produce a c
 3. All existing tests pass; new test covers theme-mismatch cache invalidation.
 
 ## Status
-planned
+released

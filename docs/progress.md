@@ -77,3 +77,5 @@
 | B-008 | bug | Letter top edge misaligned with header buttons | `released` | Product Owner Agent | `main checkout` | `main` | M-020 | 2026-03-30 |
 | B-009 | bug | Terminal command accordion has wrong styling and Copy button placement | `released` | Product Owner Agent | `main checkout` | `main` | M-020 | 2026-03-30 |
 | P-022 | task | M-020 PDF export + reader shell polish prompt | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| B-002 | bug | Render cache misses linked-file changes | `released` | Product Owner Agent | `main checkout` | `main` | — | 2026-03-30 |
+| B-003 | bug | Theme change not reflected on cache hit | `released` | Product Owner Agent | `main checkout` | `main` | fixed earlier by settings-aware cache work | 2026-03-30 |

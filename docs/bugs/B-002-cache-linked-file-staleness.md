@@ -39,4 +39,4 @@ Only the entry-point file's mtime is checked. Linked file changes are invisible 
 5. All existing tests pass; new tests cover multi-file mtime staleness detection.
 
 ## Status
-planned
+released

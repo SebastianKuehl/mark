@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `—` (M-020 released as v0.9.0).
+Current active milestone: `—` (backlog cleared through v0.9.1).
 
 ---
 
@@ -32,6 +32,7 @@ Current active milestone: `—` (M-020 released as v0.9.0).
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.9.1](releases.md#v091--patch) | patch | Render cache now invalidates on linked Markdown file changes and safely reuses unchanged recursive renders |
 | [v0.9.0](releases.md#v090--minor) | minor | PDF export button, final letter top alignment fix, flat terminal-command accordion with visible Copy button |
 | [v0.8.0](releases.md#v080--minor) | minor | Recursive render scope restriction — BFS follows only links within entry file's directory subtree |
 | [v0.7.1](releases.md#v071--patch) | patch | Reader shell UX — c hotkey toggles, letter alignment, accordion terminal command, save button |
@@ -93,8 +94,8 @@ Current active milestone: `—` (M-020 released as v0.9.0).
 | ID | Title | Severity | Status | Doc |
 |----|-------|----------|--------|-----|
 | [B-001](bugs/B-001-non-md-files-not-copied.md) | Non-Markdown linked files not copied | Medium | ✅ released | [B-001](bugs/B-001-non-md-files-not-copied.md) |
-| [B-002](bugs/B-002-cache-linked-file-staleness.md) | Render cache misses linked-file changes | Medium | 📝 planned | [B-002](bugs/B-002-cache-linked-file-staleness.md) |
-| [B-003](bugs/B-003-cache-theme-mismatch.md) | Theme change not reflected on cache hit | Low | 📝 planned | [B-003](bugs/B-003-cache-theme-mismatch.md) |
+| [B-002](bugs/B-002-cache-linked-file-staleness.md) | Render cache misses linked-file changes | Medium | ✅ released | [B-002](bugs/B-002-cache-linked-file-staleness.md) |
+| [B-003](bugs/B-003-cache-theme-mismatch.md) | Theme change not reflected on cache hit | Low | ✅ released | [B-003](bugs/B-003-cache-theme-mismatch.md) |
 | [B-004](bugs/B-004-completion-subcommands-after-file.md) | Completion suggests subcommands after FILE | Medium | ✅ released | [B-004](bugs/B-004-completion-subcommands-after-file.md) |
 | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) | Sidebar footer hotkeys can disappear behind tall hierarchies | Medium | ✅ released | [B-005](bugs/B-005-sidebar-footer-hotkeys-hidden.md) |
 | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) | Stray unlabeled checkbox appears in the reader shell | Medium | ✅ released | [B-006](bugs/B-006-stray-checkbox-in-reader-shell.md) |
@@ -137,7 +138,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 |------|--------------|
 | Active agents | none |
 | Open worktrees | none |
-| Latest tag | `v0.9.0` |
-| Recently merged work | M-020 · F-022 · B-008 · B-009 (v0.9.0) · M-019 · F-021 (v0.8.0) |
-| Next planned work | B-002 · B-003 (backlog otherwise empty) |
+| Latest tag | `v0.9.1` |
+| Recently merged work | B-002 (v0.9.1) · M-020 · F-022 · B-008 · B-009 (v0.9.0) |
+| Next planned work | backlog empty |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |

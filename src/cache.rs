@@ -35,6 +35,9 @@ pub struct CacheEntry {
     /// Appearance settings used when producing the cached render.
     #[serde(default)]
     pub appearance: Option<AppearanceConfig>,
+    /// Canonical Markdown file mtimes captured for the render tree.
+    #[serde(default)]
+    pub linked_file_mtime_secs: Option<HashMap<String, u64>>,
 }
 
 /// In-memory render cache backed by a TOML file on disk.
@@ -121,6 +124,14 @@ impl RenderCache {
             && entry.appearance == Some(appearance)
     }
 
+    /// Returns true when the cached file mtimes exactly match the current tree.
+    pub fn matches_file_tree(
+        entry: &CacheEntry,
+        current_file_mtimes: &HashMap<String, u64>,
+    ) -> bool {
+        entry.linked_file_mtime_secs.as_ref() == Some(current_file_mtimes)
+    }
+
     /// Remove entries whose `rendered_html` run directory no longer exists on disk.
     ///
     /// Called by `--cleanup` to prune stale cache state.
@@ -170,6 +181,10 @@ mod tests {
             render_mode: Some(RenderMode::Recursive),
             sidebar: Some(SidebarVisibility::Hidden),
             appearance: Some(AppearanceConfig::default()),
+            linked_file_mtime_secs: Some(HashMap::from([(
+                "/home/user/notes.md".to_string(),
+                1_700_000_000,
+            )])),
         };
         cache.set(source, entry.clone());
         cache.save();
@@ -199,6 +214,7 @@ mod tests {
             render_mode: Some(RenderMode::Recursive),
             sidebar: Some(SidebarVisibility::Hidden),
             appearance: Some(AppearanceConfig::default()),
+            linked_file_mtime_secs: Some(HashMap::from([("/project/doc.md".to_string(), 42)])),
         };
         cache.set(source, entry.clone());
         assert_eq!(cache.get(source), Some(&entry));
@@ -219,6 +235,7 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([("/project/doc.md".to_string(), 1)])),
             },
         );
         let newer = CacheEntry {
@@ -228,6 +245,7 @@ mod tests {
             render_mode: Some(RenderMode::Single),
             sidebar: Some(SidebarVisibility::Visible),
             appearance: Some(AppearanceConfig::default()),
+            linked_file_mtime_secs: Some(HashMap::from([("/project/doc.md".to_string(), 2)])),
         };
         cache.set(source, newer.clone());
         assert_eq!(cache.get(source), Some(&newer));
@@ -250,6 +268,10 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([(
+                    "/project/doc.md".to_string(),
+                    mtime,
+                )])),
             },
         );
         let entry = cache.get(source).expect("entry");
@@ -270,6 +292,7 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([("/project/doc.md".to_string(), 100)])),
             },
         );
         let entry = cache.get(source).expect("entry");
@@ -296,6 +319,7 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([("/doc.md".to_string(), 1)])),
             },
         );
         cache.remove_missing_entries();
@@ -319,6 +343,7 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([("/doc.md".to_string(), 1)])),
             },
         );
         assert!(
@@ -346,6 +371,7 @@ mod tests {
                 render_mode: None,
                 sidebar: None,
                 appearance: None,
+                linked_file_mtime_secs: None,
             },
         );
 
@@ -375,6 +401,7 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([("/good.md".to_string(), 1)])),
             },
         );
         cache.set(
@@ -386,6 +413,7 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([("/stale.md".to_string(), 2)])),
             },
         );
 
@@ -410,10 +438,50 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([("/x.md".to_string(), 7)])),
             },
         );
         cache.save();
         assert!(deep.exists(), "cache file must be created with parent dirs");
+    }
+
+    #[test]
+    fn matches_file_tree_accepts_exact_recursive_mtimes() {
+        let mtimes = HashMap::from([
+            ("/docs/overview.md".to_string(), 10),
+            ("/docs/chapters/intro.md".to_string(), 20),
+        ]);
+        let entry = CacheEntry {
+            rendered_html: PathBuf::from("/out-run"),
+            source_mtime_secs: 10,
+            theme: Some(Theme::System),
+            render_mode: Some(RenderMode::Recursive),
+            sidebar: Some(SidebarVisibility::Hidden),
+            appearance: Some(AppearanceConfig::default()),
+            linked_file_mtime_secs: Some(mtimes.clone()),
+        };
+        assert!(RenderCache::matches_file_tree(&entry, &mtimes));
+    }
+
+    #[test]
+    fn matches_file_tree_rejects_changed_linked_file() {
+        let entry = CacheEntry {
+            rendered_html: PathBuf::from("/out-run"),
+            source_mtime_secs: 10,
+            theme: Some(Theme::System),
+            render_mode: Some(RenderMode::Recursive),
+            sidebar: Some(SidebarVisibility::Hidden),
+            appearance: Some(AppearanceConfig::default()),
+            linked_file_mtime_secs: Some(HashMap::from([
+                ("/docs/overview.md".to_string(), 10),
+                ("/docs/chapters/intro.md".to_string(), 20),
+            ])),
+        };
+        let current = HashMap::from([
+            ("/docs/overview.md".to_string(), 10),
+            ("/docs/chapters/intro.md".to_string(), 21),
+        ]);
+        assert!(!RenderCache::matches_file_tree(&entry, &current));
     }
 
     #[test]
@@ -432,6 +500,10 @@ mod tests {
                 render_mode: Some(RenderMode::Recursive),
                 sidebar: Some(SidebarVisibility::Hidden),
                 appearance: Some(AppearanceConfig::default()),
+                linked_file_mtime_secs: Some(HashMap::from([(
+                    "/project/overview.md".to_string(),
+                    99,
+                )])),
             },
         );
         cache.save();
@@ -454,6 +526,7 @@ mod tests {
             render_mode: None,
             sidebar: None,
             appearance: None,
+            linked_file_mtime_secs: None,
         };
         assert!(!RenderCache::matches_options(
             &entry,
@@ -473,6 +546,7 @@ mod tests {
             render_mode: Some(RenderMode::Single),
             sidebar: Some(SidebarVisibility::Visible),
             appearance: Some(AppearanceConfig::default()),
+            linked_file_mtime_secs: Some(HashMap::from([("/doc.md".to_string(), 100)])),
         };
         assert!(RenderCache::matches_options(
             &entry,

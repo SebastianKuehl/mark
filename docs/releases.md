@@ -1,5 +1,14 @@
 # Releases
 
+## v0.9.1 — patch
+
+- **Date:** 2026-03-30
+- **Type:** patch
+- **Merged items:** B-002
+- **Summary:** Render cache now tracks the full rendered Markdown file tree, not just the entry file. Cache reuse is allowed only when every rendered Markdown file still matches its stored mtime, so linked-file edits invalidate the cache automatically. Recursive renders can now safely reuse cached output when the full source tree and render settings are unchanged.
+
+---
+
 ## v0.9.0 — minor
 
 - **Date:** 2026-03-30

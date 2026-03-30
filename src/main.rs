@@ -10,6 +10,17 @@ use mark::{
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 
+fn path_mtime_secs(path: &Path) -> Option<u64> {
+    std::fs::metadata(path)
+        .ok()
+        .and_then(|m| m.modified().ok())
+        .and_then(|t| {
+            t.duration_since(std::time::UNIX_EPOCH)
+                .ok()
+                .map(|d| d.as_secs())
+        })
+}
+
 fn stable_path_hash(path: &Path) -> u32 {
     path.as_os_str()
         .as_encoded_bytes()
@@ -273,61 +284,9 @@ fn main() -> Result<()> {
     let entry_canonical = std::fs::canonicalize(&file)
         .map_err(|e| anyhow::anyhow!("Failed to canonicalize {}: {e}", file.display()))?;
 
-    // ── Render cache: check if re-render is needed ────────────────────────────
-    //
-    // We load the cache here so it's available both for the early-exit check
+    // ── Render cache: load before discovery so it's available for early-exit
     // and for the post-render update at the bottom of main.
     let mut render_cache = cache::RenderCache::load(paths.render_cache.clone());
-
-    // Get the entry file's current mtime as Unix seconds.
-    let entry_mtime_secs: Option<u64> = std::fs::metadata(&entry_canonical)
-        .ok()
-        .and_then(|m| m.modified().ok())
-        .and_then(|t| {
-            t.duration_since(std::time::UNIX_EPOCH)
-                .ok()
-                .map(|d| d.as_secs())
-        });
-
-    // Only consult the cache when --no-open is NOT set (non-interactive re-renders
-    // should always proceed without prompting).
-    if !args.no_open {
-        if let (Some(mtime), Some(cached)) = (entry_mtime_secs, render_cache.get(&entry_canonical))
-        {
-            let cached_entry_html = output_path_for_run(
-                &cached.rendered_html,
-                entry_canonical.parent().unwrap_or_else(|| Path::new(".")),
-                &entry_canonical,
-            );
-            if render_mode == RenderMode::Single
-                && cached.source_mtime_secs == mtime
-                && cached.rendered_html.exists()
-                && cached_entry_html.exists()
-                && cache::RenderCache::matches_options(
-                    cached,
-                    theme,
-                    render_mode,
-                    sidebar,
-                    appearance,
-                )
-            {
-                eprint!(
-                    "Already rendered: {}\nRe-render? [y/N]: ",
-                    cached_entry_html.display()
-                );
-                let mut line = String::new();
-                std::io::stdin().read_line(&mut line)?;
-                if !matches!(line.trim().to_ascii_lowercase().as_str(), "y") {
-                    // Open the existing rendered file and exit — no re-render.
-                    if let Err(e) = browser::open_browser(&cached_entry_html) {
-                        eprintln!("Warning: {e}");
-                    }
-                    return Ok(());
-                }
-                // User answered "y" — fall through to full render below.
-            }
-        }
-    }
 
     // The entry directory is the canonical parent of the entry file.  All
     // recursive rendering is restricted to files within this subtree.
@@ -396,6 +355,54 @@ fn main() -> Result<()> {
 
         Vec::new()
     };
+
+    let current_file_mtimes: HashMap<String, u64> = ordered
+        .iter()
+        .filter_map(|path| {
+            path_mtime_secs(path).map(|mtime| (path.to_string_lossy().into_owned(), mtime))
+        })
+        .collect();
+    let entry_mtime_secs = current_file_mtimes
+        .get(entry_canonical.to_string_lossy().as_ref())
+        .copied();
+
+    // Only consult the cache when --no-open is NOT set (non-interactive re-renders
+    // should always proceed without prompting).
+    if !args.no_open {
+        if let (Some(mtime), Some(cached)) = (entry_mtime_secs, render_cache.get(&entry_canonical))
+        {
+            let cached_entry_html = output_path_for_run(
+                &cached.rendered_html,
+                entry_canonical.parent().unwrap_or_else(|| Path::new(".")),
+                &entry_canonical,
+            );
+            if cached.source_mtime_secs == mtime
+                && cached.rendered_html.exists()
+                && cached_entry_html.exists()
+                && cache::RenderCache::matches_options(
+                    cached,
+                    theme,
+                    render_mode,
+                    sidebar,
+                    appearance,
+                )
+                && cache::RenderCache::matches_file_tree(cached, &current_file_mtimes)
+            {
+                eprint!(
+                    "Already rendered: {}\nRe-render? [y/N]: ",
+                    cached_entry_html.display()
+                );
+                let mut line = String::new();
+                std::io::stdin().read_line(&mut line)?;
+                if !matches!(line.trim().to_ascii_lowercase().as_str(), "y") {
+                    if let Err(e) = browser::open_browser(&cached_entry_html) {
+                        eprintln!("Warning: {e}");
+                    }
+                    return Ok(());
+                }
+            }
+        }
+    }
 
     // ── Phase 2: assign output paths inside a per-run directory up-front ──────
     //
@@ -576,6 +583,7 @@ fn main() -> Result<()> {
                 render_mode: Some(render_mode),
                 sidebar: Some(sidebar),
                 appearance: Some(appearance),
+                linked_file_mtime_secs: Some(current_file_mtimes),
             },
         );
         render_cache.save();
