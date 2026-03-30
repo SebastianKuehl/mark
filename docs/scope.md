@@ -25,9 +25,8 @@ Developers and writers need a zero-friction way to preview Markdown documentatio
 - Code block copy and "copy clean" (strip comments) toolbar buttons
 - Shell completions (bash, zsh, fish, PowerShell)
 - Install / uninstall scripts (Linux, macOS, Windows)
-- `--cleanup` flag (delete rendered files older than 30 days)
 - `--no-open` flag (render without opening browser)
-- `cleanup-home` subcommand (destructive removal of `~/.mark`)
+- `wipe` subcommand for deleting all app data, only config, only renders, or only renders older than 30 days
 - GitHub Actions CI (fmt + clippy + test on Linux, macOS, Windows)
 
 ## Out of Scope

@@ -24,7 +24,9 @@ _No active items._
 
 | ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
 |----|------|-------|--------|-------|----------|--------|----------|---------|
-_No ready items._
+| M-024 | milestone | Wipe command and cleanup surface redesign | `in_progress` | anvil | `.worktrees/M-024-wipe-command` | `feat/M-024-wipe-command` | — | 2026-03-30 |
+| F-027 | feature | Unified `wipe` cleanup command | `in_progress` | anvil | `.worktrees/M-024-wipe-command` | `feat/M-024-wipe-command` | M-024 | 2026-03-30 |
+| P-027 | task | M-024 wipe command redesign prompt | `in_progress` | anvil | `.worktrees/M-024-wipe-command` | `feat/M-024-wipe-command` | — | 2026-03-30 |
 
 ---
 
