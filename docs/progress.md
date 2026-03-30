@@ -16,7 +16,14 @@
 
 ## Active Items
 
-_No active items._
+| ID | Type | Title | Status | Agent | Worktree | Branch | Blockers | Updated |
+|----|------|-------|--------|-------|----------|--------|----------|---------|
+| M-025 | milestone | CLI ergonomics and reader-shell regressions | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | — | 2026-03-30 |
+| F-028 | feature | CLI shorthand flags and directory entry handling | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
+| F-029 | feature | PDF path ergonomics and completions | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
+| B-014 | bug | Zen mode page does not fully become the letter surface | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
+| B-015 | bug | Config pane stacks beneath shell buttons | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | M-025 | 2026-03-30 |
+| P-028 | task | M-025 CLI ergonomics and reader-shell regressions prompt | `in_progress` | anvil | `.worktrees/M-025-cli-ergonomics` | `feat/M-025-cli-ergonomics` | — | 2026-03-30 |
 
 ---
 

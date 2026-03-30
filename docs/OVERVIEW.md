@@ -23,8 +23,8 @@
 
 Only the instructor and the Product Owner Agent may update `README.md`.
 
-Current active execution item: `—`.
-Current active milestone: `—` (all documented work released through `v0.12.0`).
+Current active execution item: `P-028`.
+Current active milestone: `M-025` (in progress — CLI ergonomics and reader-shell regressions).
 
 ---
 
@@ -73,6 +73,7 @@ Current active milestone: `—` (all documented work released through `v0.12.0`)
 | M-022 | CLI PDF Export and Command Shape Cleanup | ✅ released | [M-022](milestones/M-022-cli-pdf-and-command-shape.md) |
 | M-023 | Default Current-Directory Markdown Entry | ✅ released | [M-023](milestones/M-023-default-cwd-render-entrypoint.md) |
 | M-024 | Wipe Command and Cleanup Surface Redesign | ✅ released | [M-024](milestones/M-024-wipe-command-and-cleanup-redesign.md) |
+| M-025 | CLI Ergonomics and Reader-Shell Regressions | 🟡 in progress | [M-025](milestones/M-025-cli-ergonomics-and-shell-regressions.md) |
 | M-019 | Recursive Render Scope Restriction | ✅ released | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
@@ -100,6 +101,8 @@ Current active milestone: `—` (all documented work released through `v0.12.0`)
 | [F-024](features/F-024-cli-pdf-export-subcommand.md) | CLI PDF export subcommand | ✅ released | [F-024](features/F-024-cli-pdf-export-subcommand.md) |
 | [F-026](features/F-026-default-cwd-render.md) | Default current-directory Markdown render | ✅ released | [F-026](features/F-026-default-cwd-render.md) |
 | [F-027](features/F-027-unified-wipe-command.md) | Unified `wipe` cleanup command | ✅ released | [F-027](features/F-027-unified-wipe-command.md) |
+| [F-028](features/F-028-cli-shorthand-and-directory-entry.md) | CLI shorthand flags and directory entry handling | 🟡 in progress | [F-028](features/F-028-cli-shorthand-and-directory-entry.md) |
+| [F-029](features/F-029-pdf-path-ergonomics-and-completions.md) | PDF path ergonomics and completions | 🟡 in progress | [F-029](features/F-029-pdf-path-ergonomics-and-completions.md) |
 
 ---
 
@@ -120,6 +123,8 @@ Current active milestone: `—` (all documented work released through `v0.12.0`)
 | [B-011](bugs/B-011-config-sidebar-presentation-regressions.md) | Config sidebar overlaps controls, lacks matching animation, and allows blank layout values | Medium | ✅ released | [B-011](bugs/B-011-config-sidebar-presentation-regressions.md) |
 | [B-012](bugs/B-012-root-cli-file-command-overlap.md) | Root CLI mixes optional file and command forms | High | ✅ released | [B-012](bugs/B-012-root-cli-file-command-overlap.md) |
 | [B-013](bugs/B-013-zen-mode-background-does-not-match-letter.md) | Zen mode background does not match the effective letter color | Medium | ✅ released | [B-013](bugs/B-013-zen-mode-background-does-not-match-letter.md) |
+| [B-014](bugs/B-014-zen-mode-page-does-not-fully-become-letter.md) | Zen mode page does not fully become the letter surface | Medium | 🟡 in progress | [B-014](bugs/B-014-zen-mode-page-does-not-fully-become-letter.md) |
+| [B-015](bugs/B-015-config-pane-stacks-beneath-shell-buttons.md) | Config pane stacks beneath shell buttons | Medium | 🟡 in progress | [B-015](bugs/B-015-config-pane-stacks-beneath-shell-buttons.md) |
 
 ---
 
@@ -151,6 +156,7 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 | [P-025](prompts/P-025-B-013-zen-mode-background.md) | B-013 | Zen-mode background synchronization |
 | [P-026](prompts/P-026-M-023-default-cwd-render.md) | M-023 (F-026) | Default current-directory Markdown entry |
 | [P-027](prompts/P-027-M-024-wipe-command.md) | M-024 (F-027) | Replace `cleanup-home` and `--cleanup` with unified `wipe` |
+| [P-028](prompts/P-028-M-025-cli-ergonomics-and-shell-regressions.md) | M-025 (F-028 + F-029 + B-014 + B-015) | CLI shorthand, directory input, PDF path/completion, zen/config regressions |
 | m1–m9 | Original milestones | [m1](prompts/m1.txt) · [m2](prompts/m2.txt) · [m3](prompts/m3.txt) · [m4](prompts/m4.txt) · [m5](prompts/m5.txt) · [m6](prompts/m6.txt) · [m7](prompts/m7.txt) · [m8](prompts/m8.txt) · [m9](prompts/m9.txt) |
 
 ---
@@ -159,9 +165,9 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | none |
-| Open worktrees | none |
+| Active agents | P-028 in progress |
+| Open worktrees | `.worktrees/M-025-cli-ergonomics` |
 | Latest tag | `v0.12.0` |
 | Recently merged work | M-024 (`v0.12.0`) · M-023 + B-013 (`v0.11.0`) |
-| Next planned work | backlog empty |
+| Next planned work | M-025 / F-028 / F-029 / B-014 / B-015 |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |
