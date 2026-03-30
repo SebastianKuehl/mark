@@ -1,5 +1,14 @@
 # Releases
 
+## v0.12.0 — minor
+
+- **Date:** 2026-03-30
+- **Type:** minor
+- **Merged items:** M-024, F-027
+- **Summary:** Replaced the split cleanup surface with a unified `mark wipe` command. The legacy `cleanup-home` subcommand was renamed to `wipe`, the root `--cleanup` flag was removed, and cleanup is now expressed through explicit wipe modes for deleting the whole `.mark` folder, only config, only renders, or only renders older than 30 days. The crate version is synced to `v0.12.0` in `Cargo.toml` and `Cargo.lock`.
+
+---
+
 ## v0.11.0 — minor
 
 - **Date:** 2026-03-30

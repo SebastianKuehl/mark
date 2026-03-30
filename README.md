@@ -28,8 +28,8 @@ When the Markdown file contains links to other local `.md` files, `mark` can eit
 - Opens the result in the system default browser
 - Stores rendered files under `~/.mark/rendered/` in per-run directories — never in your project directory
 - Auto-cleans rendered run directories older than 30 days on every run
-- `--cleanup` mode for manual housekeeping
 - `--no-open` mode for CI or scripting
+- `wipe` subcommand for deleting all app data, only config, only renders, or only renders older than 30 days
 - Persistent theme support (`system` / `light` / `dark`) via `mark config set-theme`
 - Persistent render-mode and sidebar defaults via `mark config`
 - Per-invocation theme override via `--theme`
@@ -139,10 +139,10 @@ mark --recursive docs/overview.md
 
 This renders the entry file plus recursively linked local Markdown files into the same run directory. Only files within the entry file's parent directory (and its subdirectories) are rendered — links to files outside that subtree are silently skipped.
 
-### Run cleanup only
+### Wipe old renders
 
 ```sh
-mark --cleanup
+mark wipe --old-renders
 ```
 
 Deletes rendered run directories older than 30 days from `~/.mark/rendered/` and prints a summary.
@@ -281,36 +281,49 @@ On every normal render run, `mark` automatically deletes per-invocation render d
 
 ---
 
-## Home folder cleanup (`cleanup-home`)
+## Wipe app data (`wipe`)
 
-`mark cleanup-home` removes the entire `~/.mark` directory (or `%USERPROFILE%\.mark` on Windows) from your home folder.  This is a **destructive, irreversible operation** that deletes:
+`mark wipe` is the unified cleanup command for app data under `~/.mark` (or `%USERPROFILE%\.mark` on Windows).
+
+### Available wipe modes
+
+| Command | What it removes |
+|---------|-----------------|
+| `mark wipe --all` | The entire `.mark` app directory |
+| `mark wipe --config` | Only `config.toml` |
+| `mark wipe --renders` | Only the rendered output directory |
+| `mark wipe --old-renders` | Only rendered run directories older than 30 days |
+
+`mark wipe --all` is a **destructive, irreversible operation** that deletes:
 
 - All rendered HTML files
 - Your `config.toml` (theme preference)
 - The installed `mark` binary inside `.mark/bin`
 
-### How it differs from `--cleanup`
-
-| Command | What it removes |
-|---------|-----------------|
-| `mark --cleanup` | Rendered run directories older than 30 days only |
-| `mark cleanup-home` | The entire `.mark` app directory |
-
 ### Usage
 
 ```sh
 # Interactive — prompts for confirmation
-mark cleanup-home
+mark wipe --all
 
-# Non-interactive — skips the prompt (useful in scripts)
-mark cleanup-home --yes
+# Non-interactive full wipe — skips the prompt
+mark wipe --all --yes
+
+# Remove only config
+mark wipe --config
+
+# Remove all rendered output
+mark wipe --renders
+
+# Remove only renders older than 30 days
+mark wipe --old-renders
 ```
 
 By default you must type `yes` at the confirmation prompt.  If the directory does not exist, the command exits successfully with a no-op message.
 
 ### Windows note
 
-On Windows the running `mark.exe` binary lives inside `.mark/bin/`.  Because Windows locks executables that are in use, the binary itself may not be removable while `mark` is running.  In that case `mark cleanup-home` performs a best-effort deletion, skips the locked file, prints a warning, and asks you to re-run after the process exits.
+On Windows the running `mark.exe` binary lives inside `.mark/bin/`. Because Windows locks executables that are in use, the binary itself may not be removable while `mark wipe --all` is running. In that case the wipe performs a best-effort deletion, skips the locked file, prints a warning, and asks you to re-run after the process exits.
 
 ---
 
@@ -483,7 +496,7 @@ Re-render? [y/N]:
 
 If the source file has changed (different mtime), `mark` re-renders silently without prompting.
 
-`mark --cleanup` prunes cache entries whose render run directory no longer exists on disk.
+`mark wipe --old-renders` prunes cache entries whose render run directory no longer exists on disk.
 `mark --no-open` always re-renders without prompting (non-interactive mode).
 
 ---
@@ -524,7 +537,7 @@ Restart your terminal or run `source ~/.bashrc` (or the equivalent for your shel
 Install Rust via [rustup.rs](https://rustup.rs/): `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 
 **Rendered files accumulating**
-Run `mark --cleanup` to remove files older than 30 days.
+Run `mark wipe --old-renders` to remove files older than 30 days.
 
 ---
 

@@ -37,7 +37,7 @@ operations under explicit `wipe` subcommand modes.
 High
 
 ## Status
-ready
+released
 
 ## Target Release
-TBD
+v0.12.0

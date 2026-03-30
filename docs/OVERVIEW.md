@@ -24,7 +24,7 @@
 Only the instructor and the Product Owner Agent may update `README.md`.
 
 Current active execution item: `—`.
-Current active milestone: `M-024` (ready — replace `cleanup-home` and `--cleanup` with a unified `wipe` command).
+Current active milestone: `—` (all documented work released through `v0.12.0`).
 
 ---
 
@@ -32,6 +32,7 @@ Current active milestone: `M-024` (ready — replace `cleanup-home` and `--clean
 
 | Version | Type | Highlights |
 |---------|------|------------|
+| [v0.12.0](releases.md#v0120--minor) | minor | Unified `mark wipe` cleanup modes replace `cleanup-home` and the old `--cleanup` flag |
 | [v0.11.0](releases.md#v0110--minor) | minor | `mark` now works without an explicit file, and zen mode backgrounds stay synced to the letter surface |
 | [v0.10.0](releases.md#v0100--minor) | minor | Sidebar search, zen mode, theme persistence across navigation, `mark pdf`, and clean root CLI usage |
 | [v0.9.3](releases.md#v093--patch) | patch | Config pane is now a right sidebar and `t` no longer closes it while toggling theme |
@@ -71,7 +72,7 @@ Current active milestone: `M-024` (ready — replace `cleanup-home` and `--clean
 | M-021 | Sidebar Search and Config Panel Polish | ✅ released | [M-021](milestones/M-021-sidebar-and-config-polish.md) |
 | M-022 | CLI PDF Export and Command Shape Cleanup | ✅ released | [M-022](milestones/M-022-cli-pdf-and-command-shape.md) |
 | M-023 | Default Current-Directory Markdown Entry | ✅ released | [M-023](milestones/M-023-default-cwd-render-entrypoint.md) |
-| M-024 | Wipe Command and Cleanup Surface Redesign | 🟡 ready | [M-024](milestones/M-024-wipe-command-and-cleanup-redesign.md) |
+| M-024 | Wipe Command and Cleanup Surface Redesign | ✅ released | [M-024](milestones/M-024-wipe-command-and-cleanup-redesign.md) |
 | M-019 | Recursive Render Scope Restriction | ✅ released | [M-019](milestones/M-019-recursive-render-scope-restriction.md) |
 | M1–M9 | Original build milestones (scaffold → cleanup-home) | ✅ released | [milestones.md](milestones.md) |
 
@@ -98,7 +99,7 @@ Current active milestone: `M-024` (ready — replace `cleanup-home` and `--clean
 | [F-025](features/F-025-zen-mode.md) | Zen mode | ✅ released | [F-025](features/F-025-zen-mode.md) |
 | [F-024](features/F-024-cli-pdf-export-subcommand.md) | CLI PDF export subcommand | ✅ released | [F-024](features/F-024-cli-pdf-export-subcommand.md) |
 | [F-026](features/F-026-default-cwd-render.md) | Default current-directory Markdown render | ✅ released | [F-026](features/F-026-default-cwd-render.md) |
-| [F-027](features/F-027-unified-wipe-command.md) | Unified `wipe` cleanup command | 🟡 ready | [F-027](features/F-027-unified-wipe-command.md) |
+| [F-027](features/F-027-unified-wipe-command.md) | Unified `wipe` cleanup command | ✅ released | [F-027](features/F-027-unified-wipe-command.md) |
 
 ---
 
@@ -158,9 +159,9 @@ Current operational ledger — statuses, active worktrees, agents, blockers:
 
 | Area | Current state |
 |------|--------------|
-| Active agents | P-027 in progress |
-| Open worktrees | `.worktrees/M-024-wipe-command` |
-| Latest tag | `v0.11.0` |
-| Recently merged work | M-023 + B-013 (`v0.11.0`) · M-021 + M-022 (`v0.10.0`) |
-| Next planned work | M-024 / F-027 — unify cleanup behavior under `mark wipe` |
+| Active agents | none |
+| Open worktrees | none |
+| Latest tag | `v0.12.0` |
+| Recently merged work | M-024 (`v0.12.0`) · M-023 + B-013 (`v0.11.0`) |
+| Next planned work | backlog empty |
 | CI | ✅ fmt + clippy + test (Linux · macOS · Windows) |
